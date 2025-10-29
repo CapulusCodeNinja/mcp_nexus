@@ -22,9 +22,10 @@ internal static class EnqueueAsyncExtensionCommandTool
     /// <param name="extensionName">Name of the extension script to execute.</param>
     /// <param name="parameters">Optional parameters to pass to the extension script.</param>
     /// <returns>Command enqueue result with commandId.</returns>
-    [McpServerTool, Description("Enqueues an extension script for asynchronous execution. Returns commandId for tracking.")]
+    [McpServerTool]
+    [Description("Enqueues an extension script for asynchronous execution. Returns commandId for tracking.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static async Task<object> nexus_enqueue_async_extension_command(
+    public static async Task<object> Nexus_enqueue_async_extension_command(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Name of the extension script to execute")] string extensionName,
         [Description("Optional parameters to pass to the extension script")] object? parameters = null)
@@ -55,7 +56,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 { "Session ID", sessionId },
                 { "Extension Name", extensionName },
                 { "Parameters", parameters?.ToString() ?? "None" },
-                { "Status", "Queued" }
+                { "Status", "Queued" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -75,7 +76,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 { "Session ID", sessionId },
                 { "Extension Name", extensionName },
                 { "Parameters", parameters?.ToString() ?? "None" },
-                { "Status", "Failed" }
+                { "Status", "Failed" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -95,7 +96,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 { "Session ID", sessionId },
                 { "Extension Name", extensionName },
                 { "Parameters", parameters?.ToString() ?? "None" },
-                { "Status", "Failed" }
+                { "Status", "Failed" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -115,7 +116,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 { "Session ID", sessionId },
                 { "Extension Name", extensionName },
                 { "Parameters", parameters?.ToString() ?? "None" },
-                { "Status", "Failed" }
+                { "Status", "Failed" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -128,4 +129,3 @@ internal static class EnqueueAsyncExtensionCommandTool
         }
     }
 }
-

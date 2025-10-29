@@ -50,6 +50,7 @@ internal class CallbackServerManager : ICallbackServerManager
     /// <summary>
     /// Gets the token validator instance for sharing with other components.
     /// </summary>
+    /// <returns></returns>
     public TokenValidator GetTokenValidator()
     {
         return m_TokenValidator;
@@ -170,7 +171,7 @@ internal class CallbackServerManager : ICallbackServerManager
 
         // Configure to listen on localhost only
         var url = m_ConfiguredPort == 0
-            ? $"http://{m_Host}:0"  // Dynamic port
+            ? $"http://{m_Host}:0" // Dynamic port
             : $"http://{m_Host}:{m_ConfiguredPort}";  // Configured port
 
         _ = builder.WebHost.UseUrls(url);
@@ -248,4 +249,3 @@ internal class CallbackServerManager : ICallbackServerManager
         GC.SuppressFinalize(this);
     }
 }
-

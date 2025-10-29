@@ -21,9 +21,10 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
     /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
     /// <param name="command">WinDbg/CDB command to execute.</param>
     /// <returns>Command enqueue result with commandId.</returns>
-    [McpServerTool, Description("Enqueues a debugging command for asynchronous execution. Returns commandId for tracking.")]
+    [McpServerTool]
+    [Description("Enqueues a debugging command for asynchronous execution. Returns commandId for tracking.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static Task<object> nexus_enqueue_async_dump_analyze_command(
+    public static Task<object> Nexus_enqueue_async_dump_analyze_command(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("WinDbg/CDB command to execute (e.g., 'k', '!analyze -v', 'lm')")] string command)
     {
@@ -52,7 +53,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
                 { "Command ID", commandId },
                 { "Session ID", sessionId },
                 { "Command", command },
-                { "Status", "Queued" }
+                { "Status", "Queued" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -71,7 +72,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
                 { "Command ID", "N/A" },
                 { "Session ID", sessionId },
                 { "Command", command },
-                { "Status", "Failed" }
+                { "Status", "Failed" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -90,7 +91,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
                 { "Command ID", "N/A" },
                 { "Session ID", sessionId },
                 { "Command", command },
-                { "Status", "Failed" }
+                { "Status", "Failed" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -109,7 +110,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
                 { "Command ID", "N/A" },
                 { "Session ID", sessionId },
                 { "Command", command },
-                { "Status", "Failed" }
+                { "Status", "Failed" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -122,4 +123,3 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
         }
     }
 }
-

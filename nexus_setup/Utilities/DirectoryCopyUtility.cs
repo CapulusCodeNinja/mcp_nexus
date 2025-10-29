@@ -18,9 +18,9 @@ namespace Nexus.Setup.Utilities
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryCopyUtility"/> class.
         /// </summary>
-        public DirectoryCopyUtility() : this(new FileSystem())
+        public DirectoryCopyUtility()
+            : this(new FileSystem())
         {
-
         }
 
         /// <summary>

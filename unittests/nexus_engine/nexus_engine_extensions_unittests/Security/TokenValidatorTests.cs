@@ -30,7 +30,6 @@ public class TokenValidatorTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    #region GenerateToken Tests
 
     /// <summary>
     /// Verifies that GenerateToken returns a non-empty token.
@@ -87,9 +86,7 @@ public class TokenValidatorTests : IDisposable
         _ = token.Should().NotBeNullOrEmpty();
     }
 
-    #endregion
 
-    #region ValidateToken Tests
 
     /// <summary>
     /// Verifies that ValidateToken returns valid for freshly generated token.
@@ -178,9 +175,7 @@ public class TokenValidatorTests : IDisposable
         _ = commandId2.Should().Be("cmd-2");
     }
 
-    #endregion
 
-    #region RevokeToken Tests
 
     /// <summary>
     /// Verifies that RevokeToken invalidates a valid token.
@@ -225,9 +220,7 @@ public class TokenValidatorTests : IDisposable
         _ = act.Should().NotThrow();
     }
 
-    #endregion
 
-    #region CleanupExpiredTokens Tests
 
     /// <summary>
     /// Verifies that CleanupExpiredTokens removes expired tokens.
@@ -285,9 +278,7 @@ public class TokenValidatorTests : IDisposable
         _ = act.Should().NotThrow();
     }
 
-    #endregion
 
-    #region Dispose Tests
 
     /// <summary>
     /// Verifies that Dispose can be called multiple times.
@@ -331,13 +322,12 @@ public class TokenValidatorTests : IDisposable
         _ = actCleanup.Should().NotThrow();
     }
 
-    #endregion
 
-    #region Thread Safety Tests
 
     /// <summary>
     /// Verifies that concurrent token generation is thread-safe.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task GenerateToken_ConcurrentCalls_IsThreadSafe()
     {
@@ -354,9 +344,10 @@ public class TokenValidatorTests : IDisposable
                 {
                     tokens.Add(m_Validator.GenerateToken($"session-{i}", $"cmd-{j}"));
                 }
+
                 return tokens;
-            })
-        ).ToArray();
+            }))
+        .ToArray();
 
         var results = await Task.WhenAll(tasks);
 
@@ -369,6 +360,7 @@ public class TokenValidatorTests : IDisposable
     /// <summary>
     /// Verifies that concurrent validation is thread-safe.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task ValidateToken_ConcurrentCalls_IsThreadSafe()
     {
@@ -377,8 +369,8 @@ public class TokenValidatorTests : IDisposable
 
         // Act
         var tasks = Enumerable.Range(0, 20).Select(_ =>
-            Task.Run(() => m_Validator.ValidateToken(token))
-        ).ToArray();
+            Task.Run(() => m_Validator.ValidateToken(token)))
+        .ToArray();
 
         var results = await Task.WhenAll(tasks);
 
@@ -394,6 +386,7 @@ public class TokenValidatorTests : IDisposable
     /// <summary>
     /// Verifies that concurrent cleanup is thread-safe.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CleanupExpiredTokens_ConcurrentCalls_IsThreadSafe()
     {
@@ -405,15 +398,12 @@ public class TokenValidatorTests : IDisposable
 
         // Act
         var tasks = Enumerable.Range(0, 10).Select(_ =>
-            Task.Run(() => m_Validator.CleanupExpiredTokens())
-        ).ToArray();
+            Task.Run(() => m_Validator.CleanupExpiredTokens()))
+        .ToArray();
 
         var act = async () => await Task.WhenAll(tasks);
 
         // Assert
         _ = await act.Should().NotThrowAsync();
     }
-
-    #endregion
 }
-

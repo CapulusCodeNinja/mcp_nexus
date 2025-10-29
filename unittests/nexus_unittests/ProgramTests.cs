@@ -164,4 +164,3 @@ public class ProgramTests
         _ = hostBuilder.Should().NotBeNull();
     }
 }
-

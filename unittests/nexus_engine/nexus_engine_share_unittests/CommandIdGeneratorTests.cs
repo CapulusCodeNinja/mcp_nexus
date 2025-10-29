@@ -355,4 +355,3 @@ public class CommandIdGeneratorTests
         _ = m_Generator.GetCurrentCount("session-clear-3").Should().Be(0);
     }
 }
-

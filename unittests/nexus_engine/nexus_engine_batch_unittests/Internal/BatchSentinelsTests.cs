@@ -73,4 +73,3 @@ public class BatchSentinelsTests
         Assert.Equal("MCP_NEXUS_COMMAND_SEPARATOR_test-456_END", marker);
     }
 }
-

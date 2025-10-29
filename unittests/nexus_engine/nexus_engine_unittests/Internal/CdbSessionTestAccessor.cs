@@ -186,4 +186,3 @@ internal class CdbSessionTestAccessor : CdbSession
         m_Initialized = initialized;
     }
 }
-

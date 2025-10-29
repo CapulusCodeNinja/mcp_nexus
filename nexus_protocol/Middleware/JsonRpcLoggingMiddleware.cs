@@ -63,7 +63,8 @@ internal class JsonRpcLoggingMiddleware
     {
         var requestBody = await ReadRequestBodyAsync(context);
 
-        m_Logger.Debug("JSON-RPC Request: Method={Method}, Path={Path}, ContentType={ContentType}",
+        m_Logger.Debug(
+            "JSON-RPC Request: Method={Method}, Path={Path}, ContentType={ContentType}",
             context.Request.Method, context.Request.Path, context.Request.ContentType);
 
         var formattedRequest = FormatAndTruncateJson(requestBody);
@@ -74,7 +75,8 @@ internal class JsonRpcLoggingMiddleware
             if (IsMarkdown(text.Trim()))
             {
                 // Markdown - log as-is (no escaping needed!)
-                m_Logger.Debug("Extracted Text Field (Markdown):{NewLine}{TextField}",
+                m_Logger.Debug(
+                    "Extracted Text Field (Markdown):{NewLine}{TextField}",
                     Environment.NewLine, text.Trim());
             }
             else
@@ -82,7 +84,8 @@ internal class JsonRpcLoggingMiddleware
                 // Legacy JSON format - unescape and format
                 var unescapedText = UnescapeJsonInText(text.Trim());
                 var formattedText = FormatAndTruncateJson(unescapedText);
-                m_Logger.Debug("Extracted Text Field (JSON):{NewLine}{TextField}",
+                m_Logger.Debug(
+                    "Extracted Text Field (JSON):{NewLine}{TextField}",
                     Environment.NewLine, formattedText);
             }
         }
@@ -97,7 +100,8 @@ internal class JsonRpcLoggingMiddleware
 
             var responseBodyText = await ReadResponseBodyAsync(responseBody);
 
-            m_Logger.Debug("JSON-RPC Response: StatusCode={StatusCode}, ContentType={ContentType}",
+            m_Logger.Debug(
+                "JSON-RPC Response: StatusCode={StatusCode}, ContentType={ContentType}",
                 context.Response.StatusCode, context.Response.ContentType);
 
             var formattedResponse = FormatAndTruncateJson(responseBodyText);
@@ -108,7 +112,8 @@ internal class JsonRpcLoggingMiddleware
                 if (IsMarkdown(text.Trim()))
                 {
                     // Markdown - log as-is (no escaping needed!)
-                    m_Logger.Debug("Extracted Text Field (Markdown):{NewLine}{TextField}",
+                    m_Logger.Debug(
+                        "Extracted Text Field (Markdown):{NewLine}{TextField}",
                         Environment.NewLine, text.Trim());
                 }
                 else
@@ -116,7 +121,8 @@ internal class JsonRpcLoggingMiddleware
                     // Legacy JSON format - unescape and format
                     var unescapedText = UnescapeJsonInText(text.Trim());
                     var formattedText = FormatAndTruncateJson(unescapedText);
-                    m_Logger.Debug("Extracted Text Field (JSON):{NewLine}{TextField}",
+                    m_Logger.Debug(
+                        "Extracted Text Field (JSON):{NewLine}{TextField}",
                         Environment.NewLine, formattedText);
                 }
             }
@@ -242,13 +248,14 @@ internal class JsonRpcLoggingMiddleware
         }
 
         var trimmed = text.TrimStart();
+
         // Check for common Markdown patterns
-        return trimmed.StartsWith("#") ||           // Headers
-               trimmed.StartsWith("##") ||          // Subheaders
-               trimmed.StartsWith("**") ||          // Bold
-               trimmed.StartsWith("- ") ||          // Lists
-               trimmed.StartsWith("| ") ||          // Tables
-               text.Contains("```") ||              // Code blocks
+        return trimmed.StartsWith("#") || // Headers
+               trimmed.StartsWith("##") || // Subheaders
+               trimmed.StartsWith("**") || // Bold
+               trimmed.StartsWith("- ") || // Lists
+               trimmed.StartsWith("| ") || // Tables
+               text.Contains("```") || // Code blocks
                text.Contains("**Command ID:**");    // Our specific pattern
     }
 
@@ -405,12 +412,14 @@ internal class JsonRpcLoggingMiddleware
                         ExtractTextFieldsRecursive(property.Value, extractedTexts);
                     }
                 }
+
                 break;
             case JsonValueKind.Array:
                 foreach (var item in element.EnumerateArray())
                 {
                     ExtractTextFieldsRecursive(item, extractedTexts);
                 }
+
                 break;
         }
     }
@@ -465,6 +474,7 @@ internal class JsonRpcLoggingMiddleware
                 {
                     obj[property.Name] = TruncateJsonElement(property.Value);
                 }
+
                 return obj;
             case JsonValueKind.Array:
                 var arr = new List<object?>();
@@ -472,6 +482,7 @@ internal class JsonRpcLoggingMiddleware
                 {
                     arr.Add(TruncateJsonElement(item));
                 }
+
                 return arr;
             default:
                 return element.ToString();
@@ -504,6 +515,7 @@ internal class JsonRpcLoggingMiddleware
                 {
                     obj[property.Name] = TruncateJsonElement(property.Value, maxLength);
                 }
+
                 return obj;
             case JsonValueKind.Array:
                 var arr = new List<object?>();
@@ -511,6 +523,7 @@ internal class JsonRpcLoggingMiddleware
                 {
                     arr.Add(TruncateJsonElement(item, maxLength));
                 }
+
                 return arr;
             default:
                 return element.ToString();
@@ -552,4 +565,3 @@ internal class JsonRpcLoggingMiddleware
         return string.IsNullOrEmpty(body) ? string.Empty : body.Length > MaxLength ? body[..MaxLength] + "... (truncated)" : body;
     }
 }
-

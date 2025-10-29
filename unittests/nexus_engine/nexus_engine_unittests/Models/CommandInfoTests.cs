@@ -109,7 +109,7 @@ public class CommandInfoTests
         var queuedTime = new DateTime(2025, 1, 15, 10, 30, 0);
         var startTime = new DateTime(2025, 1, 15, 10, 30, 5);
         var endTime = new DateTime(2025, 1, 15, 10, 30, 6);
-        var output = "";
+        var output = string.Empty;
         var errorMessage = "Command not recognized";
 
         // Act

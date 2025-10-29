@@ -12,7 +12,6 @@ namespace Nexus.Protocol.Unittests.Configuration;
 /// </summary>
 public class HttpServerSetupTests
 {
-    #region ConfigureHttpServices Tests
 
     /// <summary>
     /// Verifies that ConfigureHttpServices with default configuration succeeds.
@@ -43,7 +42,7 @@ public class HttpServerSetupTests
         {
             EnableCors = true,
             EnableRateLimit = true,
-            MaxRequestBodySize = 1024 * 1024
+            MaxRequestBodySize = 1024 * 1024,
         };
 
         // Act
@@ -65,7 +64,7 @@ public class HttpServerSetupTests
         var config = new HttpServerConfiguration
         {
             EnableCors = false,
-            EnableRateLimit = false
+            EnableRateLimit = false,
         };
 
         // Act
@@ -75,9 +74,7 @@ public class HttpServerSetupTests
         Assert.NotNull(services);
     }
 
-    #endregion
 
-    #region ConfigureStdioServices Tests
 
     /// <summary>
     /// Verifies that ConfigureStdioServices configures services successfully.
@@ -107,9 +104,7 @@ public class HttpServerSetupTests
             HttpServerSetup.ConfigureStdioServices(null!));
     }
 
-    #endregion
 
-    #region CreateConfiguredHost Tests
 
     /// <summary>
     /// Verifies that CreateConfiguredHost creates host in non-service mode.
@@ -138,7 +133,4 @@ public class HttpServerSetupTests
         Assert.NotNull(host);
         _ = Assert.IsAssignableFrom<IHost>(host);
     }
-
-    #endregion
 }
-

@@ -21,7 +21,7 @@ public class BackupManagerTests
     private readonly BackupManager m_BackupManager;
 
     /// <summary>
-    /// Initializes a new instance of the BackupManagerTests class.
+    /// Initializes a new instance of the <see cref="BackupManagerTests"/> class.
     /// </summary>
     public BackupManagerTests()
     {
@@ -33,6 +33,7 @@ public class BackupManagerTests
     /// <summary>
     /// Verifies that CreateBackupAsync returns true when source directory doesn't exist.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CreateBackupAsync_WithNonExistentSourceDirectory_ShouldReturnTrue()
     {
@@ -50,6 +51,7 @@ public class BackupManagerTests
     /// <summary>
     /// Verifies that CreateBackupAsync calls CreateDirectory on backup path.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CreateBackupAsync_WithValidDirectories_CallsCreateDirectory()
     {
@@ -72,6 +74,7 @@ public class BackupManagerTests
     /// <summary>
     /// Verifies that CreateBackupAsync returns false on exception.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CreateBackupAsync_WithException_ShouldReturnFalse()
     {
@@ -91,6 +94,7 @@ public class BackupManagerTests
     /// <summary>
     /// Verifies that RollbackInstallationAsync cleans up when no backup exists.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task RollbackInstallationAsync_WithNoBackup_ShouldCleanUpDirectory()
     {
@@ -110,6 +114,7 @@ public class BackupManagerTests
     /// <summary>
     /// Verifies that RollbackInstallationAsync does nothing when installation directory doesn't exist.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task RollbackInstallationAsync_WithNonExistentInstallDir_ShouldDoNothing()
     {
@@ -128,6 +133,7 @@ public class BackupManagerTests
     /// <summary>
     /// Verifies that RollbackInstallationAsync handles exceptions gracefully.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task RollbackInstallationAsync_WithException_ShouldHandleGracefully()
     {
@@ -147,6 +153,7 @@ public class BackupManagerTests
     /// <summary>
     /// Verifies that RollbackInstallationAsync calls DeleteDirectory when backup is created.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task RollbackInstallationAsync_WhenBackupCreated_CallsDeleteDirectory()
     {
@@ -170,6 +177,7 @@ public class BackupManagerTests
     /// <summary>
     /// Verifies that CreateBackupAsync with null path throws exception which is handled.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CreateBackupAsync_WithNullPath_ReturnsTrue()
     {
@@ -187,6 +195,7 @@ public class BackupManagerTests
     /// <summary>
     /// Verifies that RollbackInstallationAsync with null paths handles gracefully.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task RollbackInstallationAsync_WithNullPaths_HandlesGracefully()
     {
@@ -204,6 +213,7 @@ public class BackupManagerTests
     /// <summary>
     /// Verifies that CreateBackupAsync handles directory creation failure.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CreateBackupAsync_WhenCreateDirectoryFails_ReturnsFalse()
     {
@@ -219,6 +229,4 @@ public class BackupManagerTests
         // Assert
         _ = result.Should().BeFalse();
     }
-
 }
-

@@ -18,7 +18,7 @@ public class StdioNotificationBridgeTests : IDisposable
     private readonly TextWriter m_OriginalOutput;
 
     /// <summary>
-    /// Initializes a new instance of the StdioNotificationBridgeTests class.
+    /// Initializes a new instance of the <see cref="StdioNotificationBridgeTests"/> class.
     /// </summary>
     public StdioNotificationBridgeTests()
     {
@@ -54,6 +54,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync writes to console with valid notification.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task SendNotificationAsync_WithValidNotification_WritesToConsole()
     {
@@ -61,7 +62,7 @@ public class StdioNotificationBridgeTests : IDisposable
         {
             JsonRpc = "2.0",
             Method = "test/notification",
-            Params = new { message = "test" }
+            Params = new { message = "test" },
         };
 
         await m_Bridge.SendNotificationAsync(notification);
@@ -74,6 +75,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync throws ArgumentNullException when notification is null.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task SendNotificationAsync_WithNullNotification_ThrowsArgumentNullException()
     {
@@ -86,6 +88,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync writes complete JSON line.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task SendNotificationAsync_WritesCompleteJsonLine()
     {
@@ -93,7 +96,7 @@ public class StdioNotificationBridgeTests : IDisposable
         {
             JsonRpc = "2.0",
             Method = "test/method",
-            Params = new { data = "value" }
+            Params = new { data = "value" },
         };
 
         await m_Bridge.SendNotificationAsync(notification);
@@ -106,6 +109,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync writes multiple notifications sequentially.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task SendNotificationAsync_MultipleNotifications_WritesSequentially()
     {
@@ -113,14 +117,14 @@ public class StdioNotificationBridgeTests : IDisposable
         {
             JsonRpc = "2.0",
             Method = "test/first",
-            Params = new { }
+            Params = new { },
         };
 
         var notification2 = new McpNotification
         {
             JsonRpc = "2.0",
             Method = "test/second",
-            Params = new { }
+            Params = new { },
         };
 
         await m_Bridge.SendNotificationAsync(notification1);
@@ -137,6 +141,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync is thread-safe with concurrent calls.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task SendNotificationAsync_ConcurrentCalls_AreThreadSafe()
     {
@@ -144,7 +149,7 @@ public class StdioNotificationBridgeTests : IDisposable
         {
             JsonRpc = "2.0",
             Method = $"test/notification{i}",
-            Params = new { index = i }
+            Params = new { index = i },
         }).ToList();
 
         var tasks = notifications.Select(n => m_Bridge.SendNotificationAsync(n)).ToArray();
@@ -161,6 +166,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync serializes complex params correctly.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task SendNotificationAsync_WithComplexParams_SerializesCorrectly()
     {
@@ -176,7 +182,7 @@ public class StdioNotificationBridgeTests : IDisposable
                     text = "test",
                     array = new[] { 1, 2, 3 }
                 }
-            }
+            },
         };
 
         await m_Bridge.SendNotificationAsync(notification);

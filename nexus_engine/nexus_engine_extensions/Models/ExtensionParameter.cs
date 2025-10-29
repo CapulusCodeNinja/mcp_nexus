@@ -8,31 +8,31 @@ namespace Nexus.Engine.Extensions.Models;
 public class ExtensionParameter
 {
     /// <summary>
-    /// Name of the parameter.
+    /// Gets or sets name of the parameter.
     /// </summary>
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Type of the parameter (e.g., "string", "int", "bool").
+    /// Gets or sets type of the parameter (e.g., "string", "int", "bool").
     /// </summary>
     [JsonPropertyName("type")]
     public string Type { get; set; } = "string";
 
     /// <summary>
-    /// Description of the parameter.
+    /// Gets or sets description of the parameter.
     /// </summary>
     [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
-    /// Whether the parameter is required.
+    /// Gets or sets a value indicating whether whether the parameter is required.
     /// </summary>
     [JsonPropertyName("required")]
     public bool Required { get; set; } = false;
 
     /// <summary>
-    /// Default value for the parameter.
+    /// Gets or sets default value for the parameter.
     /// </summary>
     [JsonPropertyName("default")]
     public object? Default
@@ -40,4 +40,3 @@ public class ExtensionParameter
         get; set;
     }
 }
-

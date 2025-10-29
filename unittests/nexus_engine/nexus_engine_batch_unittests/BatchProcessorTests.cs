@@ -9,7 +9,6 @@ namespace Nexus.Engine.Batch.Tests;
 /// </summary>
 public class BatchProcessorTests
 {
-    #region Singleton Tests
 
     /// <summary>
     /// Verifies that Instance returns a non-null singleton instance.
@@ -39,9 +38,7 @@ public class BatchProcessorTests
         _ = instance1.Should().NotBeSameAs(instance2);
     }
 
-    #endregion
 
-    #region BatchCommands Tests - Null and Empty
 
     /// <summary>
     /// Verifies that BatchCommands handles null commands list.
@@ -78,9 +75,7 @@ public class BatchProcessorTests
         _ = result.Should().BeEmpty();
     }
 
-    #endregion
 
-    #region BatchCommands Tests - Single Command
 
     /// <summary>
     /// Verifies that BatchCommands handles a single command.
@@ -92,7 +87,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var commands = new List<Command>
         {
-            new() { CommandId = "cmd-1", CommandText = "!analyze" }
+            new() { CommandId = "cmd-1", CommandText = "!analyze" },
         };
 
         // Act
@@ -105,9 +100,7 @@ public class BatchProcessorTests
         _ = result[0].CommandText.Should().Be("!analyze");
     }
 
-    #endregion
 
-    #region BatchCommands Tests - Multiple Commands
 
     /// <summary>
     /// Verifies that BatchCommands handles two simple commands.
@@ -120,7 +113,7 @@ public class BatchProcessorTests
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "lm" },
-            new() { CommandId = "cmd-2", CommandText = "dt" }
+            new() { CommandId = "cmd-2", CommandText = "dt" },
         };
 
         // Act
@@ -143,7 +136,7 @@ public class BatchProcessorTests
         {
             new() { CommandId = "cmd-1", CommandText = "lm" },
             new() { CommandId = "cmd-2", CommandText = "dt" },
-            new() { CommandId = "cmd-3", CommandText = "kL" }
+            new() { CommandId = "cmd-3", CommandText = "kL" },
         };
 
         // Act
@@ -168,7 +161,7 @@ public class BatchProcessorTests
             new() { CommandId = "cmd-2", CommandText = "dt" },
             new() { CommandId = "cmd-3", CommandText = "kL" },
             new() { CommandId = "cmd-4", CommandText = "r" },
-            new() { CommandId = "cmd-5", CommandText = "!peb" }
+            new() { CommandId = "cmd-5", CommandText = "!peb" },
         };
 
         // Act
@@ -179,9 +172,7 @@ public class BatchProcessorTests
         _ = result.Count.Should().BeGreaterThan(0);
     }
 
-    #endregion
 
-    #region BatchCommands Tests - Excluded Commands
 
     /// <summary>
     /// Verifies that BatchCommands handles excluded commands correctly.
@@ -193,7 +184,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var commands = new List<Command>
         {
-            new() { CommandId = "cmd-1", CommandText = "!analyze -v" }
+            new() { CommandId = "cmd-1", CommandText = "!analyze -v" },
         };
 
         // Act
@@ -218,7 +209,7 @@ public class BatchProcessorTests
         {
             new() { CommandId = "cmd-1", CommandText = "!analyze -v" },
             new() { CommandId = "cmd-2", CommandText = "lm" },
-            new() { CommandId = "cmd-3", CommandText = "dt" }
+            new() { CommandId = "cmd-3", CommandText = "dt" },
         };
 
         // Act
@@ -239,7 +230,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var commands = new List<Command>
         {
-            new() { CommandId = "cmd-1", CommandText = "lm" }
+            new() { CommandId = "cmd-1", CommandText = "lm" },
         };
 
         // Act
@@ -250,9 +241,7 @@ public class BatchProcessorTests
         _ = result[0].CommandId.Should().Be("cmd-1");
     }
 
-    #endregion
 
-    #region UnbatchResults Tests - Null and Empty
 
     /// <summary>
     /// Verifies that UnbatchResults handles null results list.
@@ -289,9 +278,7 @@ public class BatchProcessorTests
         _ = result.Should().BeEmpty();
     }
 
-    #endregion
 
-    #region UnbatchResults Tests - Single Result
 
     /// <summary>
     /// Verifies that UnbatchResults handles a single result.
@@ -303,7 +290,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var results = new List<CommandResult>
         {
-            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "Output 1" }
+            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "Output 1" },
         };
 
         // Act
@@ -316,9 +303,7 @@ public class BatchProcessorTests
         _ = result[0].ResultText.Should().Be("Output 1");
     }
 
-    #endregion
 
-    #region UnbatchResults Tests - Multiple Results
 
     /// <summary>
     /// Verifies that UnbatchResults handles multiple non-batched results.
@@ -332,7 +317,7 @@ public class BatchProcessorTests
         {
             new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "Output 1" },
             new() { CommandId = "cmd-2", SessionId = "test-session", ResultText = "Output 2" },
-            new() { CommandId = "cmd-3", SessionId = "test-session", ResultText = "Output 3" }
+            new() { CommandId = "cmd-3", SessionId = "test-session", ResultText = "Output 3" },
         };
 
         // Act
@@ -358,7 +343,7 @@ public class BatchProcessorTests
         {
             new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "First" },
             new() { CommandId = "cmd-2", SessionId = "test-session", ResultText = "Second" },
-            new() { CommandId = "cmd-3", SessionId = "test-session", ResultText = "Third" }
+            new() { CommandId = "cmd-3", SessionId = "test-session", ResultText = "Third" },
         };
 
         // Act
@@ -372,9 +357,7 @@ public class BatchProcessorTests
         _ = result[2].ResultText.Should().Be("Third");
     }
 
-    #endregion
 
-    #region Integration Tests - Batch and Unbatch
 
     /// <summary>
     /// Verifies that batching and unbatching work together for simple commands.
@@ -386,7 +369,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var commands = new List<Command>
         {
-            new() { CommandId = "cmd-1", CommandText = "lm" }
+            new() { CommandId = "cmd-1", CommandText = "lm" },
         };
 
         // Act - Batch commands
@@ -398,7 +381,7 @@ public class BatchProcessorTests
         {
             CommandId = cmd.CommandId,
             SessionId = "test-session",
-            ResultText = $"Result for {cmd.CommandId}"
+            ResultText = $"Result for {cmd.CommandId}",
         }).ToList();
 
         // Act - Unbatch results
@@ -419,7 +402,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var commands = new List<Command>
         {
-            new() { CommandId = "cmd-1", CommandText = "!analyze -v" }
+            new() { CommandId = "cmd-1", CommandText = "!analyze -v" },
         };
 
         // Act - Batch commands
@@ -430,7 +413,7 @@ public class BatchProcessorTests
         {
             CommandId = cmd.CommandId,
             SessionId = "test-session",
-            ResultText = "Analysis output"
+            ResultText = "Analysis output",
         }).ToList();
 
         // Act - Unbatch results
@@ -442,9 +425,7 @@ public class BatchProcessorTests
         _ = unbatchedResults[0].CommandId.Should().Be("cmd-1");
     }
 
-    #endregion
 
-    #region Edge Cases
 
     /// <summary>
     /// Verifies that BatchCommands handles commands with empty CommandText.
@@ -456,7 +437,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var commands = new List<Command>
         {
-            new() { CommandId = "cmd-1", CommandText = string.Empty }
+            new() { CommandId = "cmd-1", CommandText = string.Empty },
         };
 
         // Act
@@ -477,7 +458,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var commands = new List<Command>
         {
-            new() { CommandId = "cmd-1", CommandText = "   " }
+            new() { CommandId = "cmd-1", CommandText = "   " },
         };
 
         // Act
@@ -498,7 +479,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var results = new List<CommandResult>
         {
-            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = string.Empty }
+            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = string.Empty },
         };
 
         // Act
@@ -519,7 +500,7 @@ public class BatchProcessorTests
         var processor = new BatchProcessor();
         var results = new List<CommandResult>
         {
-            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "   " }
+            new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "   " },
         };
 
         // Act
@@ -530,13 +511,12 @@ public class BatchProcessorTests
         _ = result.Count.Should().Be(1);
     }
 
-    #endregion
 
-    #region Thread Safety Tests
 
     /// <summary>
     /// Verifies that BatchCommands is thread-safe.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task BatchCommands_ConcurrentCalls_IsThreadSafe()
     {
@@ -545,13 +525,13 @@ public class BatchProcessorTests
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "lm" },
-            new() { CommandId = "cmd-2", CommandText = "dt" }
+            new() { CommandId = "cmd-2", CommandText = "dt" },
         };
 
         // Act
         var tasks = Enumerable.Range(0, 10).Select(_ =>
-            Task.Run(() => processor.BatchCommands("test-session", commands))
-        ).ToArray();
+            Task.Run(() => processor.BatchCommands("test-session", commands)))
+        .ToArray();
 
         var results = await Task.WhenAll(tasks);
 
@@ -566,6 +546,7 @@ public class BatchProcessorTests
     /// <summary>
     /// Verifies that UnbatchResults is thread-safe.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task UnbatchResults_ConcurrentCalls_IsThreadSafe()
     {
@@ -574,13 +555,13 @@ public class BatchProcessorTests
         var results = new List<CommandResult>
         {
             new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "Output 1" },
-            new() { CommandId = "cmd-2", SessionId = "test-session", ResultText = "Output 2" }
+            new() { CommandId = "cmd-2", SessionId = "test-session", ResultText = "Output 2" },
         };
 
         // Act
         var tasks = Enumerable.Range(0, 10).Select(_ =>
-            Task.Run(() => processor.UnbatchResults(results))
-        ).ToArray();
+            Task.Run(() => processor.UnbatchResults(results)))
+        .ToArray();
 
         var taskResults = await Task.WhenAll(tasks);
 
@@ -592,9 +573,7 @@ public class BatchProcessorTests
         }
     }
 
-    #endregion
 
-    #region GetBatchCommandId Tests
 
     /// <summary>
     /// Verifies that GetBatchCommandId returns null for a non-existent command ID.
@@ -626,7 +605,7 @@ public class BatchProcessorTests
         {
             new() { CommandId = "cmd-batch-test-1", CommandText = "lm" },
             new() { CommandId = "cmd-batch-test-2", CommandText = "dt" },
-            new() { CommandId = "cmd-batch-test-3", CommandText = "kL" }
+            new() { CommandId = "cmd-batch-test-3", CommandText = "kL" },
         };
 
         // Clear any existing mappings for this session
@@ -657,7 +636,7 @@ public class BatchProcessorTests
         var sessionId = "test-session-excluded";
         var commands = new List<Command>
         {
-            new() { CommandId = "cmd-excluded", CommandText = "!analyze -v" }
+            new() { CommandId = "cmd-excluded", CommandText = "!analyze -v" },
         };
 
         // Act - Process the excluded command
@@ -681,7 +660,7 @@ public class BatchProcessorTests
         var sessionId = "test-session-single";
         var commands = new List<Command>
         {
-            new() { CommandId = "cmd-single", CommandText = "lm" }
+            new() { CommandId = "cmd-single", CommandText = "lm" },
         };
 
         // Act - Process the single command
@@ -695,9 +674,6 @@ public class BatchProcessorTests
     }
 
 
-    #endregion
-
-    #region ClearSessionBatchMappings Tests
 
     /// <summary>
     /// Verifies that ClearSessionBatchMappings removes mappings for the specified session.
@@ -712,7 +688,7 @@ public class BatchProcessorTests
         {
             new() { CommandId = $"cmd-session-{sessionId}-1", CommandText = "lm" },
             new() { CommandId = $"cmd-session-{sessionId}-2", CommandText = "dt" },
-            new() { CommandId = $"cmd-session-{sessionId}-3", CommandText = "kL" }
+            new() { CommandId = $"cmd-session-{sessionId}-3", CommandText = "kL" },
         };
 
         // Batch the commands to create mappings
@@ -746,13 +722,13 @@ public class BatchProcessorTests
         var commands1 = new List<Command>
         {
             new() { CommandId = $"cmd-{session1}-1", CommandText = "lm" },
-            new() { CommandId = $"cmd-{session1}-2", CommandText = "dt" }
+            new() { CommandId = $"cmd-{session1}-2", CommandText = "dt" },
         };
 
         var commands2 = new List<Command>
         {
             new() { CommandId = $"cmd-{session2}-1", CommandText = "lm" },
-            new() { CommandId = $"cmd-{session2}-2", CommandText = "dt" }
+            new() { CommandId = $"cmd-{session2}-2", CommandText = "dt" },
         };
 
         // Batch commands for both sessions
@@ -801,7 +777,4 @@ public class BatchProcessorTests
         // Assert
         _ = action.Should().NotThrow();
     }
-
-    #endregion
 }
-

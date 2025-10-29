@@ -16,7 +16,7 @@ internal class Manager : IDisposable
     private readonly Logger m_Logger;
     private readonly IFileSystem m_FileSystem;
     private readonly string m_ExtensionsPath;
-    private readonly Dictionary<string, ExtensionMetadata> m_Extensions = [];
+    private readonly Dictionary<string, ExtensionMetadata> m_Extensions =[];
     private readonly object m_Lock = new();
     private readonly FileSystemWatcher? m_Watcher;
     private int m_ReloadPending = 0;
@@ -28,7 +28,8 @@ internal class Manager : IDisposable
     /// </summary>
     /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
     /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
-    public Manager() : this(new FileSystem())
+    public Manager()
+        : this(new FileSystem())
     {
     }
 
@@ -66,7 +67,7 @@ internal class Manager : IDisposable
             {
                 IncludeSubdirectories = true,
                 Filter = "*.*",
-                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.Size
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.Size,
             };
             m_Watcher.Changed += OnExtensionsChanged;
             m_Watcher.Created += OnExtensionsChanged;
@@ -153,7 +154,7 @@ internal class Manager : IDisposable
         var json = await File.ReadAllTextAsync(metadataFile);
         var metadata = JsonSerializer.Deserialize<ExtensionMetadata>(json, new JsonSerializerOptions
         {
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
         });
 
         if (metadata == null)
@@ -183,10 +184,12 @@ internal class Manager : IDisposable
         // Validate script file exists
         if (!m_FileSystem.FileExists(metadata.FullScriptPath))
         {
-            m_Logger.Warn("Extension {Name} script file not found: {ScriptPath}",
+            m_Logger.Warn(
+                "Extension {Name} script file not found: {ScriptPath}",
                 metadata.Name, metadata.FullScriptPath);
             return null;
         }
+
         return metadata;
     }
 
@@ -347,4 +350,3 @@ internal class Manager : IDisposable
         GC.SuppressFinalize(this);
     }
 }
-

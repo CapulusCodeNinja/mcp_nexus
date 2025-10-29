@@ -27,6 +27,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync calls next middleware for root POST.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithRootPostRequest_CallsNextMiddleware()
     {
@@ -55,6 +56,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync skips logging for GET requests.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithGetRequest_SkipsLogging()
     {
@@ -81,6 +83,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync skips logging for non-root paths.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithNonRootPath_SkipsLogging()
     {
@@ -107,6 +110,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync copies response body correctly.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_CopiesResponseBodyToOriginalStream()
     {
@@ -135,6 +139,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync handles empty request body.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithEmptyRequestBody_HandlesGracefully()
     {
@@ -163,6 +168,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync reads and preserves request body.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_PreservesRequestBodyForNextMiddleware()
     {
@@ -199,6 +205,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync handles PUT method by skipping logging.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithPutMethod_SkipsLogging()
     {
@@ -225,6 +232,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync restores original response stream.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_RestoresOriginalResponseStream()
     {
@@ -249,6 +257,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync handles large request bodies.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithLargeRequestBody_HandlesCorrectly()
     {
@@ -285,6 +294,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync handles exceptions from next middleware.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WhenNextMiddlewareThrows_PropagatesException()
     {
@@ -305,6 +315,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync with POST to "/" enables buffering.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithPostToRoot_EnablesRequestBuffering()
     {
@@ -324,7 +335,6 @@ public class JsonRpcLoggingMiddlewareTests
         _ = context.Request.Body.Position.Should().Be(0);
     }
 
-    #region SSE Format Detection Tests
 
     /// <summary>
     /// Verifies that IsSseFormat detects SSE format correctly.
@@ -374,9 +384,7 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region SSE Content Formatting Tests
 
     /// <summary>
     /// Verifies that FormatSseContent formats SSE content correctly.
@@ -459,9 +467,7 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().Contain("\"id\": 2");
     }
 
-    #endregion
 
-    #region JSON Extraction from SSE Tests
 
     /// <summary>
     /// Verifies that ExtractJsonFromSseLine extracts JSON correctly.
@@ -511,9 +517,7 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().BeEmpty();
     }
 
-    #endregion
 
-    #region SSE Text Field Extraction Tests
 
     /// <summary>
     /// Verifies that ExtractTextFieldsFromSse extracts text fields correctly.
@@ -596,9 +600,7 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().Contain("second text");
     }
 
-    #endregion
 
-    #region JSON Formatting and Truncation Tests
 
     /// <summary>
     /// Verifies that FormatAndTruncateJson handles SSE format correctly.
@@ -700,9 +702,7 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().Be(invalidJson);
     }
 
-    #endregion
 
-    #region Text Field Extraction Tests
 
     /// <summary>
     /// Verifies that ExtractTextFields handles SSE format correctly.
@@ -804,9 +804,7 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result[0].Should().Contain("value");
     }
 
-    #endregion
 
-    #region String Truncation Tests
 
     /// <summary>
     /// Verifies that TruncateString truncates long strings correctly.
@@ -893,9 +891,7 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().Be(exactString);
     }
 
-    #endregion
 
-    #region JSON Unescaping Tests
 
     /// <summary>
     /// Verifies that UnescapeJsonInText unescapes Unicode escape sequences correctly.
@@ -956,13 +952,12 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().BeNull();
     }
 
-    #endregion
 
-    #region Integration Tests
 
     /// <summary>
     /// Verifies that the middleware handles SSE response correctly in integration.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithSseResponse_ProcessesCorrectly()
     {
@@ -989,6 +984,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that the middleware handles regular JSON response correctly in integration.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithRegularJsonResponse_ProcessesCorrectly()
     {
@@ -1011,6 +1007,4 @@ public class JsonRpcLoggingMiddlewareTests
         // Note: Response body position may not be 0 after processing due to buffering
         _ = context.Response.Body.Should().NotBeNull();
     }
-
-    #endregion
 }

@@ -23,6 +23,5 @@ public enum ServiceAccount
     /// <summary>
     /// Runs under a custom user account.
     /// </summary>
-    Custom
+    Custom,
 }
-

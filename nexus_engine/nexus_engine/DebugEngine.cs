@@ -14,6 +14,7 @@ using Nexus.External.Apis.ProcessManagement;
 using NLog;
 
 namespace Nexus.Engine;
+
 /// <summary>
 /// Main implementation of the debug engine that manages CDB sessions and command execution.
 /// </summary>
@@ -67,9 +68,9 @@ public class DebugEngine : IDebugEngine
     /// <summary>
     /// Initializes a new instance of the <see cref="DebugEngine"/> class with default dependencies.
     /// </summary>
-    internal DebugEngine() : this(new FileSystem(), new ProcessManager())
+    internal DebugEngine()
+        : this(new FileSystem(), new ProcessManager())
     {
-
     }
 
     /// <summary>
@@ -132,7 +133,6 @@ public class DebugEngine : IDebugEngine
 
         try
         {
-
             var preprocessor = new CommandPreprocessor(m_FileSystem);
             var session = new Internal.DebugSession(sessionId, dumpFilePath, symbolPath, m_FileSystem, m_ProcessManager, preprocessor);
 
@@ -360,7 +360,7 @@ public class DebugEngine : IDebugEngine
             OldState = CommandState.Queued,
             NewState = CommandState.Queued,
             Timestamp = DateTime.Now,
-            Command = $"Extension: {extensionName}"
+            Command = $"Extension: {extensionName}",
         });
 
         // Register session activity for extension command enqueue
@@ -525,7 +525,6 @@ public class DebugEngine : IDebugEngine
         return !m_Sessions.TryGetValue(sessionId, out var session) ? null : session.State;
     }
 
-
     /// <summary>
     /// Disposes of the debug engine and releases all resources.
     /// </summary>
@@ -563,6 +562,7 @@ public class DebugEngine : IDebugEngine
                 {
                     failedSessions.Add(session.SessionId);
                 }
+
                 m_Logger.Error(ex, "Error disposing session {SessionId}", session.SessionId);
             }
         }).ToArray();
@@ -573,7 +573,8 @@ public class DebugEngine : IDebugEngine
         }
         catch (OperationCanceledException)
         {
-            m_Logger.Warn("Session disposal timed out after 30 seconds. Failed sessions: {FailedSessions}",
+            m_Logger.Warn(
+                "Session disposal timed out after 30 seconds. Failed sessions: {FailedSessions}",
                 string.Join(", ", failedSessions));
         }
         catch (Exception ex)
@@ -586,6 +587,7 @@ public class DebugEngine : IDebugEngine
         {
             _ = m_Sessions.TryRemove(session.SessionId, out _);
         }
+
         m_Logger.Info("DebugEngine disposed");
     }
 
@@ -610,7 +612,6 @@ public class DebugEngine : IDebugEngine
         // Forward the event
         SessionStateChanged?.Invoke(this, e);
     }
-
 
     /// <summary>
     /// Scans active sessions and automatically closes those that have been idle beyond the configured timeout.
@@ -670,7 +671,6 @@ public class DebugEngine : IDebugEngine
         }
     }
 
-
     /// <summary>
     /// Validates that a session ID is not null or empty.
     /// </summary>
@@ -725,7 +725,6 @@ public class DebugEngine : IDebugEngine
         }
     }
 
-
     /// <summary>
     /// Validates that an extension name is not null or empty.
     /// </summary>
@@ -739,5 +738,4 @@ public class DebugEngine : IDebugEngine
             throw new ArgumentException("Extension name cannot be null or empty", paramName);
         }
     }
-
 }

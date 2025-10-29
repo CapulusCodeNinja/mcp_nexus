@@ -5,7 +5,7 @@ namespace Nexus.Protocol.Models;
 /// <summary>
 /// Represents command status notification parameters for MCP.
 /// Sent when debugger commands change state during execution.
-/// Status progression: "queued" → "executing" → "completed" (or "cancelled"/"failed")
+/// Status progression: "queued" → "executing" → "completed" (or "cancelled"/"failed").
 /// </summary>
 internal class McpCommandStatusNotification
 {
@@ -78,4 +78,3 @@ internal class McpCommandStatusNotification
         get; set;
     }
 }
-

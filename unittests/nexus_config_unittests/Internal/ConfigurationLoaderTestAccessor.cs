@@ -44,6 +44,7 @@ internal class ConfigurationLoaderTestAccessor : ConfigurationLoader
             var config = m_MockConfiguration.Get<SharedConfiguration>();
             return config ?? new SharedConfiguration();
         }
+
         return GetSharedConfiguration();
     }
 }

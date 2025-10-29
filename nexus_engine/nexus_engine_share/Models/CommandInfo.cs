@@ -91,7 +91,7 @@ public class CommandInfo
     private int m_ReadCount = 0;
 
     /// <summary>
-    /// Gets how often this command was read from external APIs.
+    /// Gets or sets how often this command was read from external APIs.
     /// </summary>
     public int ReadCount
     {
@@ -144,12 +144,13 @@ public class CommandInfo
     private static int GetCommandNumber(string sessionId, string commandId)
     {
         var prefix = $"cmd-{sessionId}-";
-        var indexString = commandId.Replace(prefix, "");
+        var indexString = commandId.Replace(prefix, string.Empty);
 
         return int.TryParse(indexString, out var index) ? index : 0;
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="CommandInfo"/> class.
     /// Creates a command info for a completed command.
     /// </summary>
     /// <param name="sessionId">The session identifier.</param>
@@ -326,4 +327,3 @@ public class CommandInfo
         return new CommandInfo(sessionId, commandId, command, CommandState.Timeout, queuedTime, processId, startTime, endTime, aggregatedOutput, $"Command timed out: {errorMessage}");
     }
 }
-

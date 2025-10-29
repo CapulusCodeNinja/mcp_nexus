@@ -16,7 +16,7 @@ public class BatchResultParserTests
     private readonly BatchResultParser m_Parser;
 
     /// <summary>
-    /// Initializes a new instance of the BatchResultParserTests class.
+    /// Initializes a new instance of the <see cref="BatchResultParserTests"/> class.
     /// </summary>
     public BatchResultParserTests()
     {
@@ -46,7 +46,7 @@ public class BatchResultParserTests
         {
             CommandId = "cmd-1",
             SessionId = "test-session",
-            ResultText = "Stack trace output"
+            ResultText = "Stack trace output",
         };
 
         var results = m_Parser.ParseResult(result);
@@ -66,7 +66,7 @@ public class BatchResultParserTests
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "k" },
-            new() { CommandId = "cmd-2", CommandText = "lm" }
+            new() { CommandId = "cmd-2", CommandText = "lm" },
         };
 
         var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
@@ -85,7 +85,7 @@ Module output for command 2
         {
             CommandId = batchId,
             SessionId = sessionId,
-            ResultText = resultText
+            ResultText = resultText,
         };
 
         // Act
@@ -111,7 +111,7 @@ Module output for command 2
         {
             new() { CommandId = "cmd-1", CommandText = "k" },
             new() { CommandId = "cmd-2", CommandText = "lm" },
-            new() { CommandId = "cmd-3", CommandText = "!threads" }
+            new() { CommandId = "cmd-3", CommandText = "!threads" },
         };
 
         var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
@@ -133,7 +133,7 @@ Output 3
         {
             CommandId = batchId,
             SessionId = sessionId,
-            ResultText = resultText
+            ResultText = resultText,
         };
 
         // Act
@@ -157,7 +157,7 @@ Output 3
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "k" },
-            new() { CommandId = "cmd-2", CommandText = "lm" }
+            new() { CommandId = "cmd-2", CommandText = "lm" },
         };
 
         var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
@@ -167,7 +167,7 @@ Output 3
         {
             CommandId = batchId,
             SessionId = sessionId,
-            ResultText = "Output without sentinels"
+            ResultText = "Output without sentinels",
         };
 
         // Act
@@ -190,7 +190,7 @@ Output 3
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "k" },
-            new() { CommandId = "cmd-2", CommandText = "lm" }
+            new() { CommandId = "cmd-2", CommandText = "lm" },
         };
 
         var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
@@ -209,7 +209,7 @@ Output 3
         {
             CommandId = batchId,
             SessionId = sessionId,
-            ResultText = resultText
+            ResultText = resultText,
         };
 
         // Act
@@ -232,7 +232,7 @@ Output 3
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "k" },
-            new() { CommandId = "cmd-2", CommandText = "lm" }
+            new() { CommandId = "cmd-2", CommandText = "lm" },
         };
 
         var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
@@ -253,7 +253,7 @@ More output
         {
             CommandId = batchId,
             SessionId = sessionId,
-            ResultText = resultText
+            ResultText = resultText,
         };
 
         // Act
@@ -284,7 +284,7 @@ Line 3
         {
             CommandId = "batch_cmd-1",
             SessionId = "test-session",
-            ResultText = resultText
+            ResultText = resultText,
         };
 
         var results = m_Parser.ParseResult(result);
@@ -310,7 +310,7 @@ Output continues without end marker
         {
             CommandId = "batch_cmd-1",
             SessionId = "test-session",
-            ResultText = resultText
+            ResultText = resultText,
         };
 
         var results = m_Parser.ParseResult(result);
@@ -335,7 +335,7 @@ Output with special chars: !@#$%^&*()
         {
             CommandId = "batch_cmd-1",
             SessionId = "test-session",
-            ResultText = resultText
+            ResultText = resultText,
         };
 
         var results = m_Parser.ParseResult(result);
@@ -356,7 +356,7 @@ Output with special chars: !@#$%^&*()
         {
             new() { CommandId = "cmd-A", CommandText = "first" },
             new() { CommandId = "cmd-B", CommandText = "second" },
-            new() { CommandId = "cmd-C", CommandText = "third" }
+            new() { CommandId = "cmd-C", CommandText = "third" },
         };
 
         var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
@@ -378,7 +378,7 @@ Third
         {
             CommandId = batchId,
             SessionId = sessionId,
-            ResultText = resultText
+            ResultText = resultText,
         };
 
         // Act
@@ -394,4 +394,3 @@ Third
         _ = results[2].ResultText.Should().Be("Third");
     }
 }
-

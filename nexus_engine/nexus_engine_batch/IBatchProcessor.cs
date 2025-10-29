@@ -15,7 +15,7 @@ public interface IBatchProcessor
     /// <remarks>
     /// ALWAYS call this. Library decides whether to batch:
     /// - If batching enabled: returns fewer commands (batched with sentinels)
-    /// - If disabled/excluded: returns same commands (1:1 pass-through)
+    /// - If disabled/excluded: returns same commands (1:1 pass-through).
     /// </remarks>
     List<Command> BatchCommands(string sessionId, List<Command> commands);
 
@@ -27,7 +27,7 @@ public interface IBatchProcessor
     /// <remarks>
     /// ALWAYS call this. Library decides whether to unbatch:
     /// - If was batched: splits by sentinels, returns more results
-    /// - If not batched: passes through as-is (1:1 pass-through)
+    /// - If not batched: passes through as-is (1:1 pass-through).
     /// </remarks>
     List<CommandResult> UnbatchResults(List<CommandResult> results);
 
@@ -53,4 +53,3 @@ public interface IBatchProcessor
     /// <param name="sessionId">The session ID to clear mappings for.</param>
     void ClearSessionBatchMappings(string sessionId);
 }
-

@@ -56,7 +56,7 @@ public class HttpServerConfigurationTests
             MaxRequestLineSize = 4096,
             MaxRequestHeadersTotalSize = 16384,
             EnableCors = false,
-            EnableRateLimit = false
+            EnableRateLimit = false,
         };
 
         var action = () => config.Validate();
@@ -219,7 +219,7 @@ public class HttpServerConfigurationTests
             MaxRequestLineSize = 4096,
             MaxRequestHeadersTotalSize = 16384,
             EnableCors = false,
-            EnableRateLimit = false
+            EnableRateLimit = false,
         };
 
         _ = config.MaxRequestBodySize.Should().Be(123456);
@@ -231,4 +231,3 @@ public class HttpServerConfigurationTests
         _ = config.EnableRateLimit.Should().BeFalse();
     }
 }
-

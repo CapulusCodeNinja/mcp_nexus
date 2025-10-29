@@ -59,7 +59,6 @@ internal class LoggingConfiguration
                 WriteBom = true,
                 Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}",
                 Encoding = System.Text.Encoding.UTF8,
-
             };
             nlogConfig.AddTarget(fileTarget);
             nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, fileTarget));
@@ -72,7 +71,7 @@ internal class LoggingConfiguration
             {
                 StdErr = true,
                 Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}",
-                Encoding = System.Text.Encoding.UTF8
+                Encoding = System.Text.Encoding.UTF8,
             };
             nlogConfig.AddTarget(stderrTarget);
             nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, stderrTarget));
@@ -87,7 +86,6 @@ internal class LoggingConfiguration
         {
             rule.SetLoggingLevels(nlogLevel, NLog.LogLevel.Fatal);
         }
-
 
         // Apply the configuration
         LogManager.Configuration = nlogConfig;
@@ -136,6 +134,7 @@ internal class LoggingConfiguration
             {
                 // Update main log file path
                 target.FileName = Path.Combine(logDirectory, "mcp-nexus.log");
+
                 // Update archive path to use the new log directory
                 target.ArchiveFileName = Path.Combine(logDirectory, "archive", "mcp-nexus-${shortdate}-{##}.log");
             }
@@ -195,7 +194,6 @@ internal class LoggingConfiguration
         _ = logging.SetMinimumLevel(logLevel);
     }
 
-
     /// <summary>
     /// Parses log level string to LogLevel enum.
     /// </summary>
@@ -214,7 +212,7 @@ internal class LoggingConfiguration
                 "error" => Microsoft.Extensions.Logging.LogLevel.Error,
                 "critical" => Microsoft.Extensions.Logging.LogLevel.Critical,
                 "none" => Microsoft.Extensions.Logging.LogLevel.None,
-                _ => Microsoft.Extensions.Logging.LogLevel.Information
+                _ => Microsoft.Extensions.Logging.LogLevel.Information,
             };
     }
 
@@ -234,7 +232,7 @@ internal class LoggingConfiguration
             Microsoft.Extensions.Logging.LogLevel.Error => NLog.LogLevel.Error,
             Microsoft.Extensions.Logging.LogLevel.Critical => NLog.LogLevel.Fatal,
             Microsoft.Extensions.Logging.LogLevel.None => NLog.LogLevel.Off,
-            _ => NLog.LogLevel.Info
+            _ => NLog.LogLevel.Info,
         };
     }
 }

@@ -15,7 +15,7 @@ public class BatchCommandFilterTests
     private readonly BatchCommandFilter m_Filter;
 
     /// <summary>
-    /// Initializes a new instance of the BatchCommandFilterTests class.
+    /// Initializes a new instance of the <see cref="BatchCommandFilterTests"/> class.
     /// </summary>
     public BatchCommandFilterTests()
     {
@@ -94,7 +94,7 @@ public class BatchCommandFilterTests
     [Fact]
     public void IsCommandExcluded_WithEmptyCommand_ReturnsFalse()
     {
-        var result = m_Filter.IsCommandExcluded("");
+        var result = m_Filter.IsCommandExcluded(string.Empty);
 
         _ = result.Should().BeFalse();
     }
@@ -144,7 +144,7 @@ public class BatchCommandFilterTests
     {
         var commands = new List<Command>
         {
-            new Command { CommandId = "cmd-1", CommandText = "k" }
+            new Command { CommandId = "cmd-1", CommandText = "k" },
         };
 
         var result = m_Filter.ShouldBatch(commands);
@@ -161,7 +161,7 @@ public class BatchCommandFilterTests
         var commands = new List<Command>
         {
             new Command { CommandId = "cmd-1", CommandText = "k" },
-            new Command { CommandId = "cmd-2", CommandText = "lm" }
+            new Command { CommandId = "cmd-2", CommandText = "lm" },
         };
 
         var result = m_Filter.ShouldBatch(commands);
@@ -178,7 +178,7 @@ public class BatchCommandFilterTests
         var commands = new List<Command>
         {
             new Command { CommandId = "cmd-1", CommandText = "!analyze -v" },
-            new Command { CommandId = "cmd-2", CommandText = "!dump" }
+            new Command { CommandId = "cmd-2", CommandText = "!dump" },
         };
 
         var result = m_Filter.ShouldBatch(commands);
@@ -196,7 +196,7 @@ public class BatchCommandFilterTests
         {
             new Command { CommandId = "cmd-1", CommandText = "!analyze -v" },
             new Command { CommandId = "cmd-2", CommandText = "k" },
-            new Command { CommandId = "cmd-3", CommandText = "lm" }
+            new Command { CommandId = "cmd-3", CommandText = "lm" },
         };
 
         var result = m_Filter.ShouldBatch(commands);
@@ -204,4 +204,3 @@ public class BatchCommandFilterTests
         _ = result.Should().BeFalse();
     }
 }
-

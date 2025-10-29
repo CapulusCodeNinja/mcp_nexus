@@ -56,4 +56,3 @@ public class ServerModeTests
         Assert.Equal(expected, result);
     }
 }
-

@@ -18,9 +18,9 @@ public class ServiceControllerWrapper : IServiceController
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceControllerWrapper"/> class.
     /// </summary>
-    public ServiceControllerWrapper() : this(new RegistryService())
+    public ServiceControllerWrapper()
+        : this(new RegistryService())
     {
-
     }
 
     /// <summary>
@@ -42,7 +42,7 @@ public class ServiceControllerWrapper : IServiceController
         try
         {
             using var controller = new ServiceController(serviceName);
-            var _ = controller.Status; // This will throw if service doesn't exist
+            _ = controller.Status; // This will throw if service doesn't exist
             return true;
         }
         catch (InvalidOperationException)
@@ -139,4 +139,3 @@ public class ServiceControllerWrapper : IServiceController
         }
     }
 }
-

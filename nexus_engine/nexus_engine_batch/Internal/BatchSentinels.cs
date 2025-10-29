@@ -30,4 +30,3 @@ internal static class BatchSentinels
         return $"{CommandSeparator}_{commandId}_END";
     }
 }
-

@@ -45,7 +45,7 @@ public class NotificationModelsTests
             ElapsedSeconds = 120.5,
             ElapsedDisplay = "2m 1s",
             Details = "Still analyzing",
-            Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero)
+            Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero),
         };
 
         _ = notification.SessionId.Should().Be("sess-001");
@@ -69,7 +69,7 @@ public class NotificationModelsTests
             CommandId = "cmd-123",
             Command = "kL",
             ElapsedSeconds = 10.5,
-            ElapsedDisplay = "10s"
+            ElapsedDisplay = "10s",
         };
 
         var json = JsonSerializer.Serialize(notification);
@@ -115,7 +115,7 @@ public class NotificationModelsTests
             Progress = 100,
             Message = "Done",
             Error = null,
-            Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero)
+            Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero),
         };
 
         _ = notification.SessionId.Should().Be("sess-001");
@@ -155,7 +155,7 @@ public class NotificationModelsTests
             QueueSize = 5,
             ActiveCommands = 10,
             Uptime = TimeSpan.FromHours(2),
-            Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero)
+            Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero),
         };
 
         _ = notification.Status.Should().Be("healthy");
@@ -194,7 +194,7 @@ public class NotificationModelsTests
             Success = true,
             Message = "Session recovered",
             AffectedCommands = new[] { "cmd-1", "cmd-2" },
-            Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero)
+            Timestamp = new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.Zero),
         };
 
         _ = notification.Reason.Should().Be("Timeout");
@@ -227,7 +227,7 @@ public class NotificationModelsTests
         {
             Code = -32700,
             Message = "Parse error",
-            Data = "Additional details"
+            Data = "Additional details",
         };
 
         _ = error.Code.Should().Be(-32700);
@@ -261,7 +261,7 @@ public class NotificationModelsTests
             JsonRpc = "2.0",
             Id = 123,
             Result = null,
-            Error = error
+            Error = error,
         };
 
         _ = response.JsonRpc.Should().Be("2.0");

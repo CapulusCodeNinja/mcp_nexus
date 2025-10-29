@@ -82,6 +82,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <summary>
     /// Creates the tool schema for opening a debugging session.
     /// </summary>
+    /// <returns></returns>
     private static McpToolSchema CreateOpenSessionTool()
     {
         return new McpToolSchema
@@ -105,13 +106,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     }
                 },
                 required = new[] { "dumpPath" }
-            }
+            },
         };
     }
 
     /// <summary>
     /// Creates the tool schema for enqueuing a debugging command.
     /// </summary>
+    /// <returns></returns>
     private static McpToolSchema CreateEnqueueCommandTool()
     {
         return new McpToolSchema
@@ -135,13 +137,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     }
                 },
                 required = new[] { "sessionId", "command" }
-            }
+            },
         };
     }
 
     /// <summary>
     /// Creates the tool schema for enqueuing an extension command.
     /// </summary>
+    /// <returns></returns>
     private static McpToolSchema CreateEnqueueExtensionCommandTool()
     {
         return new McpToolSchema
@@ -170,13 +173,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     }
                 },
                 required = new[] { "sessionId", "extensionName" }
-            }
+            },
         };
     }
 
     /// <summary>
     /// Creates the tool schema for reading command results.
     /// </summary>
+    /// <returns></returns>
     private static McpToolSchema CreateReadResultTool()
     {
         return new McpToolSchema
@@ -200,13 +204,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     }
                 },
                 required = new[] { "sessionId", "commandId" }
-            }
+            },
         };
     }
 
     /// <summary>
     /// Creates the tool schema for getting bulk command status.
     /// </summary>
+    /// <returns></returns>
     private static McpToolSchema CreateGetCommandsStatusTool()
     {
         return new McpToolSchema
@@ -225,13 +230,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     }
                 },
                 required = new[] { "sessionId" }
-            }
+            },
         };
     }
 
     /// <summary>
     /// Creates the tool schema for closing a debugging session.
     /// </summary>
+    /// <returns></returns>
     private static McpToolSchema CreateCloseSessionTool()
     {
         return new McpToolSchema
@@ -250,13 +256,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     }
                 },
                 required = new[] { "sessionId" }
-            }
+            },
         };
     }
 
     /// <summary>
     /// Creates the tool schema for canceling a command.
     /// </summary>
+    /// <returns></returns>
     private static McpToolSchema CreateCancelCommandTool()
     {
         return new McpToolSchema
@@ -280,8 +287,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     }
                 },
                 required = new[] { "sessionId", "commandId" }
-            }
+            },
         };
     }
 }
-

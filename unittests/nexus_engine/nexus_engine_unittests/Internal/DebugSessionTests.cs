@@ -44,12 +44,12 @@ public class DebugSessionTests : IDisposable
     /// <summary>
     /// Creates a command preprocessor for testing.
     /// </summary>
+    /// <returns></returns>
     private Nexus.Engine.Preprocessing.CommandPreprocessor CreatePreprocessor()
     {
         return new Nexus.Engine.Preprocessing.CommandPreprocessor(m_MockFileSystem.Object);
     }
 
-    #region Constructor Tests
 
     /// <summary>
     /// Verifies that constructor throws when sessionId is null.
@@ -103,9 +103,7 @@ public class DebugSessionTests : IDisposable
         _ = session.SessionId.Should().Be(TestSessionId);
     }
 
-    #endregion
 
-    #region Property Tests
 
     /// <summary>
     /// Verifies that SessionId property returns correct value.
@@ -178,9 +176,7 @@ public class DebugSessionTests : IDisposable
         _ = isActive.Should().BeFalse();
     }
 
-    #endregion
 
-    #region Event Tests
 
     /// <summary>
     /// Verifies that CommandStateChanged event can be subscribed to.
@@ -212,9 +208,7 @@ public class DebugSessionTests : IDisposable
         _ = eventRaised.Should().BeFalse();
     }
 
-    #endregion
 
-    #region Dispose Tests
 
     /// <summary>
     /// Verifies that Dispose can be called multiple times safely.
@@ -232,9 +226,7 @@ public class DebugSessionTests : IDisposable
         // Assert - Should not throw
     }
 
-    #endregion
 
-    #region Protected Method Tests (via Test Accessor)
 
     /// <summary>
     /// Verifies that SetState changes the state correctly.
@@ -322,7 +314,7 @@ public class DebugSessionTests : IDisposable
             OldState = CommandState.Queued,
             NewState = CommandState.Executing,
             Command = "!analyze",
-            Timestamp = DateTime.Now
+            Timestamp = DateTime.Now,
         };
 
         // Act
@@ -394,9 +386,7 @@ public class DebugSessionTests : IDisposable
         accessor.ThrowIfNotActive();
     }
 
-    #endregion
 
-    #region State Transition Tests
 
     /// <summary>
     /// Verifies all valid state transitions.
@@ -440,7 +430,4 @@ public class DebugSessionTests : IDisposable
         // Assert
         _ = accessor.IsActive.Should().Be(expectedIsActive);
     }
-
-    #endregion
 }
-

@@ -24,4 +24,3 @@ namespace Nexus.Setup
         Task<bool> UninstallServiceAsync();
     }
 }
-

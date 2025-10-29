@@ -85,11 +85,10 @@ internal class ContentTypeValidationMiddleware
                 code = -32700,
                 message = "Parse error",
                 data = "Content-Type must be application/json"
-            }
+            },
         };
 
         var json = JsonSerializer.Serialize(errorResponse);
         await context.Response.WriteAsync(json);
     }
 }
-

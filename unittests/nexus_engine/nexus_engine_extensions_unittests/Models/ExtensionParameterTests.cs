@@ -88,7 +88,7 @@ public class ExtensionParameterTests
         // Arrange & Act
         var parameter = new ExtensionParameter
         {
-            Required = true
+            Required = true,
         };
 
         // Assert
@@ -138,7 +138,7 @@ public class ExtensionParameterTests
         // Arrange & Act
         var parameter = new ExtensionParameter
         {
-            Default = null
+            Default = null,
         };
 
         // Assert
@@ -158,7 +158,7 @@ public class ExtensionParameterTests
             Type = "bool",
             Description = "A test parameter",
             Required = true,
-            Default = true
+            Default = true,
         };
 
         // Assert
@@ -169,4 +169,3 @@ public class ExtensionParameterTests
         _ = parameter.Default.Should().Be(true);
     }
 }
-

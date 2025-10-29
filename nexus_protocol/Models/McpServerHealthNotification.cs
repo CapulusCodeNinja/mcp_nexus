@@ -15,7 +15,7 @@ internal class McpServerHealthNotification
     public string Status { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets whether the CDB debugging session is active.
+    /// Gets or sets a value indicating whether gets or sets whether the CDB debugging session is active.
     /// </summary>
     [JsonPropertyName("cdbSessionActive")]
     public bool CdbSessionActive
@@ -56,4 +56,3 @@ internal class McpServerHealthNotification
         get; set;
     }
 }
-

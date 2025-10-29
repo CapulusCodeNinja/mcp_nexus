@@ -43,6 +43,7 @@ internal class BatchResultParser
         if (!ContainsSentinels(result.ResultText))
         {
             m_Logger.Warn("Batch result does not contain sentinels: {BatchId}", result.CommandId);
+
             // Return single result for first command (fallback behavior)
             return new List<CommandResult>
             {
@@ -51,14 +52,13 @@ internal class BatchResultParser
                     CommandId = originalCommandIds[0],
                     SessionId = result.SessionId,
                     ResultText = result.ResultText
-                }
+                },
             };
         }
 
         // Split by sentinels using the original command IDs from cache
         return SplitBatchResult(result.SessionId, originalCommandIds, result.ResultText);
     }
-
 
     /// <summary>
     /// Checks if result text contains batch sentinel markers.
@@ -92,10 +92,11 @@ internal class BatchResultParser
             {
                 CommandId = commandId,
                 SessionId = sessionId,
-                ResultText = individualResult
+                ResultText = individualResult,
             });
 
-            m_Logger.Trace("Extracted result for command {CommandId} ({Length} chars)",
+            m_Logger.Trace(
+                "Extracted result for command {CommandId} ({Length} chars)",
                 commandId, individualResult.Length);
         }
 
@@ -123,6 +124,7 @@ internal class BatchResultParser
         {
             return string.Empty;
         }
+
         startIndex++; // Skip the newline
 
         var endIndex = resultText.IndexOf(endMarker, startIndex, StringComparison.Ordinal);
@@ -145,4 +147,3 @@ internal class BatchResultParser
         return resultText[startIndex..endIndex].Trim();
     }
 }
-

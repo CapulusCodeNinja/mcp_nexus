@@ -38,11 +38,10 @@ public class InstallationValidatorTests
                     InstallPath = @"C:\Program Files\MCP-Nexus",
                     BackupPath = @"C:\Program Files\MCP-Nexus\backup"
                 }
-            }
+            },
         };
     }
 
-    #region Constructor Tests
 
     /// <summary>
     /// Verifies that parameterless constructor creates validator successfully.
@@ -70,9 +69,7 @@ public class InstallationValidatorTests
         _ = validator.Should().NotBeNull();
     }
 
-    #endregion
 
-    #region ValidateInstallation Tests
 
     /// <summary>
     /// Verifies that ValidateInstallation returns false when service is already installed.
@@ -191,7 +188,4 @@ public class InstallationValidatorTests
         // Assert - Will be true if running as admin, false otherwise - just verify it returns a boolean
         _ = result.GetType().Should().Be(typeof(bool));
     }
-
-    #endregion
 }
-

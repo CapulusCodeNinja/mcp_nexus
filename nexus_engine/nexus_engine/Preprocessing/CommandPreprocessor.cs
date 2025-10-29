@@ -84,16 +84,19 @@ internal partial class CommandPreprocessor
         {
             result = ProcessSrcPathCommand(result);
         }
+
         // Handle .sympath (set symbol path) - ensure local directories exist, skip srv*/http tokens
         else if (result.StartsWith(".sympath", StringComparison.OrdinalIgnoreCase))
         {
             result = ProcessSymPathCommand(result);
         }
+
         // Handle .symfix (set default symbol path with optional downstream store) - ensure local store exists
         else if (result.StartsWith(".symfix", StringComparison.OrdinalIgnoreCase))
         {
             result = ProcessSymFixCommand(result);
         }
+
         // Handle !homedir (set home directory for extensions and configuration) - ensure directory exists
         else if (result.StartsWith("!homedir", StringComparison.OrdinalIgnoreCase))
         {
@@ -241,6 +244,7 @@ internal partial class CommandPreprocessor
                         tokens.Add(new string(token));
                     }
                 }
+
                 start = i + 1;
             }
         }
@@ -364,4 +368,3 @@ internal partial class CommandPreprocessor
     [GeneratedRegex(@"srv\*(/mnt/[^"";\s]+)", RegexOptions.IgnoreCase)]
     private static partial Regex SrvMntToken();
 }
-

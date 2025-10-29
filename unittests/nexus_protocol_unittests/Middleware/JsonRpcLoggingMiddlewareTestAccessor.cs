@@ -12,10 +12,11 @@ namespace Nexus.Protocol.Unittests.Middleware;
 internal class JsonRpcLoggingMiddlewareTestAccessor : JsonRpcLoggingMiddleware
 {
     /// <summary>
-    /// Initializes a new instance of the JsonRpcLoggingMiddlewareTestAccessor class.
+    /// Initializes a new instance of the <see cref="JsonRpcLoggingMiddlewareTestAccessor"/> class.
     /// </summary>
     /// <param name="next">The next middleware in the pipeline.</param>
-    public JsonRpcLoggingMiddlewareTestAccessor(RequestDelegate next) : base(next)
+    public JsonRpcLoggingMiddlewareTestAccessor(RequestDelegate next)
+        : base(next)
     {
     }
 

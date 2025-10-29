@@ -26,4 +26,3 @@ public class McpToolSchema
     [JsonPropertyName("inputSchema")]
     public object InputSchema { get; set; } = new { };
 }
-

@@ -35,6 +35,7 @@ public class CdbSessionTests
     /// <summary>
     /// Creates a command preprocessor for testing.
     /// </summary>
+    /// <returns></returns>
     private Nexus.Engine.Preprocessing.CommandPreprocessor CreatePreprocessor()
     {
         return new Nexus.Engine.Preprocessing.CommandPreprocessor(m_MockFileSystem.Object);
@@ -43,6 +44,7 @@ public class CdbSessionTests
     /// <summary>
     /// Creates an initialized CdbSessionTestAccessor for testing.
     /// </summary>
+    /// <returns></returns>
     private CdbSessionTestAccessor CreateInitializedAccessor()
     {
         var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
@@ -50,7 +52,6 @@ public class CdbSessionTests
         return accessor;
     }
 
-    #region Constructor Tests
 
     /// <summary>
     /// Verifies that the constructor throws ArgumentNullException when fileSystem is null.
@@ -91,13 +92,12 @@ public class CdbSessionTests
         _ = session.SymbolPath.Should().BeNull();
     }
 
-    #endregion
 
-    #region InitializeAsync Tests
 
     /// <summary>
     /// Verifies that InitializeAsync throws ArgumentException when dumpFilePath is null.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InitializeAsync_NullDumpFilePath_ThrowsArgumentException()
     {
@@ -114,6 +114,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that InitializeAsync throws ArgumentException when dumpFilePath is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InitializeAsync_EmptyDumpFilePath_ThrowsArgumentException()
     {
@@ -130,6 +131,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that InitializeAsync throws ArgumentException when dumpFilePath is whitespace.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InitializeAsync_WhitespaceDumpFilePath_ThrowsArgumentException()
     {
@@ -146,6 +148,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that InitializeAsync throws FileNotFoundException when dump file does not exist.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InitializeAsync_DumpFileDoesNotExist_ThrowsFileNotFoundException()
     {
@@ -164,6 +167,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that InitializeAsync throws ObjectDisposedException when session is disposed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InitializeAsync_DisposedSession_ThrowsObjectDisposedException()
     {
@@ -178,13 +182,12 @@ public class CdbSessionTests
         _ = await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
-    #endregion
 
-    #region ExecuteCommandAsync Tests
 
     /// <summary>
     /// Verifies that ExecuteCommandAsync throws ArgumentException when command is null.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task ExecuteCommandAsync_NullCommand_ThrowsArgumentException()
     {
@@ -201,6 +204,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that ExecuteCommandAsync throws ArgumentException when command is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task ExecuteCommandAsync_EmptyCommand_ThrowsArgumentException()
     {
@@ -217,6 +221,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that ExecuteCommandAsync throws ArgumentException when command is whitespace.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task ExecuteCommandAsync_WhitespaceCommand_ThrowsArgumentException()
     {
@@ -233,6 +238,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that ExecuteCommandAsync throws ObjectDisposedException when session is disposed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task ExecuteCommandAsync_DisposedSession_ThrowsObjectDisposedException()
     {
@@ -250,6 +256,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that ExecuteCommandAsync throws InvalidOperationException when session is not initialized.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task ExecuteCommandAsync_NotInitialized_ThrowsInvalidOperationException()
     {
@@ -264,13 +271,12 @@ public class CdbSessionTests
             .WithMessage("CDB session is not initialized");
     }
 
-    #endregion
 
-    #region ExecuteBatchCommandAsync Tests
 
     /// <summary>
     /// Verifies that ExecuteBatchCommandAsync throws ArgumentNullException when commands is null.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task ExecuteBatchCommandAsync_NullCommands_ThrowsArgumentNullException()
     {
@@ -287,6 +293,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that ExecuteBatchCommandAsync throws ArgumentException when commands list is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task ExecuteBatchCommandAsync_EmptyCommands_ThrowsArgumentException()
     {
@@ -303,6 +310,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that ExecuteBatchCommandAsync throws ObjectDisposedException when session is disposed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task ExecuteBatchCommandAsync_DisposedSession_ThrowsObjectDisposedException()
     {
@@ -320,6 +328,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that ExecuteBatchCommandAsync throws InvalidOperationException when session is not initialized.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task ExecuteBatchCommandAsync_NotInitialized_ThrowsInvalidOperationException()
     {
@@ -334,13 +343,12 @@ public class CdbSessionTests
             .WithMessage("CDB session is not initialized");
     }
 
-    #endregion
 
-    #region FindCdbExecutableAsync Tests
 
     /// <summary>
     /// Verifies that FindCdbExecutableAsync throws InvalidOperationException when CDB not found.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task FindCdbExecutableAsync_CdbNotFound_ThrowsInvalidOperationException()
     {
@@ -356,13 +364,12 @@ public class CdbSessionTests
             .WithMessage("*CDB executable not found*");
     }
 
-    #endregion
 
-    #region StopCdbProcess Tests
 
     /// <summary>
     /// Verifies that StopCdbProcess throws ObjectDisposedException when session is disposed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task StopCdbProcess_DisposedSession_ThrowsObjectDisposedException()
     {
@@ -393,13 +400,12 @@ public class CdbSessionTests
         _ = act.Should().NotThrow();
     }
 
-    #endregion
 
-    #region DisposeAsync Tests
 
     /// <summary>
     /// Verifies that DisposeAsync can be called multiple times without errors.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task DisposeAsync_CalledMultipleTimes_DoesNotThrow()
     {
@@ -417,6 +423,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that DisposeAsync marks session as disposed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task DisposeAsync_MarksSessionAsDisposed()
     {
@@ -431,9 +438,7 @@ public class CdbSessionTests
         _ = session.IsInitialized.Should().BeFalse();
     }
 
-    #endregion
 
-    #region Dispose Tests
 
     /// <summary>
     /// Verifies that Dispose can be called multiple times without errors.
@@ -469,9 +474,7 @@ public class CdbSessionTests
         _ = session.IsInitialized.Should().BeFalse();
     }
 
-    #endregion
 
-    #region Protected Method Tests via Accessor
 
     /// <summary>
     /// Verifies that CreateCommandWithSentinels wraps command correctly.
@@ -579,6 +582,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that ThrowIfDisposed throws when session is disposed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task ThrowIfDisposed_DisposedSession_ThrowsObjectDisposedException()
     {
@@ -675,9 +679,7 @@ public class CdbSessionTests
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region Property Tests
 
     /// <summary>
     /// Verifies that IsActive returns false when not initialized.
@@ -695,6 +697,7 @@ public class CdbSessionTests
     /// <summary>
     /// Verifies that IsActive returns false when disposed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task IsActive_Disposed_ReturnsFalse()
     {
@@ -744,7 +747,4 @@ public class CdbSessionTests
         // Act & Assert
         _ = session.SymbolPath.Should().BeNull();
     }
-
-    #endregion
 }
-

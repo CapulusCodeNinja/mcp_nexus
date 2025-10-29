@@ -109,7 +109,7 @@ public class MarkdownFormatterTests
     public void CreateCodeBlock_WithEmptyContent_ReturnsEmptyString()
     {
         // Act
-        var result = MarkdownFormatter.CreateCodeBlock("");
+        var result = MarkdownFormatter.CreateCodeBlock(string.Empty);
 
         // Assert
         _ = result.Should().BeEmpty();
@@ -165,7 +165,7 @@ public class MarkdownFormatterTests
         var rows = new[]
         {
             new[] { "1", "Test1", "Active" },
-            new[] { "2", "Test2", "Inactive" }
+            new[] { "2", "Test2", "Inactive" },
         };
 
         // Act
@@ -311,7 +311,7 @@ public class MarkdownFormatterTests
         var commands = new object[]
         {
             new { commandId = "cmd-1", command = "!analyze", state = "Completed", isSuccess = true, executionTime = TimeSpan.FromSeconds(30) },
-            new { commandId = "cmd-2", command = "kL", state = "Running", isSuccess = (bool?)null, executionTime = (TimeSpan?)null }
+            new { commandId = "cmd-2", command = "kL", state = "Running", isSuccess = (bool?)null, executionTime = (TimeSpan?)null },
         };
 
         // Act
@@ -355,7 +355,7 @@ public class MarkdownFormatterTests
         {
             { "Command ID", "cmd-123" },
             { "Session ID", "sess-456" },
-            { "Status", "Queued" }
+            { "Status", "Queued" },
         };
 
         // Act
@@ -381,7 +381,7 @@ public class MarkdownFormatterTests
         {
             { "Command ID", "N/A" },
             { "Session ID", "sess-456" },
-            { "Status", "Failed" }
+            { "Status", "Failed" },
         };
 
         // Act
@@ -406,7 +406,7 @@ public class MarkdownFormatterTests
         var keyValues = new Dictionary<string, object?>
         {
             { "Session ID", "sess-456" },
-            { "Status", "Success" }
+            { "Status", "Success" },
         };
 
         // Act
@@ -432,7 +432,7 @@ public class MarkdownFormatterTests
         var rows = new[]
         {
             new[] { "1", "Test1" }, // Missing Status and Extra
-            new[] { "2", "Test2", "Active" } // Missing Extra
+            new[] { "2", "Test2", "Active" }, // Missing Extra
         };
 
         // Act
@@ -453,7 +453,7 @@ public class MarkdownFormatterTests
         var headers = new[] { "ID", "Name" };
         var rows = new[]
         {
-            new[] { "1", "Test1", "Extra1", "Extra2" } // More values than headers
+            new[] { "1", "Test1", "Extra1", "Extra2" }, // More values than headers
         };
 
         // Act

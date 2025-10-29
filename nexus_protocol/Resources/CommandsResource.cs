@@ -15,10 +15,10 @@ namespace Nexus.Protocol.Resources;
 /// Current Limitations:
 /// - IDebugEngine lacks GetActiveSessions() method
 /// - Cannot list commands without session enumeration
-/// 
+///
 /// Future Enhancement:
 /// - Add IEnumerable&lt;string&gt; GetActiveSessions() to IDebugEngine
-/// - Add Dictionary&lt;string, CommandInfo&gt; GetAllCommands() to IDebugEngine (optional, for efficiency)
+/// - Add Dictionary&lt;string, CommandInfo&gt; GetAllCommands() to IDebugEngine (optional, for efficiency).
 /// </remarks>
 [McpServerResourceType]
 internal static class CommandsResource
@@ -31,12 +31,13 @@ internal static class CommandsResource
     /// <remarks>
     /// LIMITATION: Currently returns empty list because IDebugEngine interface
     /// does not expose methods to enumerate sessions or query commands globally.
-    /// 
+    ///
     /// To implement full functionality, IDebugEngine needs:
     /// 1. IEnumerable&lt;string&gt; GetActiveSessions()
-    /// 2. Dictionary&lt;string, CommandInfo&gt; GetAllCommands() (optional, for efficiency)
+    /// 2. Dictionary&lt;string, CommandInfo&gt; GetAllCommands() (optional, for efficiency).
     /// </remarks>
-    [McpServerResource, Description("Lists commands from all sessions. Note: Requires IDebugEngine enhancement for full functionality.")]
+    [McpServerResource]
+    [Description("Lists commands from all sessions. Note: Requires IDebugEngine enhancement for full functionality.")]
     public static Task<string> Commands(IServiceProvider serviceProvider)
     {
         ArgumentNullException.ThrowIfNull(serviceProvider);
@@ -52,12 +53,12 @@ internal static class CommandsResource
                 commands = Array.Empty<object>(),
                 count = 0,
                 timestamp = DateTimeOffset.Now,
-                note = "Command listing requires IDebugEngine.GetActiveSessions() method (pending interface enhancement)"
+                note = "Command listing requires IDebugEngine.GetActiveSessions() method (pending interface enhancement)",
             };
 
             return Task.FromResult(JsonSerializer.Serialize(result, new JsonSerializerOptions
             {
-                WriteIndented = true
+                WriteIndented = true,
             }));
         }
         catch (Exception ex)
@@ -68,14 +69,13 @@ internal static class CommandsResource
                 commands = Array.Empty<object>(),
                 count = 0,
                 timestamp = DateTimeOffset.Now,
-                error = ex.Message
+                error = ex.Message,
             };
 
             return Task.FromResult(JsonSerializer.Serialize(errorResult, new JsonSerializerOptions
             {
-                WriteIndented = true
+                WriteIndented = true,
             }));
         }
     }
 }
-

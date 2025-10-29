@@ -15,4 +15,3 @@ public class Command
     /// </summary>
     public string CommandText { get; set; } = string.Empty;
 }
-

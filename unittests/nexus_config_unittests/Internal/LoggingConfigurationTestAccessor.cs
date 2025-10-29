@@ -57,7 +57,6 @@ internal class LoggingConfigurationTestAccessor : LoggingConfiguration
         ConfigureNLogProvider(logging, logLevel);
     }
 
-
     /// <summary>
     /// Exposes the ParseLogLevel method for testing.
     /// </summary>

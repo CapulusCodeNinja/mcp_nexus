@@ -34,4 +34,3 @@ public class ServiceStartModeTests
         Assert.Equal(3, values.Length);
     }
 }
-

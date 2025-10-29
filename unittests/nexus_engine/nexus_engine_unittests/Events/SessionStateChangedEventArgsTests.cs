@@ -28,7 +28,7 @@ public class SessionStateChangedEventArgsTests
             OldState = SessionState.Initializing,
             NewState = SessionState.Active,
             Timestamp = m_TestTime,
-            Message = "Session initialized successfully"
+            Message = "Session initialized successfully",
         };
 
         // Assert
@@ -52,7 +52,7 @@ public class SessionStateChangedEventArgsTests
             OldState = SessionState.Active,
             NewState = SessionState.Closing,
             Timestamp = m_TestTime,
-            Message = null
+            Message = null,
         };
 
         // Assert
@@ -78,7 +78,7 @@ public class SessionStateChangedEventArgsTests
             OldState = oldState,
             NewState = newState,
             Timestamp = m_TestTime,
-            Message = $"Transition from {oldState} to {newState}"
+            Message = $"Transition from {oldState} to {newState}",
         };
 
         // Assert

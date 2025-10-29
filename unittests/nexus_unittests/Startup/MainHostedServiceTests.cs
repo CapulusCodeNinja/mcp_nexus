@@ -31,6 +31,7 @@ public class MainHostedServiceTests
     /// <summary>
     /// Verifies that StopAsync completes successfully.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task StopAsync_Succeeds()
     {
@@ -47,6 +48,7 @@ public class MainHostedServiceTests
     /// <summary>
     /// Verifies that StopAsync handles cancellation.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task StopAsync_WithCancellation_Succeeds()
     {
@@ -62,4 +64,3 @@ public class MainHostedServiceTests
         // Assert - No exception thrown
     }
 }
-

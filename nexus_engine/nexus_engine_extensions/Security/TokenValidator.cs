@@ -48,11 +48,12 @@ public class TokenValidator : IDisposable
             {
                 SessionId = sessionId,
                 CommandId = commandId,
-                ExpiresAt = expiresAt
+                ExpiresAt = expiresAt,
             };
         }
 
-        m_Logger.Debug("Generated token for session {SessionId}, command {CommandId}, expires at {ExpiresAt}",
+        m_Logger.Debug(
+            "Generated token for session {SessionId}, command {CommandId}, expires at {ExpiresAt}",
             sessionId, commandId, expiresAt);
 
         return token;
@@ -85,7 +86,8 @@ public class TokenValidator : IDisposable
                 return (false, null, null);
             }
 
-            m_Logger.Trace("Valid token for session {SessionId}, command {CommandId}",
+            m_Logger.Trace(
+                "Valid token for session {SessionId}, command {CommandId}",
                 tokenInfo.SessionId, tokenInfo.CommandId);
 
             return (true, tokenInfo.SessionId, tokenInfo.CommandId);
@@ -151,7 +153,7 @@ public class TokenValidator : IDisposable
         using var rng = RandomNumberGenerator.Create();
         var bytes = new byte[32];
         rng.GetBytes(bytes);
-        return Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
+        return Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").Replace("=", string.Empty);
     }
 
     /// <summary>
@@ -190,12 +192,12 @@ public class TokenValidator : IDisposable
     private class TokenInfo
     {
         public string SessionId { get; set; } = string.Empty;
+
         public string CommandId { get; set; } = string.Empty;
+
         public DateTime ExpiresAt
         {
             get; set;
         }
     }
 }
-
-

@@ -50,4 +50,3 @@ public interface IServiceController
     /// <returns>The service executable path, or null if not found.</returns>
     string? GetServiceExecutablePath(string serviceName);
 }
-

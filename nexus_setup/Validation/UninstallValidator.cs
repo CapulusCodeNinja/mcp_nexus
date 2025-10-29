@@ -17,7 +17,8 @@ namespace Nexus.Setup.Validation
         /// <summary>
         /// Initializes a new instance of the <see cref="UninstallValidator"/> class.
         /// </summary>
-        public UninstallValidator() : this(new FileSystem(), new ServiceControllerWrapper())
+        public UninstallValidator()
+            : this(new FileSystem(), new ServiceControllerWrapper())
         {
         }
 
@@ -29,7 +30,6 @@ namespace Nexus.Setup.Validation
         internal UninstallValidator(IFileSystem fileSystem, IServiceController serviceController)
             : base(LogManager.GetCurrentClassLogger(), fileSystem, serviceController)
         {
-
         }
 
         /// <summary>
@@ -60,7 +60,6 @@ namespace Nexus.Setup.Validation
             return true;
         }
 
-
         /// <summary>
         /// Validates that the service is installed.
         /// </summary>
@@ -75,6 +74,7 @@ namespace Nexus.Setup.Validation
                 m_Logger.Info("Nothing to uninstall");
                 return false; // This is actually a success case, but we return false to indicate "nothing to do"
             }
+
             return true;
         }
 
@@ -90,6 +90,5 @@ namespace Nexus.Setup.Validation
                 m_Logger.Info("Service will be removed but no files to clean up");
             }
         }
-
     }
 }

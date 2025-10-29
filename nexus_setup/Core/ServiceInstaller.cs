@@ -25,7 +25,8 @@ internal class ServiceInstaller : IServiceInstaller
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceInstaller"/> class.
     /// </summary>
-    public ServiceInstaller() : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
+    public ServiceInstaller()
+        : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
     {
     }
 
@@ -90,7 +91,7 @@ internal class ServiceInstaller : IServiceInstaller
                 Models.ServiceStartMode.Automatic => "auto",
                 Models.ServiceStartMode.Manual => "demand",
                 Models.ServiceStartMode.Disabled => "disabled",
-                _ => "auto"
+                _ => "auto",
             };
 
             var accountName = GetAccountName(options.Account, options.AccountUsername);
@@ -262,7 +263,8 @@ internal class ServiceInstaller : IServiceInstaller
                     return true;
                 }
 
-                m_Logger.Debug("Service {ServiceName} status: {CurrentStatus}, waiting for {TargetStatus}",
+                m_Logger.Debug(
+                    "Service {ServiceName} status: {CurrentStatus}, waiting for {TargetStatus}",
                     serviceName, currentStatus, targetStatus);
             }
             catch (Exception ex)
@@ -273,7 +275,8 @@ internal class ServiceInstaller : IServiceInstaller
             await Task.Delay(pollInterval, cancellationToken);
         }
 
-        m_Logger.Warn("Service {ServiceName} did not reach status {Status} within {Timeout}ms",
+        m_Logger.Warn(
+            "Service {ServiceName} did not reach status {Status} within {Timeout}ms",
             serviceName, targetStatus, timeout.TotalMilliseconds);
         return false;
     }
@@ -320,7 +323,7 @@ internal class ServiceInstaller : IServiceInstaller
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true,
-                WorkingDirectory = workingDirectory
+                WorkingDirectory = workingDirectory,
             };
 
             using var process = m_ProcessManager.StartProcess(startInfo);
@@ -341,7 +344,8 @@ internal class ServiceInstaller : IServiceInstaller
             }
             else
             {
-                m_Logger.Error("Build failed with exit code {ExitCode}. Output: {Output}. Error: {Error}",
+                m_Logger.Error(
+                    "Build failed with exit code {ExitCode}. Output: {Output}. Error: {Error}",
                     process.ExitCode, output, error);
                 return false;
             }
@@ -439,7 +443,7 @@ internal class ServiceInstaller : IServiceInstaller
             ServiceAccount.LocalService => "NT AUTHORITY\\LocalService",
             ServiceAccount.NetworkService => "NT AUTHORITY\\NetworkService",
             ServiceAccount.Custom => customUsername ?? throw new ArgumentException("Custom username must be provided for custom account"),
-            _ => "LocalSystem"
+            _ => "LocalSystem",
         };
     }
 
@@ -460,7 +464,7 @@ internal class ServiceInstaller : IServiceInstaller
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                CreateNoWindow = true
+                CreateNoWindow = true,
             };
 
             using var process = m_ProcessManager.StartProcess(startInfo);
@@ -485,4 +489,3 @@ internal class ServiceInstaller : IServiceInstaller
         }
     }
 }
-

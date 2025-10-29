@@ -21,9 +21,10 @@ internal static class CancelCommandTool
     /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
     /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
     /// <returns>Command cancellation result.</returns>
-    [McpServerTool, Description("Cancels a queued or executing command.")]
+    [McpServerTool]
+    [Description("Cancels a queued or executing command.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static Task<object> nexus_cancel_dump_analyze_command(
+    public static Task<object> Nexus_cancel_dump_analyze_command(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Command ID to cancel")] string commandId)
     {
@@ -42,7 +43,7 @@ internal static class CancelCommandTool
                 { "Command ID", commandId },
                 { "Session ID", sessionId },
                 { "Cancelled", cancelled },
-                { "Status", cancelled ? "Cancelled" : "NotFound" }
+                { "Status", cancelled ? "Cancelled" : "NotFound" },
             };
 
             var message = cancelled
@@ -65,7 +66,7 @@ internal static class CancelCommandTool
                 { "Command ID", commandId },
                 { "Session ID", sessionId },
                 { "Cancelled", false },
-                { "Status", "Failed" }
+                { "Status", "Failed" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -84,7 +85,7 @@ internal static class CancelCommandTool
                 { "Command ID", commandId },
                 { "Session ID", sessionId },
                 { "Cancelled", false },
-                { "Status", "Failed" }
+                { "Status", "Failed" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -97,4 +98,3 @@ internal static class CancelCommandTool
         }
     }
 }
-

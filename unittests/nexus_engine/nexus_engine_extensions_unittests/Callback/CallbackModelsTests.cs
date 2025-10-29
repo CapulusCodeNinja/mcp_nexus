@@ -11,7 +11,6 @@ namespace Nexus.Engine.Extensions.Tests.Callback;
 /// </summary>
 public class CallbackModelsTests
 {
-    #region ExecuteCommandRequest Tests
 
     /// <summary>
     /// Verifies that ExecuteCommandRequest initializes with default values.
@@ -37,7 +36,7 @@ public class CallbackModelsTests
         var request = new ExecuteCommandRequest
         {
             Command = "!analyze -v",
-            TimeoutSeconds = 600
+            TimeoutSeconds = 600,
         };
 
         // Assert
@@ -45,9 +44,7 @@ public class CallbackModelsTests
         _ = request.TimeoutSeconds.Should().Be(600);
     }
 
-    #endregion
 
-    #region QueueCommandRequest Tests
 
     /// <summary>
     /// Verifies that QueueCommandRequest initializes with default values.
@@ -73,7 +70,7 @@ public class CallbackModelsTests
         var request = new QueueCommandRequest
         {
             Command = "kL",
-            TimeoutSeconds = 120
+            TimeoutSeconds = 120,
         };
 
         // Assert
@@ -81,9 +78,7 @@ public class CallbackModelsTests
         _ = request.TimeoutSeconds.Should().Be(120);
     }
 
-    #endregion
 
-    #region ReadCommandRequest Tests
 
     /// <summary>
     /// Verifies that ReadCommandRequest initializes with default values.
@@ -107,16 +102,14 @@ public class CallbackModelsTests
         // Arrange
         var request = new ReadCommandRequest
         {
-            CommandId = "cmd-123"
+            CommandId = "cmd-123",
         };
 
         // Assert
         _ = request.CommandId.Should().Be("cmd-123");
     }
 
-    #endregion
 
-    #region StatusCommandRequest Tests
 
     /// <summary>
     /// Verifies that StatusCommandRequest initializes with default values.
@@ -140,16 +133,14 @@ public class CallbackModelsTests
         // Arrange
         var request = new StatusCommandRequest
         {
-            CommandId = "cmd-456"
+            CommandId = "cmd-456",
         };
 
         // Assert
         _ = request.CommandId.Should().Be("cmd-456");
     }
 
-    #endregion
 
-    #region BulkStatusRequest Tests
 
     /// <summary>
     /// Verifies that BulkStatusRequest initializes with empty list.
@@ -174,7 +165,7 @@ public class CallbackModelsTests
         // Arrange
         var request = new BulkStatusRequest
         {
-            CommandIds = new List<string> { "cmd-1", "cmd-2", "cmd-3" }
+            CommandIds = new List<string> { "cmd-1", "cmd-2", "cmd-3" },
         };
 
         // Assert
@@ -184,9 +175,7 @@ public class CallbackModelsTests
         _ = request.CommandIds.Should().Contain("cmd-3");
     }
 
-    #endregion
 
-    #region LogRequest Tests
 
     /// <summary>
     /// Verifies that LogRequest initializes with default values.
@@ -212,7 +201,7 @@ public class CallbackModelsTests
         var request = new LogRequest
         {
             Level = "Error",
-            Message = "Test error message"
+            Message = "Test error message",
         };
 
         // Assert
@@ -220,9 +209,7 @@ public class CallbackModelsTests
         _ = request.Message.Should().Be("Test error message");
     }
 
-    #endregion
 
-    #region CommandResponse Tests
 
     /// <summary>
     /// Verifies that CommandResponse initializes with default values.
@@ -251,7 +238,7 @@ public class CallbackModelsTests
         {
             Success = true,
             CommandId = "cmd-789",
-            Output = "Command executed successfully"
+            Output = "Command executed successfully",
         };
 
         // Assert
@@ -272,7 +259,7 @@ public class CallbackModelsTests
         {
             Success = false,
             CommandId = "cmd-999",
-            Error = "Command failed"
+            Error = "Command failed",
         };
 
         // Assert
@@ -282,9 +269,7 @@ public class CallbackModelsTests
         _ = response.Output.Should().BeEmpty();
     }
 
-    #endregion
 
-    #region CommandStatus Tests
 
     /// <summary>
     /// Verifies that CommandStatus initializes with default values.
@@ -312,7 +297,7 @@ public class CallbackModelsTests
         {
             CommandId = "cmd-111",
             State = "Completed",
-            Command = "!analyze"
+            Command = "!analyze",
         };
 
         // Assert
@@ -321,9 +306,7 @@ public class CallbackModelsTests
         _ = status.Command.Should().Be("!analyze");
     }
 
-    #endregion
 
-    #region BulkStatusResponse Tests
 
     /// <summary>
     /// Verifies that BulkStatusResponse initializes with empty list.
@@ -352,7 +335,7 @@ public class CallbackModelsTests
             {
                 new() { CommandId = "cmd-1", State = "Completed" },
                 new() { CommandId = "cmd-2", State = "Running" }
-            }
+            },
         };
 
         // Assert
@@ -360,7 +343,4 @@ public class CallbackModelsTests
         _ = response.Commands[0].CommandId.Should().Be("cmd-1");
         _ = response.Commands[1].CommandId.Should().Be("cmd-2");
     }
-
-    #endregion
 }
-

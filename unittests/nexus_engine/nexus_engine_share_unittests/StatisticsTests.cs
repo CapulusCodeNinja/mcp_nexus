@@ -21,7 +21,6 @@ public class StatisticsTests
         m_Logger = LogManager.GetCurrentClassLogger();
     }
 
-    #region EmitCommandStats Tests
 
     /// <summary>
     /// Verifies that EmitCommandStats with completed status succeeds.
@@ -171,9 +170,7 @@ public class StatisticsTests
             TimeSpan.FromMilliseconds(600));
     }
 
-    #endregion
 
-    #region EmitSessionStats Tests
 
     /// <summary>
     /// Verifies that EmitSessionStats with valid data succeeds.
@@ -197,7 +194,7 @@ public class StatisticsTests
             CommandInfo.Completed(sessionId, "cmd-7", "dv", openedAt, openedAt.AddSeconds(7), openedAt.AddSeconds(8), "output7", string.Empty, null),
             CommandInfo.Completed(sessionId, "cmd-8", "u", openedAt, openedAt.AddSeconds(8), openedAt.AddSeconds(9), "output8", string.Empty, null),
             CommandInfo.Failed(sessionId, "cmd-9", "!error", openedAt, openedAt.AddSeconds(9), openedAt.AddSeconds(10), string.Empty, "Command failed", null),
-            CommandInfo.Cancelled(sessionId, "cmd-10", "!runaway", openedAt, openedAt.AddSeconds(10), openedAt.AddSeconds(11), string.Empty, string.Empty, null)
+            CommandInfo.Cancelled(sessionId, "cmd-10", "!runaway", openedAt, openedAt.AddSeconds(10), openedAt.AddSeconds(11), string.Empty, string.Empty, null),
         };
 
         // Act & Assert (should not throw)
@@ -259,7 +256,7 @@ public class StatisticsTests
             CommandInfo.Failed(sessionId, "cmd-2", "!invalid2", openedAt, openedAt.AddSeconds(2), openedAt.AddSeconds(3), string.Empty, "Error 2", null),
             CommandInfo.Failed(sessionId, "cmd-3", "!invalid3", openedAt, openedAt.AddSeconds(3), openedAt.AddSeconds(4), string.Empty, "Error 3", null),
             CommandInfo.Failed(sessionId, "cmd-4", "!invalid4", openedAt, openedAt.AddSeconds(4), openedAt.AddSeconds(5), string.Empty, "Error 4", null),
-            CommandInfo.Failed(sessionId, "cmd-5", "!invalid5", openedAt, openedAt.AddSeconds(5), openedAt.AddSeconds(6), string.Empty, "Error 5", null)
+            CommandInfo.Failed(sessionId, "cmd-5", "!invalid5", openedAt, openedAt.AddSeconds(5), openedAt.AddSeconds(6), string.Empty, "Error 5", null),
         };
 
         // Act & Assert (should not throw)
@@ -297,7 +294,7 @@ public class StatisticsTests
             CommandInfo.Cancelled(sessionId, "cmd-cancelled-1", "!cancelled", openedAt, openedAt.AddSeconds(4), openedAt.AddSeconds(5), string.Empty, string.Empty, null),
             CommandInfo.Failed(sessionId, "cmd-failed-1", "!error", openedAt, openedAt.AddSeconds(6), openedAt.AddSeconds(7), string.Empty, "Command failed", null),
             CommandInfo.Executing(sessionId, "cmd-executing-1", "!running", openedAt, openedAt.AddSeconds(8), null),
-            CommandInfo.Completed(sessionId, "cmd-completed-2", "kL", openedAt, openedAt.AddSeconds(9), openedAt.AddSeconds(10), "output2", string.Empty, null)
+            CommandInfo.Completed(sessionId, "cmd-completed-2", "kL", openedAt, openedAt.AddSeconds(9), openedAt.AddSeconds(10), "output2", string.Empty, null),
         };
 
         // Act & Assert (should not throw)
@@ -314,7 +311,4 @@ public class StatisticsTests
             1,
             commands);
     }
-
-    #endregion
 }
-

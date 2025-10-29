@@ -11,7 +11,6 @@ namespace Nexus.Engine.Tests.Preprocessing;
 /// </summary>
 public class PathHandlerTests
 {
-    #region IsWindowsPath Tests
 
     /// <summary>
     /// Verifies that IsWindowsPath returns true for drive letter paths.
@@ -90,9 +89,7 @@ public class PathHandlerTests
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region ConvertToWindowsPath Tests
 
     /// <summary>
     /// Verifies that ConvertToWindowsPath returns input for null or whitespace.
@@ -184,7 +181,4 @@ public class PathHandlerTests
         // Assert - results should be consistent (caching works)
         _ = result1.Should().Be(result2);
     }
-
-    #endregion
 }
-

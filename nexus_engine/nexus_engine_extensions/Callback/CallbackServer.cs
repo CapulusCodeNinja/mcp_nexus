@@ -78,8 +78,8 @@ internal class CallbackServer
                 return Results.BadRequest("Invalid request body");
             }
 
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? "");
+            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", string.Empty);
+            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? string.Empty);
 
             if (!isValid || extensionSessionId == null || extensionCommandId == null)
             {
@@ -90,7 +90,8 @@ internal class CallbackServer
             var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
             var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-            m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Execute request received",
+            m_Logger.Trace(
+                "[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Execute request received",
                 extensionPid, callbackCounter, extensionCommandId, extensionName);
 
             var newCommandId = m_Engine.EnqueueCommand(extensionSessionId, request.Command);
@@ -102,7 +103,7 @@ internal class CallbackServer
                 Output = commandInfo.AggregatedOutput ?? string.Empty,
                 CommandId = newCommandId,
                 State = commandInfo.State.ToString(),
-                Error = commandInfo.ErrorMessage
+                Error = commandInfo.ErrorMessage,
             };
 
             return Results.Ok(response);
@@ -132,8 +133,8 @@ internal class CallbackServer
                 return Results.BadRequest("Invalid request body");
             }
 
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? "");
+            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", string.Empty);
+            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? string.Empty);
 
             if (!isValid || extensionSessionId == null || extensionCommandId == null)
             {
@@ -144,7 +145,8 @@ internal class CallbackServer
             var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
             var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-            m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Enqueue request received",
+            m_Logger.Trace(
+                "[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Enqueue request received",
                 extensionPid, callbackCounter, extensionCommandId, extensionName);
 
             var newCommandId = m_Engine.EnqueueCommand(extensionSessionId, request.Command);
@@ -154,7 +156,7 @@ internal class CallbackServer
                 Success = true,
                 Output = "Command queued successfully",
                 CommandId = newCommandId,
-                State = "Queued"
+                State = "Queued",
             };
 
             return Results.Ok(response);
@@ -176,8 +178,8 @@ internal class CallbackServer
     {
         try
         {
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? "");
+            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", string.Empty);
+            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? string.Empty);
 
             if (!isValid || extensionSessionId == null || extensionCommandId == null)
             {
@@ -188,7 +190,8 @@ internal class CallbackServer
             var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
             var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-            m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Read request received for command {CommandId}",
+            m_Logger.Trace(
+                "[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Read request received for command {CommandId}",
                 extensionPid, callbackCounter, extensionCommandId, extensionName, commandId);
 
             var commandInfo = await m_Engine.GetCommandInfoAsync(extensionSessionId, commandId, CancellationToken.None);
@@ -199,7 +202,7 @@ internal class CallbackServer
                 Output = commandInfo.AggregatedOutput ?? string.Empty,
                 CommandId = commandId,
                 State = commandInfo.State.ToString(),
-                Error = commandInfo.ErrorMessage
+                Error = commandInfo.ErrorMessage,
             };
 
             return Results.Ok(response);
@@ -221,8 +224,8 @@ internal class CallbackServer
     {
         try
         {
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? "");
+            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", string.Empty);
+            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? string.Empty);
 
             if (!isValid || extensionSessionId == null || extensionCommandId == null)
             {
@@ -233,7 +236,8 @@ internal class CallbackServer
             var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
             var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-            m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Status request received for command {CommandId}",
+            m_Logger.Trace(
+                "[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Status request received for command {CommandId}",
                 extensionPid, callbackCounter, extensionCommandId, extensionName, commandId);
 
             var commandInfo = m_Engine.GetCommandInfo(extensionSessionId, commandId);
@@ -249,7 +253,7 @@ internal class CallbackServer
                 Output = commandInfo.AggregatedOutput ?? string.Empty,
                 CommandId = commandId,
                 State = commandInfo.State.ToString(),
-                Error = commandInfo.ErrorMessage
+                Error = commandInfo.ErrorMessage,
             };
 
             return Results.Ok(response);
@@ -279,8 +283,8 @@ internal class CallbackServer
                 return Results.BadRequest("Invalid request body or empty command IDs");
             }
 
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? "");
+            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", string.Empty);
+            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? string.Empty);
 
             if (!isValid || extensionSessionId == null || extensionCommandId == null)
             {
@@ -291,7 +295,8 @@ internal class CallbackServer
             var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
             var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-            m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Status request received",
+            m_Logger.Trace(
+                "[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Status request received",
                 extensionPid, callbackCounter, extensionCommandId, extensionName);
 
             var results = new Dictionary<string, object>();
@@ -326,7 +331,7 @@ internal class CallbackServer
                         error = commandInfo.ErrorMessage,
                         queuedTime = commandInfo.QueuedTime,
                         startTime = commandInfo.StartTime,
-                        endTime = commandInfo.EndTime
+                        endTime = commandInfo.EndTime,
                     };
                 }
             }
@@ -360,8 +365,8 @@ internal class CallbackServer
                 return Results.BadRequest("Invalid request body");
             }
 
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? "");
+            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", string.Empty);
+            var (isValid, extensionSessionId, extensionCommandId) = m_TokenValidator.ValidateToken(token ?? string.Empty);
 
             if (!isValid || extensionSessionId == null || extensionCommandId == null)
             {
@@ -432,7 +437,7 @@ internal class CallbackServer
     private static int GetCommandNumber(string sessionId, string commandId)
     {
         var prefix = $"cmd-{sessionId}-";
-        var indexString = commandId.Replace(prefix, "");
+        var indexString = commandId.Replace(prefix, string.Empty);
 
         return int.TryParse(indexString, out var index) ? index : 0;
     }

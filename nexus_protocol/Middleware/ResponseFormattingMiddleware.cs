@@ -41,7 +41,8 @@ internal class ResponseFormattingMiddleware
         catch (OperationCanceledException)
         {
             // SSE clients disconnecting is normal - log as warning with friendly message
-            m_Logger.Info("Client disconnected from SSE stream (Connection ID: {ConnectionId}). This is normal when clients close the connection.",
+            m_Logger.Info(
+                "Client disconnected from SSE stream (Connection ID: {ConnectionId}). This is normal when clients close the connection.",
                 context.Connection.Id);
 
             // Don't try to send error response for canceled operations
@@ -92,7 +93,7 @@ internal class ResponseFormattingMiddleware
                     Code = -32603,
                     Message = "Internal error",
                     Data = exception.Message
-                }
+                },
             };
 
             var json = JsonSerializer.Serialize(errorResponse);
@@ -104,4 +105,3 @@ internal class ResponseFormattingMiddleware
         }
     }
 }
-

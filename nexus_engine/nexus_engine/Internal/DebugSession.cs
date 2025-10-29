@@ -21,7 +21,7 @@ internal class DebugSession : IDisposable
     private readonly ReaderWriterLockSlim m_StateLock = new();
     private SessionState m_State = SessionState.Initializing;
     private volatile bool m_Disposed = false;
-    
+
     /// <summary>
     /// Stores the last activity timestamp for this session as ticks, updated lock-free for performance.
     /// </summary>
@@ -127,7 +127,7 @@ internal class DebugSession : IDisposable
             SetState(SessionState.Active);
 
             UpdateLastActivity();
-            
+
             m_Logger.Info("Debug session {SessionId} initialized successfully", SessionId);
         }
         catch (Exception ex)
@@ -147,7 +147,7 @@ internal class DebugSession : IDisposable
     {
         ThrowIfDisposed();
         ThrowIfNotActive();
-        
+
         UpdateLastActivity();
 
         return m_CommandQueue.EnqueueCommand(command);
@@ -213,6 +213,7 @@ internal class DebugSession : IDisposable
     /// <summary>
     /// Disposes the debug session.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task DisposeAsync()
     {
         if (m_Disposed)
@@ -284,7 +285,7 @@ internal class DebugSession : IDisposable
     {
         // Update last activity whenever a command state changes
         UpdateLastActivity();
-        
+
         // Forward the event with session context
         var args = new CommandStateChangedEventArgs
         {
@@ -293,7 +294,7 @@ internal class DebugSession : IDisposable
             OldState = e.OldState,
             NewState = e.NewState,
             Timestamp = e.Timestamp,
-            Command = e.Command
+            Command = e.Command,
         };
 
         CommandStateChanged?.Invoke(this, args);
@@ -324,7 +325,7 @@ internal class DebugSession : IDisposable
                 SessionId = SessionId,
                 OldState = oldState,
                 NewState = newState,
-                Timestamp = DateTime.Now
+                Timestamp = DateTime.Now,
             };
 
             SessionStateChanged?.Invoke(this, args);

@@ -96,4 +96,3 @@ public interface IMcpNotificationService
     /// <returns>A task representing the asynchronous operation.</returns>
     Task NotifyResourcesListChangedAsync();
 }
-

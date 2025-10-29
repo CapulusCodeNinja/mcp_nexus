@@ -38,7 +38,7 @@ internal class McpNotificationService : IMcpNotificationService
             {
                 JsonRpc = "2.0",
                 Method = eventType,
-                Params = data
+                Params = data,
             };
 
             await m_NotificationBridge.SendNotificationAsync(notification);
@@ -53,6 +53,7 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients about command status changes.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task NotifyCommandStatusAsync(
         string sessionId,
         string commandId,
@@ -73,7 +74,7 @@ internal class McpNotificationService : IMcpNotificationService
             Progress = progress,
             Message = message,
             Error = error,
-            Timestamp = DateTimeOffset.Now
+            Timestamp = DateTimeOffset.Now,
         };
 
         await PublishNotificationAsync("notifications/commandStatus", notification);
@@ -82,6 +83,7 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients about command heartbeat (for long-running commands).
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task NotifyCommandHeartbeatAsync(
         string sessionId,
         string commandId,
@@ -97,7 +99,7 @@ internal class McpNotificationService : IMcpNotificationService
             ElapsedSeconds = elapsed.TotalSeconds,
             ElapsedDisplay = FormatTimeSpan(elapsed),
             Details = details,
-            Timestamp = DateTimeOffset.Now
+            Timestamp = DateTimeOffset.Now,
         };
 
         await PublishNotificationAsync("notifications/commandHeartbeat", notification);
@@ -106,6 +108,7 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients about session recovery events.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task NotifySessionRecoveryAsync(
         string reason,
         string recoveryStep,
@@ -120,7 +123,7 @@ internal class McpNotificationService : IMcpNotificationService
             Success = success,
             Message = message,
             AffectedCommands = affectedCommands,
-            Timestamp = DateTimeOffset.Now
+            Timestamp = DateTimeOffset.Now,
         };
 
         await PublishNotificationAsync("notifications/sessionRecovery", notification);
@@ -129,6 +132,7 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients about server health status.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task NotifyServerHealthAsync(
         string status,
         bool cdbSessionActive,
@@ -143,7 +147,7 @@ internal class McpNotificationService : IMcpNotificationService
             QueueSize = queueSize,
             ActiveCommands = activeCommands,
             Uptime = uptime,
-            Timestamp = DateTimeOffset.Now
+            Timestamp = DateTimeOffset.Now,
         };
 
         await PublishNotificationAsync("notifications/serverHealth", notification);
@@ -152,6 +156,7 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients that the tools list has changed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task NotifyToolsListChangedAsync()
     {
         await PublishNotificationAsync("notifications/tools/listChanged", new { });
@@ -160,6 +165,7 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients that the resources list has changed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task NotifyResourcesListChangedAsync()
     {
         await PublishNotificationAsync("notifications/resources/listChanged", new { });
@@ -177,4 +183,3 @@ internal class McpNotificationService : IMcpNotificationService
             : timeSpan.TotalMinutes >= 1 ? $"{(int)timeSpan.TotalMinutes}m {timeSpan.Seconds}s" : $"{timeSpan.Seconds}s";
     }
 }
-

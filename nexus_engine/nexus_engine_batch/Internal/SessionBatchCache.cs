@@ -76,4 +76,3 @@ internal class SessionBatchCache
         m_CommandToBatch.Clear();
     }
 }
-

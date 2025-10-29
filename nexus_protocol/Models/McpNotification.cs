@@ -29,4 +29,3 @@ public class McpNotification
         get; set;
     }
 }
-

@@ -84,6 +84,13 @@ dotnet_style_qualification_for_method = false:error
 # Name = value;                  | this.Name = value;
 dotnet_style_qualification_for_property = false:error
 
+# StyleCop rule compatibility with repository conventions
+# Rule SA1101 (Prefix local calls with this): Disabled.
+# Rationale: The repository's style guide explicitly avoids the 'this.' prefix for readability.
+# Member qualification preferences are already configured above; keeping SA1101 disabled prevents
+# conflicting guidance and noisy diagnostics.
+dotnet_diagnostic.SA1101.severity = none
+
 # Language keywords vs BCL types preferences
 # Prefer language keywords for local variables, parameters, and members
 # true:                          | false:
@@ -335,6 +342,16 @@ csharp_style_expression_bodied_operators = false:error
 #                                |     get { return _age; }
 #                                | }
 csharp_style_expression_bodied_properties = true:error
+
+# Rule SA1633 (File should contain a header): Disabled.
+# Rationale: This repository does not require file banners/headers; we prefer concise files.
+# Build/license information is tracked in central project metadata instead of per-file headers.
+dotnet_diagnostic.SA1633.severity = none
+
+# Rule SA1518 (File must end with a single newline): Disabled.
+# Rationale: End-of-file newlines are governed by insert_final_newline and tooling; disabling SA1518
+# avoids redundant noise across generated or migrated files.
+dotnet_diagnostic.SA1518.severity = none
 
 # Pattern matching preferences
 # Prefer pattern matching over as-with-null-check
@@ -948,6 +965,11 @@ dotnet_naming_rule.public_constant_fields_should_be_pascalcase.severity = error
 dotnet_naming_rule.public_constant_fields_should_be_pascalcase.symbols = public_constant_fields
 dotnet_naming_rule.public_constant_fields_should_be_pascalcase.style = pascalcase
 
+# Rule SA1308 (Field names should not begin with prefix): Disabled.
+# Rationale: The repository mandates the 'm_' prefix for member fields (including static fields),
+# as defined in the project's Naming section. Disabling SA1308 aligns StyleCop with that convention.
+dotnet_diagnostic.SA1308.severity = none
+
 # Private constant fields should use PascalCase
 # Examples: MaxRetries, DefaultTimeout, BufferSize
 dotnet_naming_rule.private_constant_fields_should_be_pascalcase.severity = error
@@ -1155,7 +1177,27 @@ dotnet_style_allow_statement_immediately_after_block_experimental = true:silent
 
 # StyleCop Analyzers – documentation rules (apply to private/internal too)
 dotnet_analyzer_diagnostic.category-StyleCop.severity = warning
-dotnet_diagnostic.SA1600.severity = error   # Elements should be documented
-dotnet_diagnostic.SA1611.severity = error   # Parameters should be documented
-dotnet_diagnostic.SA1615.severity = error   # Return value should be documented
-dotnet_diagnostic.SA1618.severity = error   # Generic type parameters should be documented
+
+# SA1600: Elements should be documented — require XML docs on all elements (public and private)
+# Example:
+# /// <summary>
+# /// Parses input and returns a result.
+# /// </summary>
+# public int Parse(string input)
+dotnet_diagnostic.SA1600.severity = error
+
+# SA1611: Parameters should be documented — require a <param> entry for each parameter
+# Example:
+# /// <param name="input">The input text to parse.</param>
+# /// <param name="format">Optional format specifier.</param>
+dotnet_diagnostic.SA1611.severity = error
+
+# SA1615: Return value should be documented — require a <returns> entry where applicable
+# Example:
+# /// <returns>The parsed integer value.</returns>
+dotnet_diagnostic.SA1615.severity = error
+
+# SA1618: Generic type parameters should be documented — require a <typeparam> entry for each generic parameter
+# Example:
+# /// <typeparam name="T">The element type contained by this collection.</typeparam>
+dotnet_diagnostic.SA1618.severity = error

@@ -33,6 +33,5 @@ public enum ServerMode
     /// <summary>
     /// Uninstall command mode.
     /// </summary>
-    Uninstall
+    Uninstall,
 }
-

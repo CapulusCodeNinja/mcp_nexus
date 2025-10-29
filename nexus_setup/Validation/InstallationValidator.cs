@@ -17,7 +17,8 @@ namespace Nexus.Setup.Validation
         /// <summary>
         /// Initializes a new instance of the <see cref="InstallationValidator"/> class.
         /// </summary>
-        public InstallationValidator() : this(new FileSystem(), new ServiceControllerWrapper())
+        public InstallationValidator()
+            : this(new FileSystem(), new ServiceControllerWrapper())
         {
         }
 
@@ -29,9 +30,7 @@ namespace Nexus.Setup.Validation
         internal InstallationValidator(IFileSystem fileSystem, IServiceController serviceController)
             : base(LogManager.GetCurrentClassLogger(), fileSystem, serviceController)
         {
-
         }
-
 
         /// <summary>
         /// Validates all pre-installation conditions.
@@ -77,7 +76,6 @@ namespace Nexus.Setup.Validation
             return true;
         }
 
-
         /// <summary>
         /// Validates that the service is not already installed.
         /// </summary>
@@ -92,6 +90,7 @@ namespace Nexus.Setup.Validation
                 m_Logger.Info("Use --update command to update an existing installation");
                 return false;
             }
+
             return true;
         }
 

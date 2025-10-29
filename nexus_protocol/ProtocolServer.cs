@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 
-
 using NLog;
 
 namespace Nexus.Protocol;
@@ -22,7 +21,6 @@ public class ProtocolServer : IProtocolServer
     /// Gets the singleton instance of the protocol server.
     /// </summary>
     public static IProtocolServer Instance { get; } = new ProtocolServer();
-
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProtocolServer"/> class.
@@ -209,4 +207,3 @@ public class ProtocolServer : IProtocolServer
         m_Logger.Debug("Protocol server disposed.");
     }
 }
-

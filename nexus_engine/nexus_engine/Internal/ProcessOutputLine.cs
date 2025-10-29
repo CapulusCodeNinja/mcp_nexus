@@ -32,5 +32,3 @@ internal sealed class ProcessOutputLine
         get;
     }
 }
-
-

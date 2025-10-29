@@ -11,7 +11,6 @@ namespace Nexus.Tests.CommandLine;
 /// </summary>
 public class CommandLineContextTests
 {
-    #region Constructor Tests
 
     /// <summary>
     /// Verifies that constructor throws ArgumentNullException when args is null.
@@ -53,9 +52,7 @@ public class CommandLineContextTests
         _ = context.Args.Should().BeSameAs(args);
     }
 
-    #endregion
 
-    #region IsHttpMode Tests
 
     /// <summary>
     /// Verifies that IsHttpMode returns true when --http argument is present.
@@ -108,9 +105,7 @@ public class CommandLineContextTests
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region IsStdioMode Tests
 
     /// <summary>
     /// Verifies that IsStdioMode returns true when --stdio argument is present.
@@ -144,9 +139,7 @@ public class CommandLineContextTests
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region IsServiceMode Tests
 
     /// <summary>
     /// Verifies that IsServiceMode returns true when --service argument is present.
@@ -180,9 +173,7 @@ public class CommandLineContextTests
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region IsInstallMode Tests
 
     /// <summary>
     /// Verifies that IsInstallMode returns true when --install argument is present.
@@ -216,9 +207,7 @@ public class CommandLineContextTests
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region IsUpdateMode Tests
 
     /// <summary>
     /// Verifies that IsUpdateMode returns true when --update argument is present.
@@ -252,9 +241,7 @@ public class CommandLineContextTests
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region IsUninstallMode Tests
 
     /// <summary>
     /// Verifies that IsUninstallMode returns true when --uninstall argument is present.
@@ -288,9 +275,7 @@ public class CommandLineContextTests
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region Multiple Arguments Tests
 
     /// <summary>
     /// Verifies that multiple mode flags can be detected.
@@ -309,7 +294,4 @@ public class CommandLineContextTests
         _ = context.IsServiceMode.Should().BeFalse();
         _ = context.IsUninstallMode.Should().BeFalse();
     }
-
-    #endregion
 }
-

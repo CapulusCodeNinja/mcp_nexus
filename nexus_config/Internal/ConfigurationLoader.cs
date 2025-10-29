@@ -48,26 +48,50 @@ internal class ConfigurationLoader : IConfigurationProvider
             ?? throw new InvalidOperationException("Failed to load configuration");
     }
 
+    /// <summary>
+    /// Gets the child keys for the specified section.
+    /// </summary>
+    /// <param name="earlierKeys">The sequence of keys that have already been returned.</param>
+    /// <param name="parentPath">The parent path to the node.</param>
+    /// <returns>An ordered sequence of child keys.</returns>
     public IEnumerable<string> GetChildKeys(IEnumerable<string> earlierKeys, string? parentPath)
     {
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Returns a change token that can be used to observe when this provider is reloaded.
+    /// </summary>
+    /// <returns>An <see cref="IChangeToken"/> that signals when the provider is reloaded.</returns>
     public IChangeToken GetReloadToken()
     {
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Loads the configuration data from the underlying source.
+    /// </summary>
     public void Load()
     {
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Sets a configuration value.
+    /// </summary>
+    /// <param name="key">The configuration key.</param>
+    /// <param name="value">The configuration value to set.</param>
     public void Set(string key, string? value)
     {
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Attempts to retrieve a configuration value by key.
+    /// </summary>
+    /// <param name="key">The configuration key.</param>
+    /// <param name="value">When this method returns, contains the configuration value if found; otherwise, null.</param>
+    /// <returns><c>true</c> if the key was found; otherwise, <c>false</c>.</returns>
     public bool TryGet(string key, out string? value)
     {
         throw new NotImplementedException();

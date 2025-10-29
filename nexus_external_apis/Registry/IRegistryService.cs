@@ -36,4 +36,3 @@ public interface IRegistryService
     /// <returns>True if the key exists, false otherwise.</returns>
     bool KeyExists(RegistryHive hive, string keyPath);
 }
-

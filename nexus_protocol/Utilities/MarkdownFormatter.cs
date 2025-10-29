@@ -133,6 +133,7 @@ internal static class MarkdownFormatter
 
         return md.ToString();
     }
+
     /// <summary>
     /// Creates a header section with title and optional subtitle.
     /// </summary>
@@ -258,8 +259,9 @@ internal static class MarkdownFormatter
             var paddedRow = new string[headers.Length];
             for (var i = 0; i < headers.Length; i++)
             {
-                paddedRow[i] = i < row.Length ? row[i] : "";
+                paddedRow[i] = i < row.Length ? row[i] : string.Empty;
             }
+
             _ = markdown.AppendLine("| " + string.Join(" | ", paddedRow) + " |");
         }
 
@@ -390,11 +392,11 @@ internal static class MarkdownFormatter
             var headers = new[] { "Command ID", "Command", "State", "Success", "Execution Time" };
             var rows = commands.Select(cmd => new string[]
             {
-                GetPropertyValue(cmd, "commandId")?.ToString() ?? "",
-                TruncateString(GetPropertyValue(cmd, "command")?.ToString() ?? "", 50),
-                GetPropertyValue(cmd, "state")?.ToString() ?? "",
+                GetPropertyValue(cmd, "commandId")?.ToString() ?? string.Empty,
+                TruncateString(GetPropertyValue(cmd, "command")?.ToString() ?? string.Empty, 50),
+                GetPropertyValue(cmd, "state")?.ToString() ?? string.Empty,
                 GetPropertyValue(cmd, "isSuccess")?.ToString() ?? "N/A",
-                FormatExecutionTime(GetPropertyValue(cmd, "executionTime"))
+                FormatExecutionTime(GetPropertyValue(cmd, "executionTime")),
             }).ToArray();
 
             _ = markdown.AppendLine(CreateTable(headers, rows));
@@ -461,6 +463,7 @@ internal static class MarkdownFormatter
     /// <summary>
     /// Helper method to get property value from anonymous object.
     /// </summary>
+    /// <returns></returns>
     private static object? GetPropertyValue(object obj, string propertyName)
     {
         var property = obj.GetType().GetProperty(propertyName);
@@ -470,6 +473,7 @@ internal static class MarkdownFormatter
     /// <summary>
     /// Helper method to determine if a key should be code-formatted.
     /// </summary>
+    /// <returns></returns>
     private static bool ShouldCodeFormat(string key)
     {
         return key.Contains("ID") || key.Contains("Command") || key.Contains("Path") || key.Contains("File");
@@ -478,6 +482,7 @@ internal static class MarkdownFormatter
     /// <summary>
     /// Helper method to format execution time.
     /// </summary>
+    /// <returns></returns>
     private static string FormatExecutionTime(object? executionTime)
     {
         return executionTime is TimeSpan ts ? $"{ts}" : "N/A";
@@ -486,6 +491,7 @@ internal static class MarkdownFormatter
     /// <summary>
     /// Helper method to truncate long strings.
     /// </summary>
+    /// <returns></returns>
     private static string TruncateString(string value, int maxLength)
     {
         return string.IsNullOrEmpty(value) || value.Length <= maxLength ? value : value[..(maxLength - 3)] + "...";

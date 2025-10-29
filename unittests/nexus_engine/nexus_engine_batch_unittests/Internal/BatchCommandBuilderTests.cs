@@ -15,7 +15,7 @@ public class BatchCommandBuilderTests
     private readonly BatchCommandBuilder m_Builder;
 
     /// <summary>
-    /// Initializes a new instance of the BatchCommandBuilderTests class.
+    /// Initializes a new instance of the <see cref="BatchCommandBuilderTests"/> class.
     /// </summary>
     public BatchCommandBuilderTests()
     {
@@ -57,7 +57,7 @@ public class BatchCommandBuilderTests
         var command = new Command
         {
             CommandId = "cmd-1",
-            CommandText = "k"
+            CommandText = "k",
         };
 
         var result = m_Builder.BuildBatch("test-session", new List<Command> { command });
@@ -76,7 +76,7 @@ public class BatchCommandBuilderTests
         var commands = new List<Command>
         {
             new Command { CommandId = "cmd-1", CommandText = "k" },
-            new Command { CommandId = "cmd-2", CommandText = "lm" }
+            new Command { CommandId = "cmd-2", CommandText = "lm" },
         };
 
         var result = m_Builder.BuildBatch("test-session", commands);
@@ -93,7 +93,7 @@ public class BatchCommandBuilderTests
         var commands = new List<Command>
         {
             new Command { CommandId = "cmd-1", CommandText = "k" },
-            new Command { CommandId = "cmd-2", CommandText = "lm" }
+            new Command { CommandId = "cmd-2", CommandText = "lm" },
         };
 
         var result = m_Builder.BuildBatch("test-session", commands);
@@ -114,7 +114,7 @@ public class BatchCommandBuilderTests
         {
             new Command { CommandId = "cmd-1", CommandText = "k" },
             new Command { CommandId = "cmd-2", CommandText = "lm" },
-            new Command { CommandId = "cmd-3", CommandText = "!threads" }
+            new Command { CommandId = "cmd-3", CommandText = "!threads" },
         };
 
         var result = m_Builder.BuildBatch("test-session", commands);
@@ -141,7 +141,7 @@ public class BatchCommandBuilderTests
         var commands = new List<Command>
         {
             new Command { CommandId = "cmd-1", CommandText = "k" },
-            new Command { CommandId = "cmd-2", CommandText = "lm" }
+            new Command { CommandId = "cmd-2", CommandText = "lm" },
         };
 
         var result = m_Builder.BuildBatch("test-session", commands);
@@ -158,7 +158,7 @@ public class BatchCommandBuilderTests
         var commands = new List<Command>
         {
             new Command { CommandId = "cmd-1", CommandText = "k" },
-            new Command { CommandId = "cmd-2", CommandText = "lm" }
+            new Command { CommandId = "cmd-2", CommandText = "lm" },
         };
 
         var result = m_Builder.BuildBatch("test-session", commands);
@@ -175,7 +175,7 @@ public class BatchCommandBuilderTests
         var commands = new List<Command>
         {
             new Command { CommandId = "cmd-1", CommandText = "!analyze -v" },
-            new Command { CommandId = "cmd-2", CommandText = "!heap -p -a" }
+            new Command { CommandId = "cmd-2", CommandText = "!heap -p -a" },
         };
 
         var result = m_Builder.BuildBatch("test-session", commands);
@@ -195,7 +195,7 @@ public class BatchCommandBuilderTests
         {
             new Command { CommandId = "cmd-1", CommandText = "k" },
             new Command { CommandId = "cmd-2", CommandText = "lm" },
-            new Command { CommandId = "cmd-3", CommandText = "!threads" }
+            new Command { CommandId = "cmd-3", CommandText = "!threads" },
         };
 
         var result = m_Builder.BuildBatch("test-session", commands);
@@ -206,4 +206,3 @@ public class BatchCommandBuilderTests
         _ = result.CommandText.Should().Contain("MCP_NEXUS_COMMAND_SEPARATOR_cmd-3");
     }
 }
-

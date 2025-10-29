@@ -37,13 +37,13 @@ public class HttpServerConfiguration
     public int MaxRequestHeadersTotalSize { get; set; } = 32768;
 
     /// <summary>
-    /// Gets or sets whether CORS is enabled.
+    /// Gets or sets a value indicating whether gets or sets whether CORS is enabled.
     /// Default is true for MCP clients.
     /// </summary>
     public bool EnableCors { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets whether rate limiting is enabled.
+    /// Gets or sets a value indicating whether gets or sets whether rate limiting is enabled.
     /// Default is true to prevent abuse.
     /// </summary>
     public bool EnableRateLimit { get; set; } = true;
@@ -80,4 +80,3 @@ public class HttpServerConfiguration
         }
     }
 }
-

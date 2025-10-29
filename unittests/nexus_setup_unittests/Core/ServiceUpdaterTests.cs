@@ -30,7 +30,6 @@ public class ServiceUpdaterTests
         m_ServiceControllerMock = new Mock<IServiceController>();
     }
 
-    #region Constructor Tests
 
     /// <summary>
     /// Verifies that parameterless constructor creates updater successfully.
@@ -58,13 +57,12 @@ public class ServiceUpdaterTests
         _ = updater.Should().NotBeNull();
     }
 
-    #endregion
 
-    #region UpdateServiceAsync Tests
 
     /// <summary>
     /// Verifies that UpdateServiceAsync throws ArgumentException when service name is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task UpdateServiceAsync_WithEmptyServiceName_ThrowsArgumentException()
     {
@@ -72,12 +70,13 @@ public class ServiceUpdaterTests
         var updater = new ServiceUpdater(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act & Assert
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.UpdateServiceAsync("", "C:\\new.exe"));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.UpdateServiceAsync(string.Empty, "C:\\new.exe"));
     }
 
     /// <summary>
     /// Verifies that UpdateServiceAsync throws ArgumentException when executable path is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task UpdateServiceAsync_WithEmptyExecutablePath_ThrowsArgumentException()
     {
@@ -85,12 +84,13 @@ public class ServiceUpdaterTests
         var updater = new ServiceUpdater(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act & Assert
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.UpdateServiceAsync("TestService", ""));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.UpdateServiceAsync("TestService", string.Empty));
     }
 
     /// <summary>
     /// Verifies that UpdateServiceAsync returns failure when new executable file not found.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task UpdateServiceAsync_WhenNewExecutableNotFound_ReturnsFailure()
     {
@@ -112,6 +112,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that UpdateServiceAsync returns failure when service is not installed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task UpdateServiceAsync_WhenServiceNotInstalled_ReturnsFailure()
     {
@@ -134,6 +135,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that UpdateServiceAsync returns failure when current path cannot be determined.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task UpdateServiceAsync_WhenCurrentPathUndetermined_ReturnsFailure()
     {
@@ -154,13 +156,12 @@ public class ServiceUpdaterTests
         _ = result.Message.Should().Contain("current executable path");
     }
 
-    #endregion
 
-    #region BackupServiceAsync Tests
 
     /// <summary>
     /// Verifies that BackupServiceAsync throws ArgumentException when service name is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task BackupServiceAsync_WithEmptyServiceName_ThrowsArgumentException()
     {
@@ -168,12 +169,13 @@ public class ServiceUpdaterTests
         var updater = new ServiceUpdater(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act & Assert
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.BackupServiceAsync("", "C:\\backup"));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.BackupServiceAsync(string.Empty, "C:\\backup"));
     }
 
     /// <summary>
     /// Verifies that BackupServiceAsync throws ArgumentException when backup path is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task BackupServiceAsync_WithEmptyBackupPath_ThrowsArgumentException()
     {
@@ -181,12 +183,13 @@ public class ServiceUpdaterTests
         var updater = new ServiceUpdater(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act & Assert
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.BackupServiceAsync("TestService", ""));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.BackupServiceAsync("TestService", string.Empty));
     }
 
     /// <summary>
     /// Verifies that BackupServiceAsync returns false when executable path cannot be determined.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task BackupServiceAsync_WhenExecutablePathUndetermined_ReturnsFalse()
     {
@@ -204,13 +207,12 @@ public class ServiceUpdaterTests
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region RestoreServiceAsync Tests
 
     /// <summary>
     /// Verifies that RestoreServiceAsync throws ArgumentException when service name is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task RestoreServiceAsync_WithEmptyServiceName_ThrowsArgumentException()
     {
@@ -218,12 +220,13 @@ public class ServiceUpdaterTests
         var updater = new ServiceUpdater(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act & Assert
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.RestoreServiceAsync("", "C:\\backup"));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.RestoreServiceAsync(string.Empty, "C:\\backup"));
     }
 
     /// <summary>
     /// Verifies that RestoreServiceAsync throws ArgumentException when backup path is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task RestoreServiceAsync_WithEmptyBackupPath_ThrowsArgumentException()
     {
@@ -231,12 +234,13 @@ public class ServiceUpdaterTests
         var updater = new ServiceUpdater(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act & Assert
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.RestoreServiceAsync("TestService", ""));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => updater.RestoreServiceAsync("TestService", string.Empty));
     }
 
     /// <summary>
     /// Verifies that RestoreServiceAsync returns failure when backup directory not found.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task RestoreServiceAsync_WhenBackupDirectoryNotFound_ReturnsFailure()
     {
@@ -258,6 +262,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that RestoreServiceAsync returns failure when executable path cannot be determined.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task RestoreServiceAsync_WhenExecutablePathUndetermined_ReturnsFailure()
     {
@@ -276,7 +281,4 @@ public class ServiceUpdaterTests
         _ = result.Success.Should().BeFalse();
         _ = result.Message.Should().Contain("current executable path");
     }
-
-    #endregion
 }
-

@@ -19,7 +19,7 @@ public class McpToolDefinitionServiceTests
     private readonly McpToolDefinitionService m_Service;
 
     /// <summary>
-    /// Initializes a new instance of the McpToolDefinitionServiceTests class.
+    /// Initializes a new instance of the <see cref="McpToolDefinitionServiceTests"/> class.
     /// </summary>
     public McpToolDefinitionServiceTests()
     {
@@ -131,6 +131,7 @@ public class McpToolDefinitionServiceTests
     /// <summary>
     /// Verifies that NotifyToolsChangedAsync calls notification service.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task NotifyToolsChangedAsync_CallsNotificationService()
     {

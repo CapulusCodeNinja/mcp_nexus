@@ -17,7 +17,6 @@ namespace Nexus.Setup.Validation
         protected readonly IFileSystem m_FileSystem;
         protected readonly IServiceController m_ServiceController;
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseValidator"/> class.
         /// </summary>
@@ -44,6 +43,7 @@ namespace Nexus.Setup.Validation
                 m_Logger.Error("Please run this command as Administrator (Run as Administrator)");
                 return false;
             }
+
             return true;
         }
 
@@ -130,6 +130,7 @@ namespace Nexus.Setup.Validation
             catch (Exception ex)
             {
                 m_Logger.Warn(ex, "Failed to parse directory path: {DirectoryPath}", directoryPath);
+
                 // Fallback to immediate parent
                 return Path.GetDirectoryName(directoryPath) ?? string.Empty;
             }

@@ -59,4 +59,3 @@ internal class McpCommandHeartbeatNotification
     [JsonPropertyName("timestamp")]
     public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
 }
-

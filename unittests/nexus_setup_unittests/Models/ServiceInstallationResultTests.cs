@@ -57,4 +57,3 @@ public class ServiceInstallationResultTests
         Assert.Null(result.ErrorDetails);
     }
 }
-

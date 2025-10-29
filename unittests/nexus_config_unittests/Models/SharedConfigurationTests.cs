@@ -128,7 +128,7 @@ public class SharedConfigurationTests
             Enabled = false,
             ExtensionsPath = "custom_extensions",
             CallbackPort = 8080,
-            GracefulTerminationTimeoutMs = 5000
+            GracefulTerminationTimeoutMs = 5000,
         };
 
         // Assert
@@ -152,7 +152,7 @@ public class SharedConfigurationTests
             MaxBatchSize = 10,
             BatchWaitTimeoutMs = 5000,
             BatchTimeoutMultiplier = 2.0,
-            MaxBatchTimeoutMinutes = 60
+            MaxBatchTimeoutMinutes = 60,
         };
         settings.ExcludedCommands.Add("!analyze");
         settings.ExcludedCommands.Add("!dump");
@@ -297,7 +297,7 @@ public class SharedConfigurationTests
         {
             Endpoint = "/api/*",
             Period = "1s",
-            Limit = 10
+            Limit = 10,
         };
 
         // Assert
@@ -315,7 +315,7 @@ public class SharedConfigurationTests
         // Act
         var settings = new LoggingSettings
         {
-            LogLevel = "Debug"
+            LogLevel = "Debug",
         };
 
         // Assert
@@ -332,7 +332,7 @@ public class SharedConfigurationTests
         var settings = new ServerSettings
         {
             Host = "localhost",
-            Port = 8080
+            Port = 8080,
         };
 
         // Assert
@@ -350,7 +350,7 @@ public class SharedConfigurationTests
         var settings = new TransportSettings
         {
             Mode = "stdio",
-            ServiceMode = false
+            ServiceMode = false,
         };
 
         // Assert
@@ -372,7 +372,7 @@ public class SharedConfigurationTests
             IdleTimeoutMs = 150000,
             SymbolServerMaxRetries = 3,
             StartupDelayMs = 1000,
-            EnableCommandPreprocessing = false
+            EnableCommandPreprocessing = false,
         };
 
         // Assert
@@ -398,7 +398,7 @@ public class SharedConfigurationTests
             CleanupIntervalSeconds = 10,
             DisposalTimeoutSeconds = 60,
             DefaultCommandTimeoutMinutes = 20,
-            MemoryCleanupThresholdMB = 2048
+            MemoryCleanupThresholdMB = 2048,
         };
 
         // Assert
@@ -424,7 +424,7 @@ public class SharedConfigurationTests
             MaxCommandTimeoutMinutes = 120,
             HealthCheckIntervalSeconds = 60,
             MaxRecoveryAttempts = 5,
-            RecoveryDelaySeconds = 10
+            RecoveryDelaySeconds = 10,
         };
 
         // Assert
@@ -448,7 +448,7 @@ public class SharedConfigurationTests
             EnableEndpointRateLimiting = false,
             StackBlockedRequests = true,
             RealIpHeader = "X-Forwarded-For",
-            ClientIdHeader = "X-Client"
+            ClientIdHeader = "X-Client",
         };
         settings.GeneralRules.Add(new RateLimitRule { Endpoint = "*", Period = "1m", Limit = 100 });
 

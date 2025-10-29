@@ -36,10 +36,10 @@ namespace Nexus.Setup
         /// <summary>
         /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
         /// </summary>
-        private ProductInstallation() : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
+        private ProductInstallation()
+            : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
         {
         }
-
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
@@ -47,7 +47,8 @@ namespace Nexus.Setup
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="processManager">Process manager abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        internal ProductInstallation(IFileSystem fileSystem,
+        internal ProductInstallation(
+            IFileSystem fileSystem,
             IProcessManager processManager,
             IServiceController serviceController)
         {
@@ -134,7 +135,7 @@ namespace Nexus.Setup
                     Description = "Model Context Protocol server for Windows debugging tools",
                     ExecutablePath = installedExecutablePath,
                     StartMode = startMode,
-                    Account = ServiceAccount.LocalSystem
+                    Account = ServiceAccount.LocalSystem,
                 };
 
                 var result = await m_Installer.InstallServiceAsync(options);
@@ -159,6 +160,7 @@ namespace Nexus.Setup
                     {
                         m_Logger.Error("Details: {ErrorDetails}", result.ErrorDetails);
                     }
+
                     return false;
                 }
             }
@@ -204,6 +206,7 @@ namespace Nexus.Setup
                 {
                     m_Logger.Error("Details: {ErrorDetails}", result.ErrorDetails);
                 }
+
                 return false;
             }
         }
@@ -238,6 +241,7 @@ namespace Nexus.Setup
                 {
                     return true; // Not an error - service is already uninstalled
                 }
+
                 return false;
             }
 
@@ -288,6 +292,7 @@ namespace Nexus.Setup
                     {
                         m_Logger.Error("Details: {ErrorDetails}", uninstallResult.ErrorDetails);
                     }
+
                     return false;
                 }
 

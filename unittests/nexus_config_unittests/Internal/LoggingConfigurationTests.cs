@@ -101,7 +101,6 @@ public class LoggingConfigurationTests
         _ = action.Should().NotThrow();
     }
 
-
     /// <summary>
     /// Tests that ConfigureLogPaths handles service mode correctly.
     /// </summary>

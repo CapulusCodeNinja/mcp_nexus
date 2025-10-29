@@ -20,7 +20,8 @@ namespace Nexus.Setup.Management
         /// <summary>
         /// Initializes a new instance of the <see cref="BackupManager"/> class.
         /// </summary>
-        public BackupManager() : this(new FileSystem())
+        public BackupManager()
+            : this(new FileSystem())
         {
         }
 
@@ -125,6 +126,5 @@ namespace Nexus.Setup.Management
                 m_Logger.Error(ex, "Failed to rollback installation");
             }
         }
-
     }
 }

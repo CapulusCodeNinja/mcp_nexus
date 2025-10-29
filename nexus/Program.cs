@@ -46,7 +46,6 @@ internal static class Program
         }
     }
 
-
     /// <summary>
     /// Creates and configures a host builder for the application.
     /// </summary>

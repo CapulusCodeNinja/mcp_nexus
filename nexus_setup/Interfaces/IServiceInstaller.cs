@@ -70,4 +70,3 @@ internal interface IServiceInstaller
     /// <returns>True if the copy succeeded; otherwise, false.</returns>
     Task<bool> CopyApplicationFilesAsync(string sourceDirectory, string targetDirectory, CancellationToken cancellationToken = default);
 }
-

@@ -148,6 +148,7 @@ internal partial class PathHandler
                     {
                         windowsPath = root;
                     }
+
                     return true;
                 }
             }

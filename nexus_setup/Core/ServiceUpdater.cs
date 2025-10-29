@@ -11,6 +11,7 @@ using Nexus.Setup.Utilities;
 using NLog;
 
 namespace Nexus.Setup.Core;
+
 /// <summary>
 /// Implements Windows service update functionality.
 /// </summary>
@@ -26,7 +27,8 @@ internal class ServiceUpdater
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceUpdater"/> class.
     /// </summary>
-    public ServiceUpdater() : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
+    public ServiceUpdater()
+        : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
     {
     }
 
@@ -254,6 +256,4 @@ internal class ServiceUpdater
             return ServiceInstallationResult.CreateFailure(serviceName, "Exception during restore", ex.Message);
         }
     }
-
 }
-

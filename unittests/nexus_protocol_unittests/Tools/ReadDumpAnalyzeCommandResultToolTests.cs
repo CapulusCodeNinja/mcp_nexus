@@ -43,5 +43,3 @@ public class ReadDumpAnalyzeCommandResultToolTests
         _ = result.Should().Be(output);
     }
 }
-
-

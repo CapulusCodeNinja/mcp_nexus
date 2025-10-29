@@ -39,7 +39,6 @@ public class ManagerTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    #region Constructor Tests
 
     /// <summary>
     /// Verifies that constructor throws ArgumentNullException when fileSystem is null.
@@ -67,9 +66,7 @@ public class ManagerTests : IDisposable
         m_FileSystemMock.Verify(fs => fs.CreateDirectory(It.IsAny<string>()), Times.AtLeastOnce);
     }
 
-    #endregion
 
-    #region GetExtension Tests
 
     /// <summary>
     /// Verifies that GetExtension returns null for null extension name.
@@ -135,9 +132,7 @@ public class ManagerTests : IDisposable
         _ = result.Should().BeNull();
     }
 
-    #endregion
 
-    #region GetAllExtensions Tests
 
     /// <summary>
     /// Verifies that GetAllExtensions returns empty collection when no extensions loaded.
@@ -156,9 +151,7 @@ public class ManagerTests : IDisposable
         _ = result.Should().BeEmpty();
     }
 
-    #endregion
 
-    #region ExtensionExists Tests
 
     /// <summary>
     /// Verifies that ExtensionExists returns false for null extension name.
@@ -224,9 +217,7 @@ public class ManagerTests : IDisposable
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region ValidateExtension Tests
 
     /// <summary>
     /// Verifies that ValidateExtension returns invalid for unknown extension.
@@ -262,9 +253,7 @@ public class ManagerTests : IDisposable
         _ = errorMessage.Should().NotBeNullOrEmpty();
     }
 
-    #endregion
 
-    #region GetExtensionsVersion Tests
 
     /// <summary>
     /// Verifies that GetExtensionsVersion returns non-negative value.
@@ -282,9 +271,7 @@ public class ManagerTests : IDisposable
         _ = version.Should().BeGreaterThanOrEqualTo(0);
     }
 
-    #endregion
 
-    #region Dispose Tests
 
     /// <summary>
     /// Verifies that Dispose can be called multiple times without throwing.
@@ -316,7 +303,4 @@ public class ManagerTests : IDisposable
         _ = m_Manager.ExtensionExists("test");
         _ = m_Manager.GetExtensionsVersion();
     }
-
-    #endregion
 }
-

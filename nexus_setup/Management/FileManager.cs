@@ -20,9 +20,9 @@ namespace Nexus.Setup.Management
         /// <summary>
         /// Initializes a new instance of the <see cref="FileManager"/> class.
         /// </summary>
-        public FileManager() : this(new FileSystem())
+        public FileManager()
+            : this(new FileSystem())
         {
-
         }
 
         /// <summary>
@@ -49,7 +49,8 @@ namespace Nexus.Setup.Management
         {
             try
             {
-                m_Logger.Info("Copying application files from {SourceDirectory} to {DestinationDirectory}",
+                m_Logger.Info(
+                    "Copying application files from {SourceDirectory} to {DestinationDirectory}",
                     sourceDirectory, destinationDirectory);
 
                 // Create destination directory if it doesn't exist
@@ -94,6 +95,5 @@ namespace Nexus.Setup.Management
                 return false;
             }
         }
-
     }
 }

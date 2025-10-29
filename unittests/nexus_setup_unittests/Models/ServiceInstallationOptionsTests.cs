@@ -46,7 +46,7 @@ public class ServiceInstallationOptionsTests
             StartMode = ServiceStartMode.Manual,
             Account = ServiceAccount.Custom,
             AccountUsername = "TestUser",
-            AccountPassword = "TestPassword"
+            AccountPassword = "TestPassword",
         };
 
         // Assert
@@ -60,4 +60,3 @@ public class ServiceInstallationOptionsTests
         Assert.Equal("TestPassword", options.AccountPassword);
     }
 }
-

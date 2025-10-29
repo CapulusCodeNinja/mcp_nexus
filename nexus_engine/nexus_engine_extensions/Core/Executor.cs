@@ -32,7 +32,8 @@ internal class Executor
     /// </summary>
     /// <param name="manager">The extension manager.</param>
     /// <param name="tokenValidator">The token validator.</param>
-    public Executor(Manager manager, TokenValidator tokenValidator) : this(
+    public Executor(Manager manager, TokenValidator tokenValidator)
+        : this(
         manager,
         tokenValidator,
         new ProcessManager())
@@ -62,6 +63,7 @@ internal class Executor
         {
             callbackPort = config.McpNexus.Server.Port;
         }
+
         m_CallbackUrl = $"http://127.0.0.1:{callbackPort}/extension-callback";
     }
 
@@ -85,7 +87,8 @@ internal class Executor
         Action<int>? onProcessStarted = null,
         CancellationToken cancellationToken = default)
     {
-        m_Logger.Info("Executing extension {ExtensionName} with command ID {CommandId} in session {SessionId}",
+        m_Logger.Info(
+            "Executing extension {ExtensionName} with command ID {CommandId} in session {SessionId}",
             extensionName, commandId, sessionId);
 
         var startTime = DateTime.Now;
@@ -158,6 +161,7 @@ internal class Executor
     /// <summary>
     /// Starts the PowerShell process for the extension script and returns the running process.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     private Task<Process?> StartProcessAsync(
         ExtensionMetadata metadata,
         object? parameters,
@@ -213,7 +217,7 @@ internal class Executor
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                CreateNoWindow = true
+                CreateNoWindow = true,
             };
 
             if (!string.IsNullOrEmpty(workingDirectory))
@@ -228,9 +232,11 @@ internal class Executor
             }
             else
             {
-                m_Logger.Debug("Successfully started extensions script {ProcessId} for extension {ExtensionName}",
+                m_Logger.Debug(
+                    "Successfully started extensions script {ProcessId} for extension {ExtensionName}",
                     process.Id, metadata.Name);
             }
+
             return Task.FromResult<Process?>(process);
         }
         catch (Exception ex)
@@ -243,6 +249,7 @@ internal class Executor
     /// <summary>
     /// Attaches output/error handlers to the running process and waits for completion.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     private async Task<CommandInfo> MonitorScriptAsync(
         Process process,
         string sessionId,
@@ -284,7 +291,8 @@ internal class Executor
             process.ErrorDataReceived += errHandler;
 
             // Process was already started; attach readers now
-            m_Logger.Debug("Monitoring PowerShell process for extension {ExtensionName}, PID: {ProcessId}",
+            m_Logger.Debug(
+                "Monitoring PowerShell process for extension {ExtensionName}, PID: {ProcessId}",
                 metadata.Name, process.Id);
 
             process.BeginOutputReadLine();
@@ -292,13 +300,15 @@ internal class Executor
 
             // Wait for completion with timeout
             var timeoutMs = metadata.TimeoutMs;
-            m_Logger.Debug("Waiting for extensions script process completion for extension {ExtensionName}, timeout: {TimeoutMs}ms",
+            m_Logger.Debug(
+                "Waiting for extensions script process completion for extension {ExtensionName}, timeout: {TimeoutMs}ms",
                 metadata.Name, timeoutMs);
             var completed = await m_ProcessManager.WaitForProcessExitAsync(process, timeoutMs, cancellationToken);
 
             if (!completed)
             {
-                m_Logger.Warn("Extension {ExtensionName} exceeded timeout of {TimeoutMs}ms - terminating process",
+                m_Logger.Warn(
+                    "Extension {ExtensionName} exceeded timeout of {TimeoutMs}ms - terminating process",
                     metadata.Name, timeoutMs);
 
                 EndScriptExecution(process, metadata);
@@ -319,7 +329,8 @@ internal class Executor
             var executionTime = (long)(endTime - startTime).TotalMilliseconds;
             var success = process.ExitCode == 0;
 
-            m_Logger.Info("Extension {ExtensionName} completed with exit code {ExitCode} in {ExecutionTime}ms",
+            m_Logger.Info(
+                "Extension {ExtensionName} completed with exit code {ExitCode} in {ExecutionTime}ms",
                 metadata.Name, process.ExitCode, executionTime);
 
             return CommandInfo.Completed(
@@ -335,7 +346,8 @@ internal class Executor
         }
         catch (OperationCanceledException)
         {
-            m_Logger.Info("Extension {ExtensionName} was cancelled",
+            m_Logger.Info(
+                "Extension {ExtensionName} was cancelled",
                 metadata.Name);
 
             EndScriptExecution(process, metadata, true);
@@ -370,10 +382,34 @@ internal class Executor
             try
             {
                 // Detach handlers and dispose process
-                try { process.CancelOutputRead(); } catch { }
-                try { process.CancelErrorRead(); } catch { }
-                try { process.OutputDataReceived -= outHandler; } catch { }
-                try { process.ErrorDataReceived -= errHandler; } catch { }
+                try
+                {
+                    process.CancelOutputRead();
+                }
+                catch
+                {
+                }
+                try
+                {
+                    process.CancelErrorRead();
+                }
+                catch
+                {
+                }
+                try
+                {
+                    process.OutputDataReceived -= outHandler;
+                }
+                catch
+                {
+                }
+                try
+                {
+                    process.ErrorDataReceived -= errHandler;
+                }
+                catch
+                {
+                }
             }
             catch
             {
@@ -381,7 +417,13 @@ internal class Executor
             }
             finally
             {
-                try { process.Dispose(); } catch { }
+                try
+                {
+                    process.Dispose();
+                }
+                catch
+                {
+                }
             }
         }
     }
@@ -389,9 +431,9 @@ internal class Executor
     /// <summary>
     /// Ends the script execution by killing the process if it is not already exited.
     /// </summary>
-    /// <param name="process">The process to end</param>
-    /// <param name="metadata">The metadata of the extension</param>
-    /// <param name="force">Whether to force the process to exit</param>
+    /// <param name="process">The process to end.</param>
+    /// <param name="metadata">The metadata of the extension.</param>
+    /// <param name="force">Whether to force the process to exit.</param>
     private void EndScriptExecution(Process process, ExtensionMetadata metadata, bool force = false)
     {
         if (process.HasExited)

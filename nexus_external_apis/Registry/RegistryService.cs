@@ -40,7 +40,7 @@ public class RegistryService : IRegistryService
         return value switch
         {
             int intValue => intValue,
-            _ => null
+            _ => null,
         };
     }
 
@@ -57,4 +57,3 @@ public class RegistryService : IRegistryService
         return key != null;
     }
 }
-

@@ -18,6 +18,5 @@ public enum ServiceStartMode
     /// <summary>
     /// Service is disabled and cannot be started.
     /// </summary>
-    Disabled
+    Disabled,
 }
-

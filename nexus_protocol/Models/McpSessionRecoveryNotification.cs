@@ -21,7 +21,7 @@ internal class McpSessionRecoveryNotification
     public string RecoveryStep { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets whether the recovery was successful.
+    /// Gets or sets a value indicating whether gets or sets whether the recovery was successful.
     /// </summary>
     [JsonPropertyName("success")]
     public bool Success
@@ -50,4 +50,3 @@ internal class McpSessionRecoveryNotification
         get; set;
     }
 }
-

@@ -27,4 +27,3 @@ public interface IMcpToolDefinitionService
     /// <returns>A task representing the asynchronous operation.</returns>
     Task NotifyToolsChangedAsync();
 }
-

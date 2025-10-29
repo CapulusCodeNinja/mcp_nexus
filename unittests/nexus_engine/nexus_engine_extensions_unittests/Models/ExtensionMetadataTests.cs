@@ -138,4 +138,3 @@ public class ExtensionMetadataTests
         _ = metadata.OptionalParameters[0].Name.Should().Be("OptionalParam");
     }
 }
-

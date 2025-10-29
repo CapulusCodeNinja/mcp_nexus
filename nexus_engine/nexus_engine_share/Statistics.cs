@@ -15,22 +15,23 @@ public static class Statistics
     /// Static lookup array for command state sort order.
     /// Indexed by CommandState enum value for O(1) access.
     /// </summary>
-    private static readonly int[] m_StatusSortOrder;
+    private static readonly int[] M_StatusSortOrder;
 
     /// <summary>
+    /// Initializes static members of the <see cref="Statistics"/> class.
     /// Static constructor to initialize the status sort order array.
     /// </summary>
     static Statistics()
     {
         // Initialize sort order array based on CommandState enum - dynamic sizing
         var maxEnumValue = (int)Enum.GetValues(typeof(CommandState)).Cast<CommandState>().Max();
-        m_StatusSortOrder = new int[maxEnumValue + 1];
-        m_StatusSortOrder[(int)CommandState.Completed] = 1;
-        m_StatusSortOrder[(int)CommandState.Failed] = 2;
-        m_StatusSortOrder[(int)CommandState.Cancelled] = 3;
-        m_StatusSortOrder[(int)CommandState.Timeout] = 4;
-        m_StatusSortOrder[(int)CommandState.Queued] = 5;
-        m_StatusSortOrder[(int)CommandState.Executing] = 6;
+        M_StatusSortOrder = new int[maxEnumValue + 1];
+        M_StatusSortOrder[(int)CommandState.Completed] = 1;
+        M_StatusSortOrder[(int)CommandState.Failed] = 2;
+        M_StatusSortOrder[(int)CommandState.Cancelled] = 3;
+        M_StatusSortOrder[(int)CommandState.Timeout] = 4;
+        M_StatusSortOrder[(int)CommandState.Queued] = 5;
+        M_StatusSortOrder[(int)CommandState.Executing] = 6;
     }
 
     /// <summary>
@@ -106,7 +107,7 @@ public static class Statistics
     /// <param name="sessionId">The session identifier.</param>
     /// <param name="openedAt">When the session was opened (local time).</param>
     /// <param name="closedAt">When the session was closed (local time).</param>
-    /// <param name="totalDuration">Total session duration</param>
+    /// <param name="totalDuration">Total session duration.</param>
     /// <param name="totalCommands">Total number of commands executed in the session.</param>
     /// <param name="completedCommands">Number of successfully completed commands.</param>
     /// <param name="failedCommands">Number of failed commands.</param>
@@ -141,6 +142,7 @@ public static class Statistics
         {
             _ = sb.AppendLine($"    ║ CloseReason: {closeReason}");
         }
+
         _ = sb.AppendLine("    ║ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
         _ = sb.AppendLine($"    ║ TotalCommands: {totalCommands}");
         _ = sb.AppendLine($"    ║ CompletedCommands: {completedCommands}");
@@ -158,7 +160,7 @@ public static class Statistics
             _ = sb.AppendLine("    ║ -----------|----------------------------|-----------|----|--------------------|--------------------|--------------------|");
 
             // Sort commands by status using static array: Completed, Failed, Cancelled, Timeout, Queued, Executing
-            var sortedCommands = commands.OrderBy(c => m_StatusSortOrder[(int)c.State]).ThenBy(c => c.CommandNumber);
+            var sortedCommands = commands.OrderBy(c => M_StatusSortOrder[(int)c.State]).ThenBy(c => c.CommandNumber);
 
             foreach (var cmd in sortedCommands)
             {
@@ -205,6 +207,7 @@ public static class Statistics
                             list = new List<CommandInfo>();
                             batchedGroups[bId!] = list;
                         }
+
                         list.Add(cmd);
                     }
                     else
@@ -231,6 +234,7 @@ public static class Statistics
                 {
                     return null;
                 }
+
                 var ordered = values.OrderBy(v => v).ToList();
                 var idx = (int)Math.Ceiling(p * ordered.Count) - 1;
                 if (idx < 0)
@@ -270,6 +274,7 @@ public static class Statistics
                         batchWallTimes.Add(rep.ExecutionTime!.Value);
                     }
                 }
+
                 var singleExec = singleCommands.Select(c => c.ExecutionTime).Where(t => t.HasValue).Select(t => t!.Value).ToList();
                 var bE50 = Pctl(batchWallTimes, 0.50);
                 var bE95 = Pctl(batchWallTimes, 0.95);
@@ -284,7 +289,7 @@ public static class Statistics
                     {
                         BatchId = g.Key,
                         Size = g.Value.Count,
-                        Wall = g.Value.FirstOrDefault(c => c.ExecutionTime.HasValue)?.ExecutionTime ?? TimeSpan.Zero
+                        Wall = g.Value.FirstOrDefault(c => c.ExecutionTime.HasValue)?.ExecutionTime ?? TimeSpan.Zero,
                     })
                     .OrderByDescending(x => x.Wall)
                     .Take(3)
@@ -306,4 +311,3 @@ public static class Statistics
         logger.Info(sb.ToString());
     }
 }
-

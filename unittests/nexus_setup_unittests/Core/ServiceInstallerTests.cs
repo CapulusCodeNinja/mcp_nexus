@@ -33,7 +33,6 @@ public class ServiceInstallerTests
         m_ServiceControllerMock = new Mock<IServiceController>();
     }
 
-    #region Constructor Tests
 
     /// <summary>
     /// Verifies that parameterless constructor creates installer successfully.
@@ -61,13 +60,12 @@ public class ServiceInstallerTests
         _ = installer.Should().NotBeNull();
     }
 
-    #endregion
 
-    #region InstallServiceAsync Tests
 
     /// <summary>
     /// Verifies that InstallServiceAsync throws ArgumentNullException when options is null.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InstallServiceAsync_WithNullOptions_ThrowsArgumentNullException()
     {
@@ -81,12 +79,13 @@ public class ServiceInstallerTests
     /// <summary>
     /// Verifies that InstallServiceAsync throws ArgumentException when service name is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InstallServiceAsync_WithEmptyServiceName_ThrowsArgumentException()
     {
         // Arrange
         var installer = new ServiceInstaller(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
-        var options = new ServiceInstallationOptions { ServiceName = "" };
+        var options = new ServiceInstallationOptions { ServiceName = string.Empty };
 
         // Act & Assert
         _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.InstallServiceAsync(options));
@@ -95,12 +94,13 @@ public class ServiceInstallerTests
     /// <summary>
     /// Verifies that InstallServiceAsync throws ArgumentException when executable path is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InstallServiceAsync_WithEmptyExecutablePath_ThrowsArgumentException()
     {
         // Arrange
         var installer = new ServiceInstaller(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
-        var options = new ServiceInstallationOptions { ServiceName = "TestService", ExecutablePath = "" };
+        var options = new ServiceInstallationOptions { ServiceName = "TestService", ExecutablePath = string.Empty };
 
         // Act & Assert
         _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.InstallServiceAsync(options));
@@ -109,6 +109,7 @@ public class ServiceInstallerTests
     /// <summary>
     /// Verifies that InstallServiceAsync returns failure when executable file not found.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InstallServiceAsync_WhenExecutableNotFound_ReturnsFailure()
     {
@@ -117,7 +118,7 @@ public class ServiceInstallerTests
         var options = new ServiceInstallationOptions
         {
             ServiceName = "TestService",
-            ExecutablePath = "C:\\nonexistent\\test.exe"
+            ExecutablePath = "C:\\nonexistent\\test.exe",
         };
 
         _ = m_FileSystemMock.Setup(fs => fs.FileExists(options.ExecutablePath)).Returns(false);
@@ -133,6 +134,7 @@ public class ServiceInstallerTests
     /// <summary>
     /// Verifies that InstallServiceAsync returns failure when service is already installed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InstallServiceAsync_WhenServiceAlreadyInstalled_ReturnsFailure()
     {
@@ -141,7 +143,7 @@ public class ServiceInstallerTests
         var options = new ServiceInstallationOptions
         {
             ServiceName = "TestService",
-            ExecutablePath = "C:\\test\\test.exe"
+            ExecutablePath = "C:\\test\\test.exe",
         };
 
         _ = m_FileSystemMock.Setup(fs => fs.FileExists(options.ExecutablePath)).Returns(true);
@@ -155,13 +157,12 @@ public class ServiceInstallerTests
         _ = result.Message.Should().Contain("already installed");
     }
 
-    #endregion
 
-    #region UninstallServiceAsync Tests
 
     /// <summary>
     /// Verifies that UninstallServiceAsync throws ArgumentException when service name is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task UninstallServiceAsync_WithEmptyServiceName_ThrowsArgumentException()
     {
@@ -169,12 +170,13 @@ public class ServiceInstallerTests
         var installer = new ServiceInstaller(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act & Assert
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.UninstallServiceAsync(""));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.UninstallServiceAsync(string.Empty));
     }
 
     /// <summary>
     /// Verifies that UninstallServiceAsync returns failure when service is not installed.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task UninstallServiceAsync_WhenServiceNotInstalled_ReturnsFailure()
     {
@@ -192,9 +194,7 @@ public class ServiceInstallerTests
         _ = result.Message.Should().Contain("not installed");
     }
 
-    #endregion
 
-    #region IsServiceInstalled Tests
 
     /// <summary>
     /// Verifies that IsServiceInstalled returns false for null service name.
@@ -222,7 +222,7 @@ public class ServiceInstallerTests
         var installer = new ServiceInstaller(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act
-        var result = installer.IsServiceInstalled("");
+        var result = installer.IsServiceInstalled(string.Empty);
 
         // Assert
         _ = result.Should().BeFalse();
@@ -248,9 +248,7 @@ public class ServiceInstallerTests
         m_ServiceControllerMock.Verify(sc => sc.IsServiceInstalled(serviceName), Times.Once);
     }
 
-    #endregion
 
-    #region GetServiceStatus Tests
 
     /// <summary>
     /// Verifies that GetServiceStatus returns null for null service name.
@@ -278,7 +276,7 @@ public class ServiceInstallerTests
         var installer = new ServiceInstaller(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act
-        var result = installer.GetServiceStatus("");
+        var result = installer.GetServiceStatus(string.Empty);
 
         // Assert
         _ = result.Should().BeNull();
@@ -305,13 +303,12 @@ public class ServiceInstallerTests
         m_ServiceControllerMock.Verify(sc => sc.GetServiceStatus(serviceName), Times.Once);
     }
 
-    #endregion
 
-    #region WaitForServiceStatusAsync Tests
 
     /// <summary>
     /// Verifies that WaitForServiceStatusAsync throws ArgumentException when service name is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task WaitForServiceStatusAsync_WithEmptyServiceName_ThrowsArgumentException()
     {
@@ -320,12 +317,13 @@ public class ServiceInstallerTests
 
         // Act & Assert
         _ = await Assert.ThrowsAsync<ArgumentException>(() =>
-            installer.WaitForServiceStatusAsync("", "Running", TimeSpan.FromSeconds(1)));
+            installer.WaitForServiceStatusAsync(string.Empty, "Running", TimeSpan.FromSeconds(1)));
     }
 
     /// <summary>
     /// Verifies that WaitForServiceStatusAsync throws ArgumentException when target status is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task WaitForServiceStatusAsync_WithEmptyTargetStatus_ThrowsArgumentException()
     {
@@ -334,12 +332,13 @@ public class ServiceInstallerTests
 
         // Act & Assert
         _ = await Assert.ThrowsAsync<ArgumentException>(() =>
-            installer.WaitForServiceStatusAsync("TestService", "", TimeSpan.FromSeconds(1)));
+            installer.WaitForServiceStatusAsync("TestService", string.Empty, TimeSpan.FromSeconds(1)));
     }
 
     /// <summary>
     /// Verifies that WaitForServiceStatusAsync returns true when service reaches target status.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task WaitForServiceStatusAsync_WhenServiceReachesStatus_ReturnsTrue()
     {
@@ -360,6 +359,7 @@ public class ServiceInstallerTests
     /// <summary>
     /// Verifies that WaitForServiceStatusAsync returns false on timeout.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task WaitForServiceStatusAsync_WhenTimeout_ReturnsFalse()
     {
@@ -380,6 +380,7 @@ public class ServiceInstallerTests
     /// <summary>
     /// Verifies that WaitForServiceStatusAsync returns false on cancellation.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task WaitForServiceStatusAsync_WhenCancelled_ReturnsFalse()
     {
@@ -400,13 +401,12 @@ public class ServiceInstallerTests
         _ = result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region BuildProjectAsync Tests
 
     /// <summary>
     /// Verifies that BuildProjectAsync throws ArgumentException when project path is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task BuildProjectAsync_WithEmptyProjectPath_ThrowsArgumentException()
     {
@@ -414,12 +414,13 @@ public class ServiceInstallerTests
         var installer = new ServiceInstaller(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act & Assert
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.BuildProjectAsync(""));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.BuildProjectAsync(string.Empty));
     }
 
     /// <summary>
     /// Verifies that BuildProjectAsync throws ArgumentException when configuration is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task BuildProjectAsync_WithEmptyConfiguration_ThrowsArgumentException()
     {
@@ -427,16 +428,15 @@ public class ServiceInstallerTests
         var installer = new ServiceInstaller(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act & Assert
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.BuildProjectAsync("test.csproj", ""));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.BuildProjectAsync("test.csproj", string.Empty));
     }
 
-    #endregion
 
-    #region CopyApplicationFilesAsync Tests
 
     /// <summary>
     /// Verifies that CopyApplicationFilesAsync throws ArgumentException when source is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CopyApplicationFilesAsync_WithEmptySource_ThrowsArgumentException()
     {
@@ -444,12 +444,13 @@ public class ServiceInstallerTests
         var installer = new ServiceInstaller(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act & Assert
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.CopyApplicationFilesAsync("", "target"));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.CopyApplicationFilesAsync(string.Empty, "target"));
     }
 
     /// <summary>
     /// Verifies that CopyApplicationFilesAsync throws ArgumentException when target is empty.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CopyApplicationFilesAsync_WithEmptyTarget_ThrowsArgumentException()
     {
@@ -457,12 +458,13 @@ public class ServiceInstallerTests
         var installer = new ServiceInstaller(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Act & Assert
-        _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.CopyApplicationFilesAsync("source", ""));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => installer.CopyApplicationFilesAsync("source", string.Empty));
     }
 
     /// <summary>
     /// Verifies that CopyApplicationFilesAsync returns false when source directory does not exist.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CopyApplicationFilesAsync_WhenSourceNotExist_ReturnsFalse()
     {
@@ -479,7 +481,4 @@ public class ServiceInstallerTests
         // Assert
         _ = result.Should().BeFalse();
     }
-
-    #endregion
 }
-

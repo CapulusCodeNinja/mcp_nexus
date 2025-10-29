@@ -50,7 +50,7 @@ public class CdbSentinelsTests
         {
             Nexus.Engine.Internal.CdbSentinels.StartMarker,
             Nexus.Engine.Internal.CdbSentinels.EndMarker,
-            Nexus.Engine.Internal.CdbSentinels.CommandSeparator
+            Nexus.Engine.Internal.CdbSentinels.CommandSeparator,
         };
 
         // Assert

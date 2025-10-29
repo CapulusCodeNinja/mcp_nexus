@@ -50,7 +50,7 @@ internal class StartupBanner
             DisplayEnvironmentVariables();
             DisplaySystemInformation();
 
-            m_Logger.Info("");
+            m_Logger.Info(string.Empty);
         }
         catch (Exception ex)
         {
@@ -72,17 +72,18 @@ internal class StartupBanner
 
         m_Logger.Info("╔═══════════════════════════════════════════════════════════════════╗");
         m_Logger.Info("                            MCP NEXUS STARTUP");
-        m_Logger.Info("");
+        m_Logger.Info(string.Empty);
         m_Logger.Info("  Version:     {Version}", version);
         m_Logger.Info("  Environment: {Environment}", m_IsServiceMode ? "Service" : "Development");
         m_Logger.Info("  Process ID:  {ProcessId}", processId);
-        m_Logger.Info("  Transport:   {TransportMode} ({ServiceMode})",
+        m_Logger.Info(
+            "  Transport:   {TransportMode} ({ServiceMode})",
             transportMode.ToUpper(), m_IsServiceMode ? "Service Mode" : "Development Mode");
         m_Logger.Info("  Host:        {Host}", host);
         m_Logger.Info("  Port:        {Port}", port);
         m_Logger.Info("  Started:     {StartTime:yyyy-MM-dd HH:mm:ss}", startTime);
         m_Logger.Info("╚═══════════════════════════════════════════════════════════════════╝");
-        m_Logger.Info("");
+        m_Logger.Info(string.Empty);
     }
 
     /// <summary>
@@ -96,13 +97,13 @@ internal class StartupBanner
         m_Logger.Info("╔═══════════════════════════════════════════════════════════════════╗");
         m_Logger.Info("                        CONFIGURATION SETTINGS");
         m_Logger.Info("╚═══════════════════════════════════════════════════════════════════╝");
-        m_Logger.Info("");
+        m_Logger.Info(string.Empty);
 
         m_Logger.Info("┌─ Application ──────────────────────────────────────────────────────");
         m_Logger.Info("│ Environment:       {Environment}", m_IsServiceMode ? "Service" : "Development");
         m_Logger.Info("│ Working Directory: {WorkingDirectory}", workingDirectory);
         m_Logger.Info("│ Assembly Location: {AssemblyLocation}", assemblyLocation);
-        m_Logger.Info("");
+        m_Logger.Info(string.Empty);
     }
 
     /// <summary>
@@ -118,7 +119,7 @@ internal class StartupBanner
         m_Logger.Info("│ Mode:            {Mode}", GetDetectedMode());
         m_Logger.Info("│ Service Mode:    {ServiceMode}", m_IsServiceMode);
         m_Logger.Info("└─────────────────────────────────────────────────────────────────────");
-        m_Logger.Info("");
+        m_Logger.Info(string.Empty);
     }
 
     /// <summary>
@@ -151,7 +152,7 @@ internal class StartupBanner
         m_Logger.Info("┌─ Server Configuration ─────────────────────────────────────────────");
         m_Logger.Info("│ Host: {Host}", host);
         m_Logger.Info("│ Port: {Port}", port);
-        m_Logger.Info("");
+        m_Logger.Info(string.Empty);
     }
 
     /// <summary>
@@ -164,7 +165,7 @@ internal class StartupBanner
         m_Logger.Info("┌─ Transport Configuration ──────────────────────────────────────────");
         m_Logger.Info("│ Mode:         {TransportMode}", transportMode);
         m_Logger.Info("│ Service Mode: {ServiceMode}", m_IsServiceMode);
-        m_Logger.Info("");
+        m_Logger.Info(string.Empty);
     }
 
     /// <summary>
@@ -172,10 +173,10 @@ internal class StartupBanner
     /// </summary>
     private void DisplayDebuggingConfiguration()
     {
-        var cdbPath = Settings.Instance.Get().McpNexus.Debugging.CdbPath ?? "";
+        var cdbPath = Settings.Instance.Get().McpNexus.Debugging.CdbPath ?? string.Empty;
         var commandTimeout = Settings.Instance.Get().McpNexus.Debugging.CommandTimeoutMs;
         var symbolRetries = Settings.Instance.Get().McpNexus.Debugging.SymbolServerMaxRetries;
-        var symbolPath = Settings.Instance.Get().McpNexus.Debugging.SymbolSearchPath ?? "";
+        var symbolPath = Settings.Instance.Get().McpNexus.Debugging.SymbolSearchPath ?? string.Empty;
         var startupDelay = Settings.Instance.Get().McpNexus.Debugging.StartupDelayMs;
 
         m_Logger.Info("┌─ Debugging Configuration ──────────────────────────────────────────");
@@ -185,7 +186,7 @@ internal class StartupBanner
         m_Logger.Info("│ Symbol Search Path:       {SymbolPath}", string.IsNullOrEmpty(symbolPath) ? "Not configured" : symbolPath);
         m_Logger.Info("│ Effective Symbol Path:    {SymbolPath}", string.IsNullOrEmpty(symbolPath) ? "Not configured" : symbolPath);
         m_Logger.Info("│ Startup Delay:            {StartupDelay}ms", startupDelay);
-        m_Logger.Info("");
+        m_Logger.Info(string.Empty);
     }
 
     /// <summary>
@@ -193,15 +194,15 @@ internal class StartupBanner
     /// </summary>
     private void DisplayServiceConfiguration()
     {
-        var installPath = Settings.Instance.Get().McpNexus.Service.InstallPath ?? "";
-        var backupPath = Settings.Instance.Get().McpNexus.Service.BackupPath ?? "";
+        var installPath = Settings.Instance.Get().McpNexus.Service.InstallPath ?? string.Empty;
+        var backupPath = Settings.Instance.Get().McpNexus.Service.BackupPath ?? string.Empty;
 
         if (!string.IsNullOrEmpty(installPath))
         {
             m_Logger.Info("┌─ Service Configuration ────────────────────────────────────────────");
             m_Logger.Info("│ Install Path: {InstallPath}", installPath);
             m_Logger.Info("│ Backup Path:  {BackupPath}", backupPath);
-            m_Logger.Info("");
+            m_Logger.Info(string.Empty);
         }
     }
 
@@ -215,7 +216,7 @@ internal class StartupBanner
         m_Logger.Info("┌─ Logging Configuration ────────────────────────────────────────────");
         m_Logger.Info("│ Log Level:         {LogLevel}", logLevel);
         m_Logger.Info("│ Environment:       {Environment}", m_IsServiceMode ? "Service" : "Development");
-        m_Logger.Info("");
+        m_Logger.Info(string.Empty);
     }
 
     /// <summary>
@@ -224,7 +225,7 @@ internal class StartupBanner
     private void DisplayEnvironmentVariables()
     {
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
-        var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? "";
+        var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
         var hasCdbInPath = pathEnv.Contains("cdb.exe", StringComparison.OrdinalIgnoreCase) ||
                           pathEnv.Contains("windbg", StringComparison.OrdinalIgnoreCase);
 
@@ -233,7 +234,7 @@ internal class StartupBanner
         m_Logger.Info("│ ASPNETCORE_URLS:        {AspnetcoreUrls}", Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "Not set");
         m_Logger.Info("│ PRIVATE_TOKEN:          {PrivateToken}", Environment.GetEnvironmentVariable("PRIVATE_TOKEN") ?? "Not set");
         m_Logger.Info("│ CDB Paths in PATH:      {CdbInPath}", hasCdbInPath ? "CDB paths found in PATH" : "No CDB paths found in PATH");
-        m_Logger.Info("");
+        m_Logger.Info(string.Empty);
     }
 
     /// <summary>

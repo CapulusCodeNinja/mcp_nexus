@@ -24,7 +24,7 @@ public class McpModelsTests
         {
             JsonRpc = "2.0",
             Id = 1,
-            Result = new { status = "success" }
+            Result = new { status = "success" },
         };
 
         var json = JsonSerializer.Serialize(response);
@@ -48,7 +48,7 @@ public class McpModelsTests
             {
                 Code = -32603,
                 Message = "Internal error"
-            }
+            },
         };
 
         var json = JsonSerializer.Serialize(response);
@@ -78,7 +78,7 @@ public class McpModelsTests
                         type = "string"
                     }
                 }
-            }
+            },
         };
 
         var json = JsonSerializer.Serialize(schema);
@@ -103,7 +103,7 @@ public class McpModelsTests
             Status = "Executing",
             Progress = 50,
             Message = "Processing...",
-            Timestamp = DateTimeOffset.Now
+            Timestamp = DateTimeOffset.Now,
         };
 
         _ = notification.SessionId.Should().Be("sess-001");
@@ -122,7 +122,7 @@ public class McpModelsTests
         {
             Code = -32600,
             Message = "Invalid Request",
-            Data = new { details = "Missing required parameter" }
+            Data = new { details = "Missing required parameter" },
         };
 
         var json = JsonSerializer.Serialize(error);
@@ -142,7 +142,7 @@ public class McpModelsTests
         var error = new McpError
         {
             Code = -32601,
-            Message = "Method not found"
+            Message = "Method not found",
         };
 
         var json = JsonSerializer.Serialize(error);
@@ -150,7 +150,6 @@ public class McpModelsTests
         _ = json.Should().Contain("\"code\":-32601");
         _ = json.Should().Contain("\"message\":\"Method not found\"");
     }
-
 
     /// <summary>
     /// Verifies that McpToolSchema with complex input schema serializes correctly.
@@ -180,7 +179,7 @@ public class McpModelsTests
                         maximum = 100
                     }
                 }
-            }
+            },
         };
 
         var json = JsonSerializer.Serialize(schema);
@@ -200,7 +199,7 @@ public class McpModelsTests
         {
             JsonRpc = "2.0",
             Method = "notifications/command_status",
-            Params = new { commandId = "cmd-123", status = "completed" }
+            Params = new { commandId = "cmd-123", status = "completed" },
         };
 
         var json = JsonSerializer.Serialize(notification);
@@ -224,7 +223,7 @@ public class McpModelsTests
             QueueSize = 5,
             ActiveCommands = 2,
             Uptime = TimeSpan.FromHours(24),
-            Timestamp = new DateTimeOffset(2025, 1, 15, 10, 30, 0, TimeSpan.Zero)
+            Timestamp = new DateTimeOffset(2025, 1, 15, 10, 30, 0, TimeSpan.Zero),
         };
 
         var json = JsonSerializer.Serialize(notification);
@@ -248,7 +247,7 @@ public class McpModelsTests
             Success = true,
             Message = "Session recovered successfully",
             AffectedCommands = new[] { "cmd-1", "cmd-2" },
-            Timestamp = new DateTimeOffset(2025, 1, 15, 10, 30, 0, TimeSpan.Zero)
+            Timestamp = new DateTimeOffset(2025, 1, 15, 10, 30, 0, TimeSpan.Zero),
         };
 
         var json = JsonSerializer.Serialize(notification);
@@ -274,7 +273,7 @@ public class McpModelsTests
             ElapsedSeconds = 125.5,
             ElapsedDisplay = "2m 5s",
             Details = "Analyzing crash dump",
-            Timestamp = new DateTimeOffset(2025, 1, 15, 10, 30, 0, TimeSpan.Zero)
+            Timestamp = new DateTimeOffset(2025, 1, 15, 10, 30, 0, TimeSpan.Zero),
         };
 
         var json = JsonSerializer.Serialize(notification);
@@ -297,7 +296,7 @@ public class McpModelsTests
             JsonRpc = "2.0",
             Id = 1,
             Result = "success",
-            Error = null
+            Error = null,
         };
 
         var json = JsonSerializer.Serialize(response);
@@ -316,7 +315,7 @@ public class McpModelsTests
         {
             Code = -32700,
             Message = "Parse error",
-            Data = new { line = 5, column = 10 }
+            Data = new { line = 5, column = 10 },
         };
 
         _ = error.Code.Should().Be(-32700);

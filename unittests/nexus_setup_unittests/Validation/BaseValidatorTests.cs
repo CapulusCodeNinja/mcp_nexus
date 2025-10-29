@@ -31,7 +31,6 @@ public class BaseValidatorTests
         m_Logger = LogManager.GetCurrentClassLogger();
     }
 
-    #region Constructor Tests
 
     /// <summary>
     /// Verifies that constructor throws ArgumentNullException when fileSystem is null.
@@ -68,9 +67,7 @@ public class BaseValidatorTests
         _ = validator.Should().NotBeNull();
     }
 
-    #endregion
 
-    #region ValidateAdministratorPrivileges Tests
 
     /// <summary>
     /// Verifies that ValidateAdministratorPrivileges returns a boolean result.
@@ -88,9 +85,7 @@ public class BaseValidatorTests
         _ = result.GetType().Should().Be(typeof(bool));
     }
 
-    #endregion
 
-    #region ValidateDirectoryPermissions Tests
 
     /// <summary>
     /// Verifies that ValidateDirectoryPermissions returns true when parent directory exists.
@@ -171,7 +166,6 @@ public class BaseValidatorTests
         _ = result.Should().BeTrue();
     }
 
-    #endregion
 
     /// <summary>
     /// Testable concrete implementation of BaseValidator for testing.
@@ -194,4 +188,3 @@ public class BaseValidatorTests
         }
     }
 }
-

@@ -27,6 +27,7 @@ public class ContentTypeValidationMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync calls next middleware for valid content type.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithValidContentType_CallsNextMiddleware()
     {
@@ -54,6 +55,7 @@ public class ContentTypeValidationMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync rejects request with missing content type.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithMissingContentType_Returns400()
     {
@@ -83,6 +85,7 @@ public class ContentTypeValidationMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync rejects request with wrong content type.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithWrongContentType_Returns400()
     {
@@ -112,6 +115,7 @@ public class ContentTypeValidationMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync accepts application/json with charset.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithApplicationJsonAndCharset_CallsNextMiddleware()
     {
@@ -139,6 +143,7 @@ public class ContentTypeValidationMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync is case-insensitive for content type.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithMixedCaseContentType_CallsNextMiddleware()
     {
@@ -166,6 +171,7 @@ public class ContentTypeValidationMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync skips validation for GET requests.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithGetRequest_SkipsValidation()
     {
@@ -193,6 +199,7 @@ public class ContentTypeValidationMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync skips validation for non-root paths.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithNonRootPath_SkipsValidation()
     {
@@ -220,6 +227,7 @@ public class ContentTypeValidationMiddlewareTests
     /// <summary>
     /// Verifies that invalid content type response includes error details.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithInvalidContentType_ReturnsJsonRpcError()
     {
@@ -248,6 +256,7 @@ public class ContentTypeValidationMiddlewareTests
     /// <summary>
     /// Verifies that invalid content type response sets correct content type.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithInvalidContentType_SetsJsonResponseContentType()
     {
@@ -270,6 +279,7 @@ public class ContentTypeValidationMiddlewareTests
     /// <summary>
     /// Verifies that empty content type is rejected.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithEmptyContentType_Returns400()
     {
@@ -292,6 +302,7 @@ public class ContentTypeValidationMiddlewareTests
     /// <summary>
     /// Verifies that whitespace content type is rejected.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task InvokeAsync_WithWhitespaceContentType_Returns400()
     {

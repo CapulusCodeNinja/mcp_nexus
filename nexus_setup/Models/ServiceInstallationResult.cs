@@ -43,7 +43,7 @@ public class ServiceInstallationResult
         {
             Success = true,
             ServiceName = serviceName,
-            Message = message
+            Message = message,
         };
     }
 
@@ -61,8 +61,7 @@ public class ServiceInstallationResult
             Success = false,
             ServiceName = serviceName,
             Message = message,
-            ErrorDetails = errorDetails
+            ErrorDetails = errorDetails,
         };
     }
 }
-

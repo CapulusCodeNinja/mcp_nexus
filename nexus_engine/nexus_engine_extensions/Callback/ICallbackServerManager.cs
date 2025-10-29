@@ -43,4 +43,3 @@ internal interface ICallbackServerManager : IAsyncDisposable
     /// <returns>A task that represents the asynchronous stop operation.</returns>
     Task StopAsync(CancellationToken cancellationToken = default);
 }
-

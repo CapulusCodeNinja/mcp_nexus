@@ -61,4 +61,3 @@ internal class DebugSessionTestAccessor : DebugSession
         base.ThrowIfNotActive();
     }
 }
-

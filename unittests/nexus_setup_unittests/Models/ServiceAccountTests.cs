@@ -35,4 +35,3 @@ public class ServiceAccountTests
         Assert.Equal(4, values.Length);
     }
 }
-

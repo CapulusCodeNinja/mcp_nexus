@@ -76,6 +76,7 @@ public class MainHostedService : IHostedService
     /// Starts the HTTP server mode with MCP protocol support.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for graceful shutdown.</param>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     private async Task StartHttpServer(CancellationToken cancellationToken)
     {
         m_Logger.Info("Starting HTTP server mode...");
@@ -110,6 +111,7 @@ public class MainHostedService : IHostedService
     /// Starts the Stdio server mode with MCP protocol support.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for graceful shutdown.</param>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     private async Task StartStdioServer(CancellationToken cancellationToken)
     {
         m_Logger.Info("Starting Stdio server mode...");
@@ -144,6 +146,7 @@ public class MainHostedService : IHostedService
     /// Starts the Windows Service mode (uses HTTP transport internally).
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for graceful shutdown.</param>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     private async Task StartServiceServer(CancellationToken cancellationToken)
     {
         // Service mode uses HTTP transport
@@ -153,6 +156,7 @@ public class MainHostedService : IHostedService
     /// <summary>
     /// Handles the install command to install the application as a Windows Service.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private async Task HandleInstallCommand()
     {
@@ -173,6 +177,7 @@ public class MainHostedService : IHostedService
     /// <summary>
     /// Handles the update command to update an existing Windows Service installation.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private async Task HandleUpdateCommand()
     {
@@ -193,6 +198,7 @@ public class MainHostedService : IHostedService
     /// <summary>
     /// Handles the uninstall command to remove the Windows Service.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private async Task HandleUninstallCommand()
     {

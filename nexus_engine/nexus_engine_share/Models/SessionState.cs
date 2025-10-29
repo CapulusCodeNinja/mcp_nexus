@@ -28,6 +28,5 @@ public enum SessionState
     /// <summary>
     /// Session encountered an error and is in a faulted state.
     /// </summary>
-    Faulted
+    Faulted,
 }
-

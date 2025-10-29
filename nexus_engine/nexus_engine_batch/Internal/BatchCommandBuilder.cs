@@ -47,7 +47,7 @@ internal class BatchCommandBuilder
         return new Command
         {
             CommandId = batchId,
-            CommandText = batchedCommandText
+            CommandText = batchedCommandText,
         };
     }
 
@@ -103,4 +103,3 @@ internal class BatchCommandBuilder
         return string.Join("; ", parts);
     }
 }
-

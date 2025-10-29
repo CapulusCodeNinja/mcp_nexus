@@ -3,6 +3,7 @@ using Nexus.Config;
 using NLog;
 
 namespace Nexus.Engine.Batch.Internal;
+
 /// <summary>
 /// Filters commands to determine if they should be batched.
 /// </summary>
@@ -36,7 +37,8 @@ internal class BatchCommandFilter
 
         if (commands.Count < Settings.Instance.Get().McpNexus.Batching.MinBatchSize)
         {
-            m_Logger.Trace("Not enough commands to batch (count: {Count}, min: {Min})",
+            m_Logger.Trace(
+                "Not enough commands to batch (count: {Count}, min: {Min})",
                 commands.Count, Settings.Instance.Get().McpNexus.Batching.MinBatchSize);
             return false;
         }
@@ -80,4 +82,3 @@ internal class BatchCommandFilter
         return false;
     }
 }
-

@@ -21,7 +21,7 @@ public class FileManagerTests
     private readonly FileManager m_FileManager;
 
     /// <summary>
-    /// Initializes a new instance of the FileManagerTests class.
+    /// Initializes a new instance of the <see cref="FileManagerTests"/> class.
     /// </summary>
     public FileManagerTests()
     {
@@ -47,6 +47,7 @@ public class FileManagerTests
     /// <summary>
     /// Verifies that CopyApplicationFilesAsync calls CreateDirectory.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CopyApplicationFilesAsync_WithValidDirectories_CallsCreateDirectory()
     {
@@ -67,6 +68,7 @@ public class FileManagerTests
     /// <summary>
     /// Verifies that CopyApplicationFilesAsync returns false on exception.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CopyApplicationFilesAsync_WithException_ShouldReturnFalse()
     {
@@ -140,6 +142,7 @@ public class FileManagerTests
     /// <summary>
     /// Verifies that CopyApplicationFilesAsync with empty source still calls CreateDirectory.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task CopyApplicationFilesAsync_WithEmptySource_CallsCreateDirectory()
     {
@@ -149,7 +152,7 @@ public class FileManagerTests
             .Throws(new IOException("Path error")); // Force exception with empty/invalid path
 
         // Act
-        var result = await m_FileManager.CopyApplicationFilesAsync("", "C:\\dest");
+        var result = await m_FileManager.CopyApplicationFilesAsync(string.Empty, "C:\\dest");
 
         // Assert - CreateDirectory should be called before the exception
         m_MockFileSystem.Verify(fs => fs.CreateDirectory("C:\\dest"), Times.Once);
@@ -162,14 +165,13 @@ public class FileManagerTests
     public void RemoveApplicationFiles_WithEmptyPath_ShouldReturnTrue()
     {
         // Arrange
-        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(""))
+        _ = m_MockFileSystem.Setup(fs => fs.DirectoryExists(string.Empty))
             .Returns(false);
 
         // Act
-        var result = m_FileManager.RemoveApplicationFiles("");
+        var result = m_FileManager.RemoveApplicationFiles(string.Empty);
 
         // Assert
         _ = result.Should().BeTrue();
     }
 }
-

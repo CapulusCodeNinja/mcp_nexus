@@ -6,7 +6,7 @@ namespace Nexus.Engine.Batch;
 public class CommandResult
 {
     /// <summary>
-    /// Gets the process identifier.
+    /// Gets or sets the process identifier.
     /// </summary>
     public int? ProcessId
     {
@@ -14,7 +14,7 @@ public class CommandResult
     }
 
     /// <summary>
-    /// Gets or sets the command identifier.
+    /// Gets the command identifier.
     /// </summary>
     public required string SessionId
     {
@@ -22,7 +22,7 @@ public class CommandResult
     }
 
     /// <summary>
-    /// Gets or sets the command identifier.
+    /// Gets the command identifier.
     /// </summary>
     public required string CommandId
     {
@@ -30,7 +30,7 @@ public class CommandResult
     }
 
     /// <summary>
-    /// Gets or sets the result text.
+    /// Gets the result text.
     /// </summary>
     public required string ResultText
     {
@@ -61,4 +61,3 @@ public class CommandResult
         get; set;
     }
 }
-

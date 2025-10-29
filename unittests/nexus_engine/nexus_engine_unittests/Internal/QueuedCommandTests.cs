@@ -12,7 +12,6 @@ namespace Nexus.Engine.Tests.Internal;
 /// </summary>
 public class QueuedCommandTests
 {
-    #region Constructor and Properties Tests
 
     /// <summary>
     /// Verifies that constructor sets all required properties correctly.
@@ -31,7 +30,7 @@ public class QueuedCommandTests
             Id = id,
             Command = command,
             QueuedTime = queuedTime,
-            ProcessId = null
+            ProcessId = null,
         };
 
         // Assert
@@ -57,7 +56,7 @@ public class QueuedCommandTests
             Command = "test",
             QueuedTime = DateTime.Now,
             ProcessId = null,
-            State = CommandState.Executing
+            State = CommandState.Executing,
         };
 
         // Assert
@@ -78,7 +77,7 @@ public class QueuedCommandTests
             Command = "test",
             QueuedTime = DateTime.Now,
             ProcessId = null,
-            CompletionSource = newCompletionSource
+            CompletionSource = newCompletionSource,
         };
 
         // Assert
@@ -99,16 +98,14 @@ public class QueuedCommandTests
             Command = "test",
             QueuedTime = DateTime.Now,
             ProcessId = null,
-            CancellationTokenSource = newCancellationTokenSource
+            CancellationTokenSource = newCancellationTokenSource,
         };
 
         // Assert
         _ = ReferenceEquals(queuedCommand.CancellationTokenSource, newCancellationTokenSource).Should().BeTrue();
     }
 
-    #endregion
 
-    #region Dispose Tests
 
     /// <summary>
     /// Verifies that Dispose releases resources correctly.
@@ -122,7 +119,7 @@ public class QueuedCommandTests
             Id = "cmd-123",
             Command = "test",
             QueuedTime = DateTime.Now,
-            ProcessId = null
+            ProcessId = null,
         };
 
         // Act & Assert (should not throw)
@@ -141,7 +138,7 @@ public class QueuedCommandTests
             Id = "cmd-123",
             Command = "test",
             QueuedTime = DateTime.Now,
-            ProcessId = null
+            ProcessId = null,
         };
 
         // Act & Assert (should not throw)
@@ -163,13 +160,10 @@ public class QueuedCommandTests
             Command = "test",
             QueuedTime = DateTime.Now,
             ProcessId = null,
-            CancellationTokenSource = null!
+            CancellationTokenSource = null!,
         };
 
         // Act & Assert (should not throw)
         queuedCommand.Dispose();
     }
-
-    #endregion
 }
-

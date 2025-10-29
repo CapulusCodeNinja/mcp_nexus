@@ -51,4 +51,3 @@ public class ServiceInstallationOptions
         get; set;
     }
 }
-

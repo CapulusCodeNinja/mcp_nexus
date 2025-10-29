@@ -10,22 +10,25 @@ namespace Nexus.Config
     /// </summary>
     public class Settings : ISettings, IDisposable
     {
-        private ConfigurationLoader m_ConfigurationLoader;
         private readonly LoggingConfiguration m_LoggingConfiguration;
         private readonly ReaderWriterLockSlim m_ConfigLock = new();
+        private ConfigurationLoader m_ConfigurationLoader;
         private SharedConfiguration? m_CachedConfiguration;
         private bool m_Disposed;
 
         /// <summary>
-        /// Gets the singleton instance of the settings.
+        /// Initializes a new instance of the <see cref="Settings"/> class.
         /// </summary>
-        public static ISettings Instance { get; } = new Settings();
-
         private Settings()
         {
             m_ConfigurationLoader = new ConfigurationLoader();
             m_LoggingConfiguration = new LoggingConfiguration();
         }
+
+        /// <summary>
+        /// Gets the singleton instance of the settings.
+        /// </summary>
+        public static ISettings Instance { get; } = new Settings();
 
         /// <summary>
         /// Configures logging using NLog and provided configuration.

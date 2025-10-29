@@ -6,7 +6,7 @@ namespace Nexus.Engine.Share;
 public class SessionIdGenerator
 {
     /// <summary>
-    /// Singleton instance of the session ID generator.
+    /// Gets singleton instance of the session ID generator.
     /// </summary>
     public static SessionIdGenerator Instance { get; } = new SessionIdGenerator();
 
@@ -19,7 +19,7 @@ public class SessionIdGenerator
 
     /// <summary>
     /// Generates a unique session ID based on the current timestamp with tick precision.
-    /// Format: sess-YYYY-MM-DD-HH-mm-ss-fffffff (7-digit ticks within second)
+    /// Format: sess-YYYY-MM-DD-HH-mm-ss-fffffff (7-digit ticks within second).
     /// </summary>
     /// <returns>A unique session ID in the format sess-YYYY-MM-DD-HH-mm-ss-fffffff.</returns>
     public string GenerateSessionId()
@@ -28,4 +28,3 @@ public class SessionIdGenerator
         return $"sess-{now:yyyy-MM-dd-HH-mm-ss-fffffff}";
     }
 }
-

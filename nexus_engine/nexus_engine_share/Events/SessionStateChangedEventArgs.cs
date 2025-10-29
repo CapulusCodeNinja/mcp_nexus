@@ -47,4 +47,3 @@ public class SessionStateChangedEventArgs : EventArgs
         get; init;
     }
 }
-

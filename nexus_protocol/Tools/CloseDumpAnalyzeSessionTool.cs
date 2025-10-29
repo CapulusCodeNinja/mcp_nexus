@@ -20,9 +20,10 @@ internal static class CloseDumpAnalyzeSessionTool
     /// </summary>
     /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
     /// <returns>Session closure result.</returns>
-    [McpServerTool, Description("Closes a debugging session and releases resources.")]
+    [McpServerTool]
+    [Description("Closes a debugging session and releases resources.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static async Task<object> nexus_close_dump_analyze_session(
+    public static async Task<object> Nexus_close_dump_analyze_session(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
     {
         var logger = LogManager.GetCurrentClassLogger();
@@ -38,7 +39,7 @@ internal static class CloseDumpAnalyzeSessionTool
             var keyValues = new Dictionary<string, object?>
             {
                 { "Session ID", sessionId },
-                { "Status", "Success" }
+                { "Status", "Success" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -55,7 +56,7 @@ internal static class CloseDumpAnalyzeSessionTool
             var keyValues = new Dictionary<string, object?>
             {
                 { "Session ID", sessionId },
-                { "Status", "Failed" }
+                { "Status", "Failed" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -72,7 +73,7 @@ internal static class CloseDumpAnalyzeSessionTool
             var keyValues = new Dictionary<string, object?>
             {
                 { "Session ID", sessionId },
-                { "Status", "Failed" }
+                { "Status", "Failed" },
             };
 
             var markdown = MarkdownFormatter.CreateOperationResult(
@@ -85,4 +86,3 @@ internal static class CloseDumpAnalyzeSessionTool
         }
     }
 }
-

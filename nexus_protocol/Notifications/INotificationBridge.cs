@@ -15,4 +15,3 @@ public interface INotificationBridge
     /// <returns>A task representing the asynchronous operation.</returns>
     Task SendNotificationAsync(McpNotification notification);
 }
-

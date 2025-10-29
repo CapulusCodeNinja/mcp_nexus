@@ -13,7 +13,7 @@ public class CommandIdGenerator
     private readonly ConcurrentDictionary<string, int> m_SessionCounters = new();
 
     /// <summary>
-    /// Singleton instance of the command ID generator.
+    /// Gets singleton instance of the command ID generator.
     /// </summary>
     public static CommandIdGenerator Instance { get; } = new CommandIdGenerator();
 
@@ -26,7 +26,7 @@ public class CommandIdGenerator
 
     /// <summary>
     /// Generates a unique command ID for the specified session.
-    /// Format: cmd-{sessionId}-{sequentialNumber}
+    /// Format: cmd-{sessionId}-{sequentialNumber}.
     /// </summary>
     /// <param name="sessionId">The session ID to generate a command ID for.</param>
     /// <returns>A unique command ID in the format cmd-{sessionId}-{number}.</returns>
@@ -86,4 +86,3 @@ public class CommandIdGenerator
         m_SessionCounters.Clear();
     }
 }
-

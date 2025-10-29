@@ -82,7 +82,6 @@ public static class HttpServerSetup
     /// <param name="services">The service collection to configure.</param>
     private static void ConfigureRateLimit(IServiceCollection services)
     {
-
         _ = services.AddMemoryCache();
         _ = services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
         _ = services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
@@ -209,4 +208,3 @@ public static class HttpServerSetup
         return hostBuilder.Build();
     }
 }
-

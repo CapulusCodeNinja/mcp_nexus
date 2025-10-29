@@ -31,7 +31,7 @@ public class CommandStateChangedEventArgsTests
             OldState = CommandState.Queued,
             NewState = CommandState.Executing,
             Timestamp = m_TestTime,
-            Command = m_Command
+            Command = m_Command,
         };
 
         // Assert
@@ -57,7 +57,7 @@ public class CommandStateChangedEventArgsTests
             OldState = CommandState.Queued,
             NewState = CommandState.Executing,
             Timestamp = m_TestTime,
-            Command = null
+            Command = null,
         };
 
         // Assert
@@ -85,7 +85,7 @@ public class CommandStateChangedEventArgsTests
             OldState = oldState,
             NewState = newState,
             Timestamp = m_TestTime,
-            Command = m_Command
+            Command = m_Command,
         };
 
         // Assert

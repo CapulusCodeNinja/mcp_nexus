@@ -24,7 +24,7 @@ internal sealed class ProcessOutputAggregator : IDisposable
         {
             SingleReader = false,
             SingleWriter = false,
-            AllowSynchronousContinuations = false
+            AllowSynchronousContinuations = false,
         });
     }
 
@@ -105,5 +105,3 @@ internal sealed class ProcessOutputAggregator : IDisposable
         }
     }
 }
-
-

@@ -6,7 +6,7 @@ namespace Nexus.Engine.Extensions.Models;
 internal class ExtensionStatus
 {
     /// <summary>
-    /// Gets or sets the command ID for this extension execution.
+    /// Gets the command ID for this extension execution.
     /// </summary>
     public required string CommandId
     {
@@ -14,7 +14,7 @@ internal class ExtensionStatus
     }
 
     /// <summary>
-    /// Gets or sets the session ID this extension belongs to.
+    /// Gets the session ID this extension belongs to.
     /// </summary>
     public required string SessionId
     {
@@ -22,7 +22,7 @@ internal class ExtensionStatus
     }
 
     /// <summary>
-    /// Gets or sets the name of the extension.
+    /// Gets the name of the extension.
     /// </summary>
     public required string ExtensionName
     {
@@ -38,7 +38,7 @@ internal class ExtensionStatus
     }
 
     /// <summary>
-    /// Gets or sets the time when the extension was started.
+    /// Gets the time when the extension was started.
     /// </summary>
     public required DateTime StartTime
     {
@@ -46,7 +46,7 @@ internal class ExtensionStatus
     }
 
     /// <summary>
-    /// Gets or sets the cancellation token source for this extension.
+    /// Gets the cancellation token source for this extension.
     /// </summary>
     public required CancellationTokenSource CancellationTokenSource
     {
@@ -54,11 +54,10 @@ internal class ExtensionStatus
     }
 
     /// <summary>
-    /// Gets or sets the parameters passed to the extension.
+    /// Gets the parameters passed to the extension.
     /// </summary>
     public object? Parameters
     {
         get; init;
     }
 }
-

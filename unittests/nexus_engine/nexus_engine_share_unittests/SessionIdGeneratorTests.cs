@@ -95,11 +95,13 @@ public class SessionIdGeneratorTests
         // Assert
         var expectedCount = threadCount * sessionsPerThread;
         _ = sessionIds.Should().HaveCount(expectedCount);
+
         // All IDs should match the format
         foreach (var sessionId in sessionIds)
         {
             _ = sessionId.Should().MatchRegex(@"^sess-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{7}$");
         }
+
         // With tick precision, most should be unique
         _ = sessionIds.Distinct().Count().Should().BeGreaterThan(expectedCount * 9 / 10); // At least 90% unique
     }
@@ -119,6 +121,7 @@ public class SessionIdGeneratorTests
         {
             var sessionId = new SessionIdGeneratorAccessor().GenerateSessionId();
             _ = sessionIds.Add(sessionId);
+
             // Small delay to ensure different timestamps
             if (i % 10 == 0)
             {
@@ -160,7 +163,7 @@ public class SessionIdGeneratorTests
         var sessionId = new SessionIdGeneratorAccessor().GenerateSessionId();
 
         // Assert - Extract and validate components
-        var parts = sessionId.Replace("sess-", "").Split('-');
+        var parts = sessionId.Replace("sess-", string.Empty).Split('-');
         _ = parts.Should().HaveCount(7); // YYYY-MM-DD-HH-mm-ss-fffffff
 
         var year = int.Parse(parts[0]);

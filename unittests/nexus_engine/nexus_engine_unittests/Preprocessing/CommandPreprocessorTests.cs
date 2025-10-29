@@ -27,7 +27,6 @@ public class CommandPreprocessorTests
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
     }
 
-    #region Constructor Tests
 
     /// <summary>
     /// Verifies that constructor throws ArgumentNullException when fileSystem is null.
@@ -39,9 +38,7 @@ public class CommandPreprocessorTests
         _ = Assert.Throws<ArgumentNullException>(() => new CommandPreprocessor(null!));
     }
 
-    #endregion
 
-    #region PreprocessCommand - Basic Tests
 
     /// <summary>
     /// Verifies that PreprocessCommand returns input for null command.
@@ -114,9 +111,7 @@ public class CommandPreprocessorTests
         _ = result1.Should().Be(result2);
     }
 
-    #endregion
 
-    #region .sympath Command Tests
 
     /// <summary>
     /// Verifies that PreprocessCommand handles .sympath commands.
@@ -192,9 +187,7 @@ public class CommandPreprocessorTests
         m_FileSystemMock.Verify(fs => fs.CreateDirectory("D:\\symbols3"), Times.Once);
     }
 
-    #endregion
 
-    #region .srcpath Command Tests
 
     /// <summary>
     /// Verifies that PreprocessCommand handles .srcpath commands.
@@ -232,9 +225,7 @@ public class CommandPreprocessorTests
         m_FileSystemMock.Verify(fs => fs.CreateDirectory(It.Is<string>(p => p.Contains("srv"))), Times.Never);
     }
 
-    #endregion
 
-    #region .symfix Command Tests
 
     /// <summary>
     /// Verifies that PreprocessCommand handles .symfix commands.
@@ -254,9 +245,7 @@ public class CommandPreprocessorTests
         m_FileSystemMock.Verify(fs => fs.CreateDirectory("C:\\symbols"), Times.Once);
     }
 
-    #endregion
 
-    #region !homedir Command Tests
 
     /// <summary>
     /// Verifies that PreprocessCommand handles !homedir commands.
@@ -310,9 +299,7 @@ public class CommandPreprocessorTests
         _ = result.Should().Contain("\"C:/debugger/extensions\"");
     }
 
-    #endregion
 
-    #region Directory Creation Tests
 
     /// <summary>
     /// Verifies that PreprocessCommand doesn't create directories that already exist.
@@ -353,9 +340,7 @@ public class CommandPreprocessorTests
         _ = result.Should().Be(command);
     }
 
-    #endregion
 
-    #region WSL Path Conversion Tests
 
     /// <summary>
     /// Verifies that PreprocessCommand skips WSL paths in regular commands.
@@ -374,7 +359,4 @@ public class CommandPreprocessorTests
         // Just verify it doesn't throw
         _ = result.Should().NotBeNullOrEmpty();
     }
-
-    #endregion
 }
-

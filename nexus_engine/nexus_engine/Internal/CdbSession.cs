@@ -9,6 +9,7 @@ using Nexus.External.Apis.ProcessManagement;
 using NLog;
 
 namespace Nexus.Engine.Internal;
+
 /// <summary>
 /// Internal CDB session that manages a single CDB process and command execution.
 /// </summary>
@@ -366,7 +367,7 @@ internal class CdbSession : ICdbSession
             @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
             @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe",
             @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe",
-            @"C:\Program Files\Windows Kits\10\Debuggers\x86\cdb.exe"
+            @"C:\Program Files\Windows Kits\10\Debuggers\x86\cdb.exe",
         };
 
         foreach (var path in commonPaths)
@@ -405,7 +406,6 @@ internal class CdbSession : ICdbSession
         return;
     }
 
-
     /// <summary>
     /// Generates a session-specific CDB log file path based on the current log configuration and service mode.
     /// </summary>
@@ -417,7 +417,7 @@ internal class CdbSession : ICdbSession
     private static string GetCdbSessionBasedLogPath(string sessionId)
     {
         var fileTarget = LogManager.Configuration?.FindTargetByName("mainFile") as NLog.Targets.FileTarget ?? throw new InvalidOperationException("File target not found in NLog configuration");
-        var logEventInfo = new LogEventInfo(NLog.LogLevel.Info, "", "");
+        var logEventInfo = new LogEventInfo(NLog.LogLevel.Info, string.Empty, string.Empty);
         var originalPath = fileTarget.FileName.Render(logEventInfo);
 
         var directory = Path.GetDirectoryName(originalPath);
@@ -464,7 +464,7 @@ internal class CdbSession : ICdbSession
         var arguments = new List<string>
         {
             "-z", // Analyze dump file
-            $"\"{DumpFilePath}\""
+            $"\"{DumpFilePath}\"",
         };
 
         if (!string.IsNullOrWhiteSpace(SymbolPath))
@@ -500,7 +500,7 @@ internal class CdbSession : ICdbSession
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             CreateNoWindow = true,
-            WindowStyle = ProcessWindowStyle.Hidden
+            WindowStyle = ProcessWindowStyle.Hidden,
         };
 
         m_CdbProcess = m_ProcessManager.StartProcess(startInfo);

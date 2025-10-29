@@ -33,6 +33,5 @@ public enum CommandState
     /// <summary>
     /// Command timed out during execution.
     /// </summary>
-    Timeout
+    Timeout,
 }
-

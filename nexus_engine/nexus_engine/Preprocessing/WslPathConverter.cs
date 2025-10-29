@@ -16,9 +16,9 @@ internal partial class WslPathConverter
     /// <summary>
     /// Initializes a new instance of the <see cref="WslPathConverter"/> class.
     /// </summary>
-    public WslPathConverter() : this(new ProcessManager())
+    public WslPathConverter()
+        : this(new ProcessManager())
     {
-
     }
 
     /// <summary>
@@ -49,7 +49,7 @@ internal partial class WslPathConverter
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
             };
 
             using var proc = m_ProcessManager.StartProcess(psi);
@@ -68,6 +68,7 @@ internal partial class WslPathConverter
                 {
                     // Ignore kill failures
                 }
+
                 return false;
             }
 
@@ -107,7 +108,7 @@ internal partial class WslPathConverter
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
             };
 
             using var proc = m_ProcessManager.StartProcess(psi);
@@ -126,6 +127,7 @@ internal partial class WslPathConverter
                 {
                     // Ignore kill failures
                 }
+
                 return mappings;
             }
 
@@ -161,8 +163,10 @@ internal partial class WslPathConverter
                 {
                     // Handle both "C:" and "C:/some/path"
                     root = src.Replace('/', '\\');
+
                     // Ensure drive letter is uppercase
                     root = char.ToUpperInvariant(root[0]) + root[1..];
+
                     // Ensure backslash after drive letter
                     if (root.Length == 2 || (root.Length > 2 && root[2] != '\\'))
                     {
@@ -177,6 +181,7 @@ internal partial class WslPathConverter
                     {
                         unc = "\\\\" + unc.TrimStart('\\');
                     }
+
                     root = unc;
                 }
 
@@ -206,4 +211,3 @@ internal partial class WslPathConverter
     [GeneratedRegex(@"\s+")]
     private static partial Regex WsSplitRegex();
 }
-

@@ -156,4 +156,3 @@ public class StartupBannerTests
         // Assert - No exception thrown
     }
 }
-

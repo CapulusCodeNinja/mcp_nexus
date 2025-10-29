@@ -49,4 +49,3 @@ public class LoggingExtensionsTests
         _ = result.Should().BeSameAs(mockLoggingBuilder.Object);
     }
 }
-

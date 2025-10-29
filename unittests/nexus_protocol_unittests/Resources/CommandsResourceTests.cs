@@ -25,7 +25,7 @@ public class CommandsResourceTests
     private readonly IServiceProvider m_ServiceProvider;
 
     /// <summary>
-    /// Initializes a new instance of the CommandsResourceTests class.
+    /// Initializes a new instance of the <see cref="CommandsResourceTests"/> class.
     /// </summary>
     public CommandsResourceTests()
     {
@@ -40,6 +40,7 @@ public class CommandsResourceTests
     /// <summary>
     /// Verifies that Commands returns empty list when no commands exist.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task Commands_ReturnsEmptyList()
     {
@@ -56,6 +57,7 @@ public class CommandsResourceTests
     /// <summary>
     /// Verifies that Commands includes timestamp in response.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task Commands_IncludesTimestamp()
     {
@@ -65,10 +67,10 @@ public class CommandsResourceTests
         _ = json.RootElement.TryGetProperty("timestamp", out _).Should().BeTrue();
     }
 
-
     /// <summary>
     /// Verifies that Commands returns valid JSON.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task Commands_ReturnsValidJson()
     {
@@ -81,6 +83,7 @@ public class CommandsResourceTests
     /// <summary>
     /// Verifies that Commands returns error response when exception occurs.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task Commands_WithException_ReturnsErrorResponse()
     {
@@ -99,6 +102,7 @@ public class CommandsResourceTests
     /// <summary>
     /// Verifies that Commands throws exception when service provider is null.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task Commands_WithNullServiceProvider_ThrowsException()
     {
@@ -109,6 +113,7 @@ public class CommandsResourceTests
     /// <summary>
     /// Verifies that Commands JSON format is indented.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
     [Fact]
     public async Task Commands_JsonFormat_IsIndented()
     {
