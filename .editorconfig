@@ -893,6 +893,9 @@ dotnet_diagnostic.IDE0005.severity = error
 
 # Naming rules
 
+# SA1311: Static readonly fields should begin with upper-case letter
+dotnet_diagnostic.SA1311.severity = none
+
 # Types and namespaces should use PascalCase
 # Examples: MyClass, PersonManager, DataAccess, MyNamespace
 dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.severity = error
@@ -1201,3 +1204,6 @@ dotnet_diagnostic.SA1615.severity = error
 # Example:
 # /// <typeparam name="T">The element type contained by this collection.</typeparam>
 dotnet_diagnostic.SA1618.severity = error
+
+# Default severity for analyzer diagnostics with category 'StyleCop.CSharp.OrderingRules'
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.OrderingRules.severity = none

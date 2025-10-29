@@ -5,6 +5,8 @@ namespace Nexus.Engine.Share.Models;
 /// </summary>
 public class CommandInfo
 {
+    private int m_ReadCount = 0;
+
     /// <summary>
     /// Gets the process identifier.
     /// </summary>
@@ -84,11 +86,6 @@ public class CommandInfo
     {
         get; private set;
     }
-
-    /// <summary>
-    /// Backing field for read count.
-    /// </summary>
-    private int m_ReadCount = 0;
 
     /// <summary>
     /// Gets or sets how often this command was read from external APIs.
