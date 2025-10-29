@@ -14,6 +14,8 @@ namespace Nexus.Setup.Validation
     [SupportedOSPlatform("windows")]
     internal class InstallationValidator : BaseValidator
     {
+        private readonly Logger m_Logger;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="InstallationValidator"/> class.
         /// </summary>
@@ -28,8 +30,9 @@ namespace Nexus.Setup.Validation
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
         internal InstallationValidator(IFileSystem fileSystem, IServiceController serviceController)
-            : base(LogManager.GetCurrentClassLogger(), fileSystem, serviceController)
+            : base(fileSystem, serviceController)
         {
+            m_Logger = LogManager.GetCurrentClassLogger();
         }
 
         /// <summary>
@@ -83,7 +86,7 @@ namespace Nexus.Setup.Validation
         /// <returns>True if service is not installed, false otherwise.</returns>
         private bool ValidateServiceNotInstalled(string serviceName)
         {
-            var isServiceInstalled = m_ServiceController.IsServiceInstalled(serviceName);
+            var isServiceInstalled = ServiceController.IsServiceInstalled(serviceName);
             if (isServiceInstalled)
             {
                 m_Logger.Warn("Service {ServiceName} is already installed", serviceName);
@@ -101,14 +104,14 @@ namespace Nexus.Setup.Validation
         /// <returns>True if source files are valid, false otherwise.</returns>
         private bool ValidateSourceFiles(string sourceDirectory)
         {
-            if (!m_FileSystem.DirectoryExists(sourceDirectory))
+            if (!FileSystem.DirectoryExists(sourceDirectory))
             {
                 m_Logger.Error("Source directory does not exist: {SourceDirectory}", sourceDirectory);
                 return false;
             }
 
             var sourceExecutablePath = Path.Combine(sourceDirectory, "nexus.exe");
-            if (!m_FileSystem.FileExists(sourceExecutablePath))
+            if (!FileSystem.FileExists(sourceExecutablePath))
             {
                 m_Logger.Error("Source executable not found: {SourceExecutablePath}", sourceExecutablePath);
                 m_Logger.Error("Please ensure the application is properly built before installation");

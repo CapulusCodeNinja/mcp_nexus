@@ -14,6 +14,8 @@ namespace Nexus.Setup.Validation
     [SupportedOSPlatform("windows")]
     internal class UninstallValidator : BaseValidator
     {
+        private readonly Logger m_Logger;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="UninstallValidator"/> class.
         /// </summary>
@@ -28,8 +30,9 @@ namespace Nexus.Setup.Validation
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
         internal UninstallValidator(IFileSystem fileSystem, IServiceController serviceController)
-            : base(LogManager.GetCurrentClassLogger(), fileSystem, serviceController)
+            : base(fileSystem, serviceController)
         {
+            m_Logger = LogManager.GetCurrentClassLogger();
         }
 
         /// <summary>
@@ -67,7 +70,7 @@ namespace Nexus.Setup.Validation
         /// <returns>True if service is installed, false otherwise.</returns>
         private bool ValidateServiceInstalled(string serviceName)
         {
-            var isServiceInstalled = m_ServiceController.IsServiceInstalled(serviceName);
+            var isServiceInstalled = ServiceController.IsServiceInstalled(serviceName);
             if (!isServiceInstalled)
             {
                 m_Logger.Warn("Service {ServiceName} is not installed", serviceName);
@@ -84,7 +87,7 @@ namespace Nexus.Setup.Validation
         /// <param name="installationDirectory">Installation directory path.</param>
         private void ValidateInstallationDirectory(string installationDirectory)
         {
-            if (!m_FileSystem.DirectoryExists(installationDirectory))
+            if (!FileSystem.DirectoryExists(installationDirectory))
             {
                 m_Logger.Warn("Installation directory does not exist: {InstallationDirectory}", installationDirectory);
                 m_Logger.Info("Service will be removed but no files to clean up");

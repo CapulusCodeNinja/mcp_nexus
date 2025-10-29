@@ -13,21 +13,28 @@ namespace Nexus.Setup.Validation
     [SupportedOSPlatform("windows")]
     internal abstract class BaseValidator
     {
-        protected readonly Logger m_Logger;
-        protected readonly IFileSystem m_FileSystem;
-        protected readonly IServiceController m_ServiceController;
+        private readonly Logger m_Logger;
+
+        /// <summary>
+        /// Gets the file system abstraction used for validation.
+        /// </summary>
+        protected IFileSystem FileSystem { get; private set; }
+
+        /// <summary>
+        /// Gets the Windows service controller abstraction used for validation.
+        /// </summary>
+        protected IServiceController ServiceController { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseValidator"/> class.
         /// </summary>
-        /// <param name="logger">NLog logger instance.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        protected BaseValidator(Logger logger, IFileSystem fileSystem, IServiceController serviceController)
+        protected BaseValidator(IFileSystem fileSystem, IServiceController serviceController)
         {
-            m_Logger = logger;
-            m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
-            m_ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
+            m_Logger = LogManager.GetCurrentClassLogger();
+            FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+            ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
         }
 
         /// <summary>

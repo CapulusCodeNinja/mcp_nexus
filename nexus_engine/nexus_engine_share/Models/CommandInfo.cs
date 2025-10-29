@@ -160,8 +160,17 @@ public class CommandInfo
     /// <param name="endTime">The time when the command completed.</param>
     /// <param name="aggregatedOutput">The aggregated output.</param>
     /// <param name="errorMessage">The error message if failed.</param>
-    public CommandInfo(string sessionId, string commandId, string command, CommandState state, DateTime queuedTime, int? processId,
-        DateTime? startTime, DateTime? endTime, string? aggregatedOutput, string? errorMessage)
+    public CommandInfo(
+        string sessionId,
+        string commandId,
+        string command,
+        CommandState state,
+        DateTime queuedTime,
+        int? processId,
+        DateTime? startTime,
+        DateTime? endTime,
+        string? aggregatedOutput,
+        string? errorMessage)
     {
         SessionId = sessionId;
         CommandId = commandId;
