@@ -181,8 +181,8 @@ internal class CdbSessionTestAccessor : CdbSession
     /// Sets the initialized state directly for testing purposes.
     /// </summary>
     /// <param name="initialized">The initialized state to set.</param>
-    public void SetInitializedForTesting(bool initialized)
+    public new void SetInitializedForTesting(bool initialized)
     {
-        m_Initialized = initialized;
+        base.SetInitializedForTesting(initialized);
     }
 }

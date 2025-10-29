@@ -40,6 +40,8 @@ public class ServerModeTests
     /// <summary>
     /// Verifies that enum values can be converted to strings.
     /// </summary>
+    /// <param name="mode">The server mode enum value under test.</param>
+    /// <param name="expected">The expected string representation.</param>
     [Theory]
     [InlineData(ServerMode.Http, "Http")]
     [InlineData(ServerMode.Stdio, "Stdio")]

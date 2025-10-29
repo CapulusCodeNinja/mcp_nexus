@@ -53,7 +53,7 @@ public class HttpServerHostedServiceTests
     /// <summary>
     /// Verifies StartAsync calls protocol server StartAsync.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task StartAsync_CallsProtocolServerStartAsync()
     {
@@ -71,7 +71,7 @@ public class HttpServerHostedServiceTests
     /// <summary>
     /// Verifies StopAsync calls protocol server StopAsync.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task StopAsync_CallsProtocolServerStopAsync()
     {

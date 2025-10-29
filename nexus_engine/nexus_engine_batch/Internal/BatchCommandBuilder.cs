@@ -12,6 +12,9 @@ internal class BatchCommandBuilder
 {
     private readonly Logger m_Logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BatchCommandBuilder"/> class.
+    /// </summary>
     public BatchCommandBuilder()
     {
         m_Logger = LogManager.GetCurrentClassLogger();

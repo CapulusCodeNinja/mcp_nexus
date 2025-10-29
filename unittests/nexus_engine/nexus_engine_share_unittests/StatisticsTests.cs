@@ -21,7 +21,6 @@ public class StatisticsTests
         m_Logger = LogManager.GetCurrentClassLogger();
     }
 
-
     /// <summary>
     /// Verifies that EmitCommandStats with completed status succeeds.
     /// </summary>
@@ -169,8 +168,6 @@ public class StatisticsTests
             TimeSpan.FromMilliseconds(500),
             TimeSpan.FromMilliseconds(600));
     }
-
-
 
     /// <summary>
     /// Verifies that EmitSessionStats with valid data succeeds.

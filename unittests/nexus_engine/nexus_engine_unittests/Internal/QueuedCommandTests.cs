@@ -12,7 +12,6 @@ namespace Nexus.Engine.Tests.Internal;
 /// </summary>
 public class QueuedCommandTests
 {
-
     /// <summary>
     /// Verifies that constructor sets all required properties correctly.
     /// </summary>
@@ -104,8 +103,6 @@ public class QueuedCommandTests
         // Assert
         _ = ReferenceEquals(queuedCommand.CancellationTokenSource, newCancellationTokenSource).Should().BeTrue();
     }
-
-
 
     /// <summary>
     /// Verifies that Dispose releases resources correctly.

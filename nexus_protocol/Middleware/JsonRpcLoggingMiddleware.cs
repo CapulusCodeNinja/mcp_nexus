@@ -63,9 +63,7 @@ internal class JsonRpcLoggingMiddleware
     {
         var requestBody = await ReadRequestBodyAsync(context);
 
-        m_Logger.Debug(
-            "JSON-RPC Request: Method={Method}, Path={Path}, ContentType={ContentType}",
-            context.Request.Method, context.Request.Path, context.Request.ContentType);
+        m_Logger.Debug("JSON-RPC Request: Method={Method}, Path={Path}, ContentType={ContentType}", context.Request.Method, context.Request.Path, context.Request.ContentType);
 
         var formattedRequest = FormatAndTruncateJson(requestBody);
         var extractedTexts = ExtractTextFields(requestBody);
@@ -75,18 +73,14 @@ internal class JsonRpcLoggingMiddleware
             if (IsMarkdown(text.Trim()))
             {
                 // Markdown - log as-is (no escaping needed!)
-                m_Logger.Debug(
-                    "Extracted Text Field (Markdown):{NewLine}{TextField}",
-                    Environment.NewLine, text.Trim());
+                m_Logger.Debug("Extracted Text Field (Markdown):{NewLine}{TextField}", Environment.NewLine, text.Trim());
             }
             else
             {
                 // Legacy JSON format - unescape and format
                 var unescapedText = UnescapeJsonInText(text.Trim());
                 var formattedText = FormatAndTruncateJson(unescapedText);
-                m_Logger.Debug(
-                    "Extracted Text Field (JSON):{NewLine}{TextField}",
-                    Environment.NewLine, formattedText);
+                m_Logger.Debug("Extracted Text Field (JSON):{NewLine}{TextField}", Environment.NewLine, formattedText);
             }
         }
 
@@ -100,9 +94,7 @@ internal class JsonRpcLoggingMiddleware
 
             var responseBodyText = await ReadResponseBodyAsync(responseBody);
 
-            m_Logger.Debug(
-                "JSON-RPC Response: StatusCode={StatusCode}, ContentType={ContentType}",
-                context.Response.StatusCode, context.Response.ContentType);
+            m_Logger.Debug("JSON-RPC Response: StatusCode={StatusCode}, ContentType={ContentType}", context.Response.StatusCode, context.Response.ContentType);
 
             var formattedResponse = FormatAndTruncateJson(responseBodyText);
             var extractedResponseTexts = ExtractTextFields(responseBodyText);
@@ -112,18 +104,14 @@ internal class JsonRpcLoggingMiddleware
                 if (IsMarkdown(text.Trim()))
                 {
                     // Markdown - log as-is (no escaping needed!)
-                    m_Logger.Debug(
-                        "Extracted Text Field (Markdown):{NewLine}{TextField}",
-                        Environment.NewLine, text.Trim());
+                    m_Logger.Debug("Extracted Text Field (Markdown):{NewLine}{TextField}", Environment.NewLine, text.Trim());
                 }
                 else
                 {
                     // Legacy JSON format - unescape and format
                     var unescapedText = UnescapeJsonInText(text.Trim());
                     var formattedText = FormatAndTruncateJson(unescapedText);
-                    m_Logger.Debug(
-                        "Extracted Text Field (JSON):{NewLine}{TextField}",
-                        Environment.NewLine, formattedText);
+                    m_Logger.Debug("Extracted Text Field (JSON):{NewLine}{TextField}", Environment.NewLine, formattedText);
                 }
             }
 

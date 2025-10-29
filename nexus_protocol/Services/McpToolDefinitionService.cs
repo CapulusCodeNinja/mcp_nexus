@@ -75,14 +75,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
             CreateReadResultTool(),
             CreateGetCommandsStatusTool(),
             CreateCloseSessionTool(),
-            CreateCancelCommandTool()
+            CreateCancelCommandTool(),
         ];
     }
 
     /// <summary>
     /// Creates the tool schema for opening a debugging session.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The tool schema describing the open-session operation.</returns>
     private static McpToolSchema CreateOpenSessionTool()
     {
         return new McpToolSchema
@@ -97,15 +97,15 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     dumpPath = new
                     {
                         type = "string",
-                        description = "Full path to the crash dump file (.dmp)"
+                        description = "Full path to the crash dump file (.dmp)",
                     },
                     symbolsPath = new
                     {
                         type = "string",
-                        description = "Optional: Path to symbols directory for enhanced analysis"
-                    }
+                        description = "Optional: Path to symbols directory for enhanced analysis",
+                    },
                 },
-                required = new[] { "dumpPath" }
+                required = new[] { "dumpPath" },
             },
         };
     }
@@ -113,7 +113,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <summary>
     /// Creates the tool schema for enqueuing a debugging command.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The tool schema describing the enqueue-command operation.</returns>
     private static McpToolSchema CreateEnqueueCommandTool()
     {
         return new McpToolSchema
@@ -128,15 +128,15 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from nexus_open_dump_analyze_session"
+                        description = "Session ID from nexus_open_dump_analyze_session",
                     },
                     command = new
                     {
                         type = "string",
-                        description = "WinDbg/CDB command to execute (e.g., 'k', '!analyze -v', 'lm')"
-                    }
+                        description = "WinDbg/CDB command to execute (e.g., 'k', '!analyze -v', 'lm')",
+                    },
                 },
-                required = new[] { "sessionId", "command" }
+                required = new[] { "sessionId", "command" },
             },
         };
     }
@@ -144,7 +144,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <summary>
     /// Creates the tool schema for enqueuing an extension command.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The tool schema describing the enqueue-extension operation.</returns>
     private static McpToolSchema CreateEnqueueExtensionCommandTool()
     {
         return new McpToolSchema
@@ -159,20 +159,20 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from nexus_open_dump_analyze_session"
+                        description = "Session ID from nexus_open_dump_analyze_session",
                     },
                     extensionName = new
                     {
                         type = "string",
-                        description = "Name of the extension to execute"
+                        description = "Name of the extension to execute",
                     },
                     parameters = new
                     {
                         type = "object",
-                        description = "Optional parameters to pass to the extension (JSON object)"
-                    }
+                        description = "Optional parameters to pass to the extension (JSON object)",
+                    },
                 },
-                required = new[] { "sessionId", "extensionName" }
+                required = new[] { "sessionId", "extensionName" },
             },
         };
     }
@@ -180,7 +180,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <summary>
     /// Creates the tool schema for reading command results.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The tool schema describing the read-result operation.</returns>
     private static McpToolSchema CreateReadResultTool()
     {
         return new McpToolSchema
@@ -195,15 +195,15 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from nexus_open_dump_analyze_session"
+                        description = "Session ID from nexus_open_dump_analyze_session",
                     },
                     commandId = new
                     {
                         type = "string",
-                        description = "Command ID from nexus_enqueue_async_dump_analyze_command"
-                    }
+                        description = "Command ID from nexus_enqueue_async_dump_analyze_command",
+                    },
                 },
-                required = new[] { "sessionId", "commandId" }
+                required = new[] { "sessionId", "commandId" },
             },
         };
     }
@@ -211,7 +211,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <summary>
     /// Creates the tool schema for getting bulk command status.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The tool schema describing the get-commands-status operation.</returns>
     private static McpToolSchema CreateGetCommandsStatusTool()
     {
         return new McpToolSchema
@@ -226,10 +226,10 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from nexus_open_dump_analyze_session"
-                    }
+                        description = "Session ID from nexus_open_dump_analyze_session",
+                    },
                 },
-                required = new[] { "sessionId" }
+                required = new[] { "sessionId" },
             },
         };
     }
@@ -237,7 +237,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <summary>
     /// Creates the tool schema for closing a debugging session.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The tool schema describing the close-session operation.</returns>
     private static McpToolSchema CreateCloseSessionTool()
     {
         return new McpToolSchema
@@ -252,10 +252,10 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from nexus_open_dump_analyze_session"
-                    }
+                        description = "Session ID from nexus_open_dump_analyze_session",
+                    },
                 },
-                required = new[] { "sessionId" }
+                required = new[] { "sessionId" },
             },
         };
     }
@@ -263,7 +263,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <summary>
     /// Creates the tool schema for canceling a command.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The tool schema describing the cancel-command operation.</returns>
     private static McpToolSchema CreateCancelCommandTool()
     {
         return new McpToolSchema
@@ -278,15 +278,15 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from nexus_open_dump_analyze_session"
+                        description = "Session ID from nexus_open_dump_analyze_session",
                     },
                     commandId = new
                     {
                         type = "string",
-                        description = "Command ID from nexus_enqueue_async_dump_analyze_command"
-                    }
+                        description = "Command ID from nexus_enqueue_async_dump_analyze_command",
+                    },
                 },
-                required = new[] { "sessionId", "commandId" }
+                required = new[] { "sessionId", "commandId" },
             },
         };
     }

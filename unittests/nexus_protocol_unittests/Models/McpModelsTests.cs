@@ -47,7 +47,7 @@ public class McpModelsTests
             Error = new McpError
             {
                 Code = -32603,
-                Message = "Internal error"
+                Message = "Internal error",
             },
         };
 
@@ -75,9 +75,9 @@ public class McpModelsTests
                 {
                     param1 = new
                     {
-                        type = "string"
-                    }
-                }
+                        type = "string",
+                    },
+                },
             },
         };
 
@@ -170,15 +170,15 @@ public class McpModelsTests
                     param1 = new
                     {
                         type = "string",
-                        description = "First parameter"
+                        description = "First parameter",
                     },
                     param2 = new
                     {
                         type = "integer",
                         minimum = 0,
-                        maximum = 100
-                    }
-                }
+                        maximum = 100,
+                    },
+                },
             },
         };
 

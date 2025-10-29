@@ -131,7 +131,7 @@ public class McpToolDefinitionServiceTests
     /// <summary>
     /// Verifies that NotifyToolsChangedAsync calls notification service.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task NotifyToolsChangedAsync_CallsNotificationService()
     {

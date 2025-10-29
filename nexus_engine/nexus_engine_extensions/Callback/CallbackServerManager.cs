@@ -50,7 +50,7 @@ internal class CallbackServerManager : ICallbackServerManager
     /// <summary>
     /// Gets the token validator instance for sharing with other components.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The token validator instance used by the callback server.</returns>
     public TokenValidator GetTokenValidator()
     {
         return m_TokenValidator;

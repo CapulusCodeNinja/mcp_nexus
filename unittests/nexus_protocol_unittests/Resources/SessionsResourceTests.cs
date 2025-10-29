@@ -40,7 +40,7 @@ public class SessionsResourceTests
     /// <summary>
     /// Verifies that Sessions returns empty list when no sessions exist.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task Sessions_ReturnsEmptyList()
     {
@@ -57,7 +57,7 @@ public class SessionsResourceTests
     /// <summary>
     /// Verifies that Sessions includes timestamp in response.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task Sessions_IncludesTimestamp()
     {
@@ -70,7 +70,7 @@ public class SessionsResourceTests
     /// <summary>
     /// Verifies that Sessions returns valid JSON.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task Sessions_ReturnsValidJson()
     {
@@ -83,7 +83,7 @@ public class SessionsResourceTests
     /// <summary>
     /// Verifies that Sessions returns error response when exception occurs.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task Sessions_WithException_ReturnsErrorResponse()
     {
@@ -102,7 +102,7 @@ public class SessionsResourceTests
     /// <summary>
     /// Verifies that Sessions throws exception when service provider is null.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task Sessions_WithNullServiceProvider_ThrowsException()
     {
@@ -113,7 +113,7 @@ public class SessionsResourceTests
     /// <summary>
     /// Verifies that Sessions JSON format is indented.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task Sessions_JsonFormat_IsIndented()
     {

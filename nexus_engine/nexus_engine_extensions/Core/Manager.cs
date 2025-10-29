@@ -16,7 +16,7 @@ internal class Manager : IDisposable
     private readonly Logger m_Logger;
     private readonly IFileSystem m_FileSystem;
     private readonly string m_ExtensionsPath;
-    private readonly Dictionary<string, ExtensionMetadata> m_Extensions =[];
+    private readonly Dictionary<string, ExtensionMetadata> m_Extensions = new();
     private readonly object m_Lock = new();
     private readonly FileSystemWatcher? m_Watcher;
     private int m_ReloadPending = 0;
@@ -184,9 +184,7 @@ internal class Manager : IDisposable
         // Validate script file exists
         if (!m_FileSystem.FileExists(metadata.FullScriptPath))
         {
-            m_Logger.Warn(
-                "Extension {Name} script file not found: {ScriptPath}",
-                metadata.Name, metadata.FullScriptPath);
+            m_Logger.Warn("Extension {Name} script file not found: {ScriptPath}", metadata.Name, metadata.FullScriptPath);
             return null;
         }
 
@@ -288,7 +286,7 @@ internal class Manager : IDisposable
     /// </summary>
     /// <param name="extensionName">The name of the extension to validate.</param>
     /// <returns>A tuple containing validation result and error message if validation fails.</returns>
-    public (bool isValid, string? errorMessage) ValidateExtension(string extensionName)
+    public (bool IsValid, string? ErrorMessage) ValidateExtension(string extensionName)
     {
         var metadata = GetExtension(extensionName);
         if (metadata == null)
@@ -313,8 +311,8 @@ internal class Manager : IDisposable
 
         var supportedScriptTypes = new[] { "powershell" };
         return !supportedScriptTypes.Contains(metadata.ScriptType.ToLowerInvariant())
-            ? ((bool isValid, string? errorMessage))(false, $"Extension '{extensionName}' has unsupported script type: {metadata.ScriptType}")
-            : ((bool isValid, string? errorMessage))(true, null);
+            ? (false, $"Extension '{extensionName}' has unsupported script type: {metadata.ScriptType}")
+            : (true, (string?)null);
     }
 
     /// <summary>

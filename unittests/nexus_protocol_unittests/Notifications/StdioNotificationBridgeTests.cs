@@ -54,7 +54,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync writes to console with valid notification.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task SendNotificationAsync_WithValidNotification_WritesToConsole()
     {
@@ -75,7 +75,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync throws ArgumentNullException when notification is null.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task SendNotificationAsync_WithNullNotification_ThrowsArgumentNullException()
     {
@@ -88,7 +88,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync writes complete JSON line.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task SendNotificationAsync_WritesCompleteJsonLine()
     {
@@ -109,7 +109,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync writes multiple notifications sequentially.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task SendNotificationAsync_MultipleNotifications_WritesSequentially()
     {
@@ -141,7 +141,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync is thread-safe with concurrent calls.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task SendNotificationAsync_ConcurrentCalls_AreThreadSafe()
     {
@@ -166,7 +166,7 @@ public class StdioNotificationBridgeTests : IDisposable
     /// <summary>
     /// Verifies that SendNotificationAsync serializes complex params correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task SendNotificationAsync_WithComplexParams_SerializesCorrectly()
     {
@@ -180,8 +180,8 @@ public class StdioNotificationBridgeTests : IDisposable
                 {
                     value = 123,
                     text = "test",
-                    array = new[] { 1, 2, 3 }
-                }
+                    array = new[] { 1, 2, 3 },
+                },
             },
         };
 

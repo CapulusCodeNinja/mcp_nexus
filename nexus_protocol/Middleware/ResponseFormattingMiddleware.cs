@@ -92,7 +92,7 @@ internal class ResponseFormattingMiddleware
                 {
                     Code = -32603,
                     Message = "Internal error",
-                    Data = exception.Message
+                    Data = exception.Message,
                 },
             };
 

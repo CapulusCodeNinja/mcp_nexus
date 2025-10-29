@@ -30,7 +30,6 @@ public class TokenValidatorTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-
     /// <summary>
     /// Verifies that GenerateToken returns a non-empty token.
     /// </summary>
@@ -85,8 +84,6 @@ public class TokenValidatorTests : IDisposable
         // Assert
         _ = token.Should().NotBeNullOrEmpty();
     }
-
-
 
     /// <summary>
     /// Verifies that ValidateToken returns valid for freshly generated token.
@@ -175,8 +172,6 @@ public class TokenValidatorTests : IDisposable
         _ = commandId2.Should().Be("cmd-2");
     }
 
-
-
     /// <summary>
     /// Verifies that RevokeToken invalidates a valid token.
     /// </summary>
@@ -219,8 +214,6 @@ public class TokenValidatorTests : IDisposable
         // Assert
         _ = act.Should().NotThrow();
     }
-
-
 
     /// <summary>
     /// Verifies that CleanupExpiredTokens removes expired tokens.
@@ -278,8 +271,6 @@ public class TokenValidatorTests : IDisposable
         _ = act.Should().NotThrow();
     }
 
-
-
     /// <summary>
     /// Verifies that Dispose can be called multiple times.
     /// </summary>
@@ -322,12 +313,10 @@ public class TokenValidatorTests : IDisposable
         _ = actCleanup.Should().NotThrow();
     }
 
-
-
     /// <summary>
     /// Verifies that concurrent token generation is thread-safe.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task GenerateToken_ConcurrentCalls_IsThreadSafe()
     {
@@ -360,7 +349,7 @@ public class TokenValidatorTests : IDisposable
     /// <summary>
     /// Verifies that concurrent validation is thread-safe.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task ValidateToken_ConcurrentCalls_IsThreadSafe()
     {
@@ -386,7 +375,7 @@ public class TokenValidatorTests : IDisposable
     /// <summary>
     /// Verifies that concurrent cleanup is thread-safe.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CleanupExpiredTokens_ConcurrentCalls_IsThreadSafe()
     {

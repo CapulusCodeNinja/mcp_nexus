@@ -24,6 +24,8 @@ internal class CallbackServer
     /// <summary>
     /// Initializes a new instance of the <see cref="CallbackServer"/> class.
     /// </summary>
+    /// <param name="engine">The debug engine used to enqueue and query commands.</param>
+    /// <param name="tokenValidator">Validator used to authenticate extension callbacks.</param>
     public CallbackServer(IDebugEngine engine, TokenValidator tokenValidator)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
@@ -90,9 +92,7 @@ internal class CallbackServer
             var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
             var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-            m_Logger.Trace(
-                "[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Execute request received",
-                extensionPid, callbackCounter, extensionCommandId, extensionName);
+            m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Execute request received", extensionPid, callbackCounter, extensionCommandId, extensionName);
 
             var newCommandId = m_Engine.EnqueueCommand(extensionSessionId, request.Command);
             var commandInfo = await m_Engine.GetCommandInfoAsync(extensionSessionId, newCommandId, CancellationToken.None);
@@ -145,9 +145,7 @@ internal class CallbackServer
             var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
             var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-            m_Logger.Trace(
-                "[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Enqueue request received",
-                extensionPid, callbackCounter, extensionCommandId, extensionName);
+            m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Enqueue request received", extensionPid, callbackCounter, extensionCommandId, extensionName);
 
             var newCommandId = m_Engine.EnqueueCommand(extensionSessionId, request.Command);
 
@@ -190,9 +188,7 @@ internal class CallbackServer
             var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
             var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-            m_Logger.Trace(
-                "[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Read request received for command {CommandId}",
-                extensionPid, callbackCounter, extensionCommandId, extensionName, commandId);
+            m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Read request received for command {CommandId}", extensionPid, callbackCounter, extensionCommandId, extensionName, commandId);
 
             var commandInfo = await m_Engine.GetCommandInfoAsync(extensionSessionId, commandId, CancellationToken.None);
 
@@ -236,9 +232,7 @@ internal class CallbackServer
             var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
             var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-            m_Logger.Trace(
-                "[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Status request received for command {CommandId}",
-                extensionPid, callbackCounter, extensionCommandId, extensionName, commandId);
+            m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Status request received for command {CommandId}", extensionPid, callbackCounter, extensionCommandId, extensionName, commandId);
 
             var commandInfo = m_Engine.GetCommandInfo(extensionSessionId, commandId);
 
@@ -295,9 +289,7 @@ internal class CallbackServer
             var extensionPid = context.Request.Headers["X-Extension-PID"].FirstOrDefault() ?? "0";
             var extensionName = context.Request.Headers["X-Script-Extension-Name"].FirstOrDefault() ?? string.Empty;
 
-            m_Logger.Trace(
-                "[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Status request received",
-                extensionPid, callbackCounter, extensionCommandId, extensionName);
+            m_Logger.Trace("[Extension] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: Status request received", extensionPid, callbackCounter, extensionCommandId, extensionName);
 
             var results = new Dictionary<string, object>();
 
@@ -379,8 +371,7 @@ internal class CallbackServer
 
             var commandNumber = GetCommandNumber(extensionSessionId, extensionCommandId);
 
-            LogMessageWithLevel(m_Logger, request.Level, "[EXT] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: {Message}",
-                extensionPid, callbackCounter, commandNumber, extensionName, request.Message);
+            LogMessageWithLevel(m_Logger, request.Level, "[EXT] [{ExtensionPid}] [{CallbackCounter}] [{ExtensionCommandId}] [{extensionName}]: {Message}", extensionPid, callbackCounter, commandNumber, extensionName, request.Message);
 
             return Results.Ok();
         }

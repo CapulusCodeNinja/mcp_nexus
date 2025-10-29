@@ -11,6 +11,9 @@ internal class BatchCommandFilter
 {
     private readonly Logger m_Logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BatchCommandFilter"/> class.
+    /// </summary>
     public BatchCommandFilter()
     {
         m_Logger = LogManager.GetCurrentClassLogger();
@@ -37,9 +40,7 @@ internal class BatchCommandFilter
 
         if (commands.Count < Settings.Instance.Get().McpNexus.Batching.MinBatchSize)
         {
-            m_Logger.Trace(
-                "Not enough commands to batch (count: {Count}, min: {Min})",
-                commands.Count, Settings.Instance.Get().McpNexus.Batching.MinBatchSize);
+            m_Logger.Trace("Not enough commands to batch (count: {Count}, min: {Min})", commands.Count, Settings.Instance.Get().McpNexus.Batching.MinBatchSize);
             return false;
         }
 

@@ -36,12 +36,11 @@ public class InstallationValidatorTests
                 {
                     ServiceName = "TestService",
                     InstallPath = @"C:\Program Files\MCP-Nexus",
-                    BackupPath = @"C:\Program Files\MCP-Nexus\backup"
-                }
+                    BackupPath = @"C:\Program Files\MCP-Nexus\backup",
+                },
             },
         };
     }
-
 
     /// <summary>
     /// Verifies that parameterless constructor creates validator successfully.
@@ -68,8 +67,6 @@ public class InstallationValidatorTests
         // Assert
         _ = validator.Should().NotBeNull();
     }
-
-
 
     /// <summary>
     /// Verifies that ValidateInstallation returns false when service is already installed.

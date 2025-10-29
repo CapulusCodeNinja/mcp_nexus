@@ -21,6 +21,8 @@ internal class DebugEngineTestAccessor : DebugEngine
     /// <summary>
     /// Exposes ValidateSessionId for testing.
     /// </summary>
+    /// <param name="sessionId">Session identifier to validate.</param>
+    /// <param name="paramName">Parameter name for exception context.</param>
     public static new void ValidateSessionId(string sessionId, string paramName)
     {
         DebugEngine.ValidateSessionId(sessionId, paramName);
@@ -29,6 +31,8 @@ internal class DebugEngineTestAccessor : DebugEngine
     /// <summary>
     /// Exposes ValidateCommandId for testing.
     /// </summary>
+    /// <param name="commandId">Command identifier to validate.</param>
+    /// <param name="paramName">Parameter name for exception context.</param>
     public static new void ValidateCommandId(string commandId, string paramName)
     {
         DebugEngine.ValidateCommandId(commandId, paramName);
@@ -37,6 +41,8 @@ internal class DebugEngineTestAccessor : DebugEngine
     /// <summary>
     /// Exposes ValidateCommand for testing.
     /// </summary>
+    /// <param name="command">Command text to validate.</param>
+    /// <param name="paramName">Parameter name for exception context.</param>
     public static new void ValidateCommand(string command, string paramName)
     {
         DebugEngine.ValidateCommand(command, paramName);
@@ -45,6 +51,8 @@ internal class DebugEngineTestAccessor : DebugEngine
     /// <summary>
     /// Exposes ValidateExtensionName for testing.
     /// </summary>
+    /// <param name="extensionName">Extension name to validate.</param>
+    /// <param name="paramName">Parameter name for exception context.</param>
     public static new void ValidateExtensionName(string extensionName, string paramName)
     {
         DebugEngine.ValidateExtensionName(extensionName, paramName);

@@ -53,7 +53,15 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients about command status changes.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <param name="sessionId">The session identifier associated with the command.</param>
+    /// <param name="commandId">The unique command identifier.</param>
+    /// <param name="command">The command text that was executed.</param>
+    /// <param name="status">The current status string.</param>
+    /// <param name="result">Optional result payload for completed commands.</param>
+    /// <param name="progress">Progress percentage (0-100) for in-flight commands.</param>
+    /// <param name="message">Optional human-readable status message.</param>
+    /// <param name="error">Optional error detail if the command failed.</param>
+    /// <returns>A task representing the asynchronous publish operation.</returns>
     public async Task NotifyCommandStatusAsync(
         string sessionId,
         string commandId,
@@ -83,7 +91,12 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients about command heartbeat (for long-running commands).
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <param name="sessionId">The session identifier owning the command.</param>
+    /// <param name="commandId">The unique command identifier.</param>
+    /// <param name="command">The command text.</param>
+    /// <param name="elapsed">Elapsed time since command start.</param>
+    /// <param name="details">Optional additional details about the heartbeat.</param>
+    /// <returns>A task representing the asynchronous publish operation.</returns>
     public async Task NotifyCommandHeartbeatAsync(
         string sessionId,
         string commandId,
@@ -108,7 +121,12 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients about session recovery events.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <param name="reason">Reason for the recovery action.</param>
+    /// <param name="recoveryStep">The recovery step performed.</param>
+    /// <param name="success">True if recovery succeeded; otherwise false.</param>
+    /// <param name="message">Human-readable message describing the outcome.</param>
+    /// <param name="affectedCommands">Optional list of affected command IDs.</param>
+    /// <returns>A task representing the asynchronous publish operation.</returns>
     public async Task NotifySessionRecoveryAsync(
         string reason,
         string recoveryStep,
@@ -132,7 +150,12 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients about server health status.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <param name="status">Overall server status string.</param>
+    /// <param name="cdbSessionActive">Whether a CDB session is currently active.</param>
+    /// <param name="queueSize">The current command queue size.</param>
+    /// <param name="activeCommands">The number of actively executing commands.</param>
+    /// <param name="uptime">Optional server uptime.</param>
+    /// <returns>A task representing the asynchronous publish operation.</returns>
     public async Task NotifyServerHealthAsync(
         string status,
         bool cdbSessionActive,
@@ -156,7 +179,7 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients that the tools list has changed.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A task representing the asynchronous publish operation.</returns>
     public async Task NotifyToolsListChangedAsync()
     {
         await PublishNotificationAsync("notifications/tools/listChanged", new { });
@@ -165,7 +188,7 @@ internal class McpNotificationService : IMcpNotificationService
     /// <summary>
     /// Notifies clients that the resources list has changed.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A task representing the asynchronous publish operation.</returns>
     public async Task NotifyResourcesListChangedAsync()
     {
         await PublishNotificationAsync("notifications/resources/listChanged", new { });

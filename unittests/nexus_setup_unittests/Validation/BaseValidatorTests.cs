@@ -31,7 +31,6 @@ public class BaseValidatorTests
         m_Logger = LogManager.GetCurrentClassLogger();
     }
 
-
     /// <summary>
     /// Verifies that constructor throws ArgumentNullException when fileSystem is null.
     /// </summary>
@@ -67,8 +66,6 @@ public class BaseValidatorTests
         _ = validator.Should().NotBeNull();
     }
 
-
-
     /// <summary>
     /// Verifies that ValidateAdministratorPrivileges returns a boolean result.
     /// </summary>
@@ -84,8 +81,6 @@ public class BaseValidatorTests
         // Assert - Result depends on whether test is run as admin, just verify it returns a boolean
         _ = result.GetType().Should().Be(typeof(bool));
     }
-
-
 
     /// <summary>
     /// Verifies that ValidateDirectoryPermissions returns true when parent directory exists.
@@ -166,22 +161,38 @@ public class BaseValidatorTests
         _ = result.Should().BeTrue();
     }
 
-
     /// <summary>
     /// Testable concrete implementation of BaseValidator for testing.
     /// </summary>
     private class TestableBaseValidator : BaseValidator
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TestableBaseValidator"/> class for tests.
+        /// </summary>
+        /// <param name="logger">Logger instance.</param>
+        /// <param name="fileSystem">File system abstraction.</param>
+        /// <param name="serviceController">Service controller abstraction.</param>
         public TestableBaseValidator(Logger logger, IFileSystem fileSystem, IServiceController serviceController)
-            : base(logger, fileSystem, serviceController)
+            : base(fileSystem, serviceController)
         {
+            _ = logger; // parameter intentionally unused in accessor
         }
 
+        /// <summary>
+        /// Exposes the protected administrator privileges validation.
+        /// </summary>
+        /// <returns>True if validation passes; otherwise false.</returns>
         public bool PublicValidateAdministratorPrivileges()
         {
             return ValidateAdministratorPrivileges();
         }
 
+        /// <summary>
+        /// Exposes the protected directory permissions validation.
+        /// </summary>
+        /// <param name="directoryPath">Path to validate.</param>
+        /// <param name="directoryName">Friendly directory name used in messages.</param>
+        /// <returns>True if permissions are sufficient; otherwise false.</returns>
         public bool PublicValidateDirectoryPermissions(string directoryPath, string directoryName)
         {
             return ValidateDirectoryPermissions(directoryPath, directoryName);

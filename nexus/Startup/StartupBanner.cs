@@ -76,9 +76,7 @@ internal class StartupBanner
         m_Logger.Info("  Version:     {Version}", version);
         m_Logger.Info("  Environment: {Environment}", m_IsServiceMode ? "Service" : "Development");
         m_Logger.Info("  Process ID:  {ProcessId}", processId);
-        m_Logger.Info(
-            "  Transport:   {TransportMode} ({ServiceMode})",
-            transportMode.ToUpper(), m_IsServiceMode ? "Service Mode" : "Development Mode");
+        m_Logger.Info("  Transport:   {TransportMode} ({ServiceMode})", transportMode.ToUpper(), m_IsServiceMode ? "Service Mode" : "Development Mode");
         m_Logger.Info("  Host:        {Host}", host);
         m_Logger.Info("  Port:        {Port}", port);
         m_Logger.Info("  Started:     {StartTime:yyyy-MM-dd HH:mm:ss}", startTime);

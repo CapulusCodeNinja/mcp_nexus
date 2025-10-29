@@ -14,6 +14,8 @@ public class CommandStateTests
     /// <summary>
     /// Verifies that CommandState enum values have correct numeric values.
     /// </summary>
+    /// <param name="state">The enum value under test.</param>
+    /// <param name="expectedValue">The expected integer representation.</param>
     [Theory]
     [InlineData(CommandState.Queued, 0)]
     [InlineData(CommandState.Executing, 1)]

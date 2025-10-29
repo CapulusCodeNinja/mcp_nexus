@@ -27,7 +27,6 @@ public class CommandPreprocessorTests
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
     }
 
-
     /// <summary>
     /// Verifies that constructor throws ArgumentNullException when fileSystem is null.
     /// </summary>
@@ -37,8 +36,6 @@ public class CommandPreprocessorTests
         // Act & Assert
         _ = Assert.Throws<ArgumentNullException>(() => new CommandPreprocessor(null!));
     }
-
-
 
     /// <summary>
     /// Verifies that PreprocessCommand returns input for null command.
@@ -59,6 +56,7 @@ public class CommandPreprocessorTests
     /// <summary>
     /// Verifies that PreprocessCommand returns input for empty command.
     /// </summary>
+    /// <param name="command">Command text under test.</param>
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -77,6 +75,7 @@ public class CommandPreprocessorTests
     /// <summary>
     /// Verifies that PreprocessCommand returns input for simple commands.
     /// </summary>
+    /// <param name="command">Command text under test.</param>
     [Theory]
     [InlineData("k")]
     [InlineData("!analyze -v")]
@@ -110,8 +109,6 @@ public class CommandPreprocessorTests
         // Assert - results should be identical (caching works)
         _ = result1.Should().Be(result2);
     }
-
-
 
     /// <summary>
     /// Verifies that PreprocessCommand handles .sympath commands.
@@ -187,8 +184,6 @@ public class CommandPreprocessorTests
         m_FileSystemMock.Verify(fs => fs.CreateDirectory("D:\\symbols3"), Times.Once);
     }
 
-
-
     /// <summary>
     /// Verifies that PreprocessCommand handles .srcpath commands.
     /// </summary>
@@ -225,8 +220,6 @@ public class CommandPreprocessorTests
         m_FileSystemMock.Verify(fs => fs.CreateDirectory(It.Is<string>(p => p.Contains("srv"))), Times.Never);
     }
 
-
-
     /// <summary>
     /// Verifies that PreprocessCommand handles .symfix commands.
     /// </summary>
@@ -244,8 +237,6 @@ public class CommandPreprocessorTests
         // Assert - should try to create the directory
         m_FileSystemMock.Verify(fs => fs.CreateDirectory("C:\\symbols"), Times.Once);
     }
-
-
 
     /// <summary>
     /// Verifies that PreprocessCommand handles !homedir commands.
@@ -299,8 +290,6 @@ public class CommandPreprocessorTests
         _ = result.Should().Contain("\"C:/debugger/extensions\"");
     }
 
-
-
     /// <summary>
     /// Verifies that PreprocessCommand doesn't create directories that already exist.
     /// </summary>
@@ -339,8 +328,6 @@ public class CommandPreprocessorTests
         // Assert
         _ = result.Should().Be(command);
     }
-
-
 
     /// <summary>
     /// Verifies that PreprocessCommand skips WSL paths in regular commands.

@@ -213,7 +213,7 @@ internal class DebugSession : IDisposable
     /// <summary>
     /// Disposes the debug session.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A task representing the asynchronous disposal operation.</returns>
     public async Task DisposeAsync()
     {
         if (m_Disposed)

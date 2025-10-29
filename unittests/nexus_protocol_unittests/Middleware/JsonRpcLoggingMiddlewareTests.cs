@@ -27,7 +27,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync calls next middleware for root POST.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithRootPostRequest_CallsNextMiddleware()
     {
@@ -56,7 +56,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync skips logging for GET requests.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithGetRequest_SkipsLogging()
     {
@@ -83,7 +83,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync skips logging for non-root paths.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithNonRootPath_SkipsLogging()
     {
@@ -110,7 +110,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync copies response body correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_CopiesResponseBodyToOriginalStream()
     {
@@ -139,7 +139,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync handles empty request body.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithEmptyRequestBody_HandlesGracefully()
     {
@@ -168,7 +168,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync reads and preserves request body.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_PreservesRequestBodyForNextMiddleware()
     {
@@ -205,7 +205,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync handles PUT method by skipping logging.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithPutMethod_SkipsLogging()
     {
@@ -232,7 +232,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync restores original response stream.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_RestoresOriginalResponseStream()
     {
@@ -257,7 +257,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync handles large request bodies.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithLargeRequestBody_HandlesCorrectly()
     {
@@ -294,7 +294,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync handles exceptions from next middleware.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WhenNextMiddlewareThrows_PropagatesException()
     {
@@ -315,7 +315,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync with POST to "/" enables buffering.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithPostToRoot_EnablesRequestBuffering()
     {
@@ -335,10 +335,11 @@ public class JsonRpcLoggingMiddlewareTests
         _ = context.Request.Body.Position.Should().Be(0);
     }
 
-
     /// <summary>
     /// Verifies that IsSseFormat detects SSE format correctly.
     /// </summary>
+    /// <param name="content">Input text to evaluate.</param>
+    /// <param name="expected">Expected detection result.</param>
     [Theory]
     [InlineData("event: message\ndata: {\"test\":\"value\"}", true)]
     [InlineData("data: {\"test\":\"value\"}", true)]
@@ -358,6 +359,8 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that IsSseFormat handles whitespace correctly.
     /// </summary>
+    /// <param name="content">Input text including whitespace.</param>
+    /// <param name="expected">Expected detection result.</param>
     [Theory]
     [InlineData("  event: message", true)]
     [InlineData("\tdata: {\"test\":\"value\"}", true)]
@@ -384,8 +387,6 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().BeFalse();
     }
 
-
-
     /// <summary>
     /// Verifies that FormatSseContent formats SSE content correctly.
     /// </summary>
@@ -408,6 +409,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that FormatSseContent handles empty content.
     /// </summary>
+    /// <param name="content">SSE content to format.</param>
     [Theory]
     [InlineData("")]
     public void FormatSseContent_WithEmptyContent_ReturnsEmptyString(string content)
@@ -467,11 +469,11 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().Contain("\"id\": 2");
     }
 
-
-
     /// <summary>
     /// Verifies that ExtractJsonFromSseLine extracts JSON correctly.
     /// </summary>
+    /// <param name="line">The SSE data line.</param>
+    /// <param name="expectedJson">The expected JSON payload.</param>
     [Theory]
     [InlineData("data: {\"test\":\"value\"}", "{\"test\":\"value\"}")]
     [InlineData("data:{\"test\":\"value\"}", "{\"test\":\"value\"}")]
@@ -489,6 +491,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that ExtractJsonFromSseLine handles invalid lines.
     /// </summary>
+    /// <param name="line">Line to evaluate.</param>
     [Theory]
     [InlineData("")]
     [InlineData("event: message")]
@@ -517,8 +520,6 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().BeEmpty();
     }
 
-
-
     /// <summary>
     /// Verifies that ExtractTextFieldsFromSse extracts text fields correctly.
     /// </summary>
@@ -542,6 +543,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that ExtractTextFieldsFromSse handles empty content.
     /// </summary>
+    /// <param name="content">SSE content.</param>
     [Theory]
     [InlineData("")]
     public void ExtractTextFieldsFromSse_WithEmptyContent_ReturnsEmptyList(string content)
@@ -600,8 +602,6 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().Contain("second text");
     }
 
-
-
     /// <summary>
     /// Verifies that FormatAndTruncateJson handles SSE format correctly.
     /// </summary>
@@ -643,6 +643,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that FormatAndTruncateJson handles empty content.
     /// </summary>
+    /// <param name="content">JSON string or SSE content.</param>
     [Theory]
     [InlineData("")]
     public void FormatAndTruncateJson_WithEmptyContent_ReturnsEmptyString(string content)
@@ -702,8 +703,6 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().Be(invalidJson);
     }
 
-
-
     /// <summary>
     /// Verifies that ExtractTextFields handles SSE format correctly.
     /// </summary>
@@ -743,6 +742,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that ExtractTextFields handles empty content.
     /// </summary>
+    /// <param name="content">JSON or SSE content.</param>
     [Theory]
     [InlineData("")]
     public void ExtractTextFields_WithEmptyContent_ReturnsEmptyList(string content)
@@ -804,8 +804,6 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result[0].Should().Contain("value");
     }
 
-
-
     /// <summary>
     /// Verifies that TruncateString truncates long strings correctly.
     /// </summary>
@@ -844,6 +842,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that TruncateString handles empty strings correctly.
     /// </summary>
+    /// <param name="value">String value to truncate.</param>
     [Theory]
     [InlineData("")]
     public void TruncateString_WithEmptyString_ReturnsOriginal(string value)
@@ -891,8 +890,6 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().Be(exactString);
     }
 
-
-
     /// <summary>
     /// Verifies that UnescapeJsonInText unescapes Unicode escape sequences correctly.
     /// </summary>
@@ -928,6 +925,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that UnescapeJsonInText handles empty content correctly.
     /// </summary>
+    /// <param name="text">Text containing escaped JSON sequences.</param>
     [Theory]
     [InlineData("")]
     public void UnescapeJsonInText_WithEmptyContent_ReturnsOriginal(string text)
@@ -952,12 +950,10 @@ public class JsonRpcLoggingMiddlewareTests
         _ = result.Should().BeNull();
     }
 
-
-
     /// <summary>
     /// Verifies that the middleware handles SSE response correctly in integration.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithSseResponse_ProcessesCorrectly()
     {
@@ -984,7 +980,7 @@ public class JsonRpcLoggingMiddlewareTests
     /// <summary>
     /// Verifies that the middleware handles regular JSON response correctly in integration.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithRegularJsonResponse_ProcessesCorrectly()
     {

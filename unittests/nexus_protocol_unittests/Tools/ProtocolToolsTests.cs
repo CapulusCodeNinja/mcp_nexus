@@ -12,11 +12,10 @@ namespace Nexus.Protocol.Unittests.Tools;
 /// </summary>
 public class ProtocolToolsTests
 {
-
     /// <summary>
     /// Verifies that enqueue tool handles empty sessionId correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueDumpAnalyzeCommand_WithEmptySessionId_ReturnsErrorResponse()
     {
@@ -34,7 +33,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that enqueue tool handles empty command correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueDumpAnalyzeCommand_WithEmptyCommand_ReturnsErrorResponse()
     {
@@ -52,7 +51,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that enqueue tool handles whitespace-only sessionId correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueDumpAnalyzeCommand_WithWhitespaceSessionId_ReturnsErrorResponse()
     {
@@ -69,7 +68,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that enqueue tool handles whitespace-only command correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueDumpAnalyzeCommand_WithWhitespaceCommand_ReturnsErrorResponse()
     {
@@ -86,7 +85,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that enqueue tool handles invalid sessionId correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueDumpAnalyzeCommand_WithInvalidSessionId_ReturnsErrorResponse()
     {
@@ -102,12 +101,10 @@ public class ProtocolToolsTests
         _ = (markdown.Contains("Failed") || markdown.Contains("Error") || markdown.Contains("❌")).Should().BeTrue();
     }
 
-
-
     /// <summary>
     /// Verifies that extension enqueue tool handles empty sessionId correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionCommand_WithEmptySessionId_ReturnsErrorResponse()
     {
@@ -125,7 +122,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that extension enqueue tool handles empty extension name correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionCommand_WithEmptyExtensionName_ReturnsErrorResponse()
     {
@@ -143,7 +140,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that extension enqueue tool handles whitespace sessionId correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionCommand_WithWhitespaceSessionId_ReturnsErrorResponse()
     {
@@ -160,7 +157,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that extension enqueue tool handles whitespace extension name correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionCommand_WithWhitespaceExtensionName_ReturnsErrorResponse()
     {
@@ -177,7 +174,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that extension enqueue tool handles invalid sessionId correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionCommand_WithInvalidSessionId_ReturnsErrorResponse()
     {
@@ -194,7 +191,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that extension enqueue tool accepts null parameters.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionCommand_WithNullParameters_HandlesGracefully()
     {
@@ -210,7 +207,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that extension enqueue tool accepts parameters object.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionCommand_WithParameters_HandlesGracefully()
     {
@@ -224,12 +221,10 @@ public class ProtocolToolsTests
         _ = markdown.Should().NotBeNullOrEmpty();
     }
 
-
-
     /// <summary>
     /// Verifies that get commands status tool handles invalid sessionId correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task GetCommandsStatus_WithInvalidSessionId_ReturnsErrorResponse()
     {
@@ -246,7 +241,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that get commands status tool handles empty sessionId correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task GetCommandsStatus_WithEmptySessionId_ReturnsErrorResponse()
     {
@@ -262,7 +257,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that get commands status tool returns valid markdown.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task GetCommandsStatus_ReturnsValidMarkdown()
     {
@@ -276,12 +271,10 @@ public class ProtocolToolsTests
         _ = markdown.Should().Contain("##");
     }
 
-
-
     /// <summary>
     /// Verifies that cancel command tool handles invalid sessionId correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CancelCommand_WithInvalidSessionId_ReturnsResponse()
     {
@@ -298,7 +291,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that cancel command tool handles invalid commandId correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CancelCommand_WithInvalidCommandId_ReturnsResponse()
     {
@@ -314,7 +307,7 @@ public class ProtocolToolsTests
     /// <summary>
     /// Verifies that cancel command tool returns valid markdown.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CancelCommand_ReturnsValidMarkdown()
     {

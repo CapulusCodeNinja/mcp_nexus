@@ -212,8 +212,16 @@ public class MarkdownFormatterTests
 
         // Act
         var result = MarkdownFormatter.CreateCommandResult(
-            commandId, sessionId, command, state, isSuccess, queuedTime,
-            startTime, endTime, executionTime, totalTime);
+            commandId,
+            sessionId,
+            command,
+            state,
+            isSuccess,
+            queuedTime,
+            startTime,
+            endTime,
+            executionTime,
+            totalTime);
 
         // Assert
         _ = result.Should().Contain("## Command Result");

@@ -38,7 +38,6 @@ public class DebugEngineTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-
     /// <summary>
     /// Verifies that constructor throws when fileSystem is null.
     /// </summary>
@@ -71,8 +70,6 @@ public class DebugEngineTests : IDisposable
         // Assert
         _ = engine.Should().NotBeNull();
     }
-
-
 
     /// <summary>
     /// Verifies that idle cleanup closes a session that has exceeded the inactivity timeout and has no active commands.
@@ -116,12 +113,10 @@ public class DebugEngineTests : IDisposable
         _ = isActive.Should().BeFalse();
     }
 
-
-
     /// <summary>
     /// Verifies that CreateSessionAsync throws when dumpFilePath is null.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CreateSessionAsync_WithNullDumpFilePath_ThrowsArgumentException()
     {
@@ -132,7 +127,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that CreateSessionAsync throws when dumpFilePath is empty.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CreateSessionAsync_WithEmptyDumpFilePath_ThrowsArgumentException()
     {
@@ -143,7 +138,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that CreateSessionAsync throws when dumpFilePath is whitespace.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CreateSessionAsync_WithWhitespaceDumpFilePath_ThrowsArgumentException()
     {
@@ -154,7 +149,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that CreateSessionAsync throws when dump file does not exist.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CreateSessionAsync_WithNonExistentFile_ThrowsFileNotFoundException()
     {
@@ -169,7 +164,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that CreateSessionAsync throws when disposed.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CreateSessionAsync_WhenDisposed_ThrowsObjectDisposedException()
     {
@@ -180,12 +175,10 @@ public class DebugEngineTests : IDisposable
         _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => m_Engine.CreateSessionAsync(@"C:\test\dump.dmp"));
     }
 
-
-
     /// <summary>
     /// Verifies that CloseSessionAsync throws when sessionId is null.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CloseSessionAsync_WithNullSessionId_ThrowsArgumentException()
     {
@@ -196,7 +189,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that CloseSessionAsync throws when sessionId is empty.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CloseSessionAsync_WithEmptySessionId_ThrowsArgumentException()
     {
@@ -207,7 +200,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that CloseSessionAsync succeeds when session not found.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CloseSessionAsync_WithNonExistentSession_Succeeds()
     {
@@ -220,7 +213,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that CloseSessionAsync throws when disposed.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CloseSessionAsync_WhenDisposed_ThrowsObjectDisposedException()
     {
@@ -230,8 +223,6 @@ public class DebugEngineTests : IDisposable
         // Act & Assert
         _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => m_Engine.CloseSessionAsync("test-session"));
     }
-
-
 
     /// <summary>
     /// Verifies that IsSessionActive throws when sessionId is null.
@@ -278,8 +269,6 @@ public class DebugEngineTests : IDisposable
         // Act & Assert
         _ = Assert.Throws<ObjectDisposedException>(() => m_Engine.IsSessionActive("test-session"));
     }
-
-
 
     /// <summary>
     /// Verifies that EnqueueCommand throws when sessionId is null.
@@ -334,12 +323,10 @@ public class DebugEngineTests : IDisposable
         _ = Assert.Throws<ObjectDisposedException>(() => m_Engine.EnqueueCommand("test-session", "!analyze"));
     }
 
-
-
     /// <summary>
     /// Verifies that EnqueueExtensionScriptAsync throws when sessionId is null.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionScriptAsync_WithNullSessionId_ThrowsArgumentException()
     {
@@ -350,7 +337,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that EnqueueExtensionScriptAsync throws when extensionName is null.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionScriptAsync_WithNullExtensionName_ThrowsArgumentException()
     {
@@ -361,7 +348,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that EnqueueExtensionScriptAsync throws when extensionName is empty.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionScriptAsync_WithEmptyExtensionName_ThrowsArgumentException()
     {
@@ -372,7 +359,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that EnqueueExtensionScriptAsync throws when session not found.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionScriptAsync_WithNonExistentSession_ThrowsInvalidOperationException()
     {
@@ -383,7 +370,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that EnqueueExtensionScriptAsync throws when disposed.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task EnqueueExtensionScriptAsync_WhenDisposed_ThrowsObjectDisposedException()
     {
@@ -394,12 +381,10 @@ public class DebugEngineTests : IDisposable
         _ = await Assert.ThrowsAsync<ObjectDisposedException>(async () => await m_Engine.EnqueueExtensionScriptAsync("test-session", "test-extension"));
     }
 
-
-
     /// <summary>
     /// Verifies that GetCommandInfoAsync throws when sessionId is null.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task GetCommandInfoAsync_WithNullSessionId_ThrowsArgumentException()
     {
@@ -410,7 +395,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that GetCommandInfoAsync throws when commandId is null.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task GetCommandInfoAsync_WithNullCommandId_ThrowsArgumentException()
     {
@@ -421,7 +406,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that GetCommandInfoAsync throws when session not found.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task GetCommandInfoAsync_WithNonExistentSession_ThrowsInvalidOperationException()
     {
@@ -432,7 +417,7 @@ public class DebugEngineTests : IDisposable
     /// <summary>
     /// Verifies that GetCommandInfoAsync throws when disposed.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task GetCommandInfoAsync_WhenDisposed_ThrowsObjectDisposedException()
     {
@@ -442,8 +427,6 @@ public class DebugEngineTests : IDisposable
         // Act & Assert
         _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => m_Engine.GetCommandInfoAsync("test-session", "cmd-123"));
     }
-
-
 
     /// <summary>
     /// Verifies that GetCommandInfo throws when sessionId is null.
@@ -491,8 +474,6 @@ public class DebugEngineTests : IDisposable
         _ = Assert.Throws<ObjectDisposedException>(() => m_Engine.GetCommandInfo("test-session", "cmd-123"));
     }
 
-
-
     /// <summary>
     /// Verifies that GetAllCommandInfos throws when sessionId is null.
     /// </summary>
@@ -529,8 +510,6 @@ public class DebugEngineTests : IDisposable
         // Act & Assert
         _ = Assert.Throws<ObjectDisposedException>(() => m_Engine.GetAllCommandInfos("test-session"));
     }
-
-
 
     /// <summary>
     /// Verifies that CancelCommand throws when sessionId is null.
@@ -578,8 +557,6 @@ public class DebugEngineTests : IDisposable
         _ = Assert.Throws<ObjectDisposedException>(() => m_Engine.CancelCommand("test-session", "cmd-123"));
     }
 
-
-
     /// <summary>
     /// Verifies that CancelAllCommands throws when sessionId is null.
     /// </summary>
@@ -615,8 +592,6 @@ public class DebugEngineTests : IDisposable
         // Act & Assert
         _ = Assert.Throws<ObjectDisposedException>(() => m_Engine.CancelAllCommands("test-session"));
     }
-
-
 
     /// <summary>
     /// Verifies that GetSessionState throws when sessionId is null.
@@ -654,8 +629,6 @@ public class DebugEngineTests : IDisposable
         _ = Assert.Throws<ObjectDisposedException>(() => m_Engine.GetSessionState("test-session"));
     }
 
-
-
     /// <summary>
     /// Verifies that Dispose can be called multiple times safely.
     /// </summary>
@@ -681,8 +654,6 @@ public class DebugEngineTests : IDisposable
         // Assert - All operations should throw ObjectDisposedException
         _ = Assert.Throws<ObjectDisposedException>(() => m_Engine.IsSessionActive("test"));
     }
-
-
 
     /// <summary>
     /// Verifies that CommandStateChanged event can be subscribed to.
@@ -712,8 +683,6 @@ public class DebugEngineTests : IDisposable
         _ = eventRaised.Should().BeFalse();
     }
 
-
-
     /// <summary>
     /// Verifies that Instance returns non-null singleton.
     /// </summary>
@@ -740,8 +709,6 @@ public class DebugEngineTests : IDisposable
         // Assert
         _ = instance1.Should().BeSameAs(instance2);
     }
-
-
 
     /// <summary>
     /// Verifies that ValidateSessionId throws when sessionId is null.

@@ -13,17 +13,28 @@ namespace Nexus.Setup.Validation
     [SupportedOSPlatform("windows")]
     internal abstract class BaseValidator
     {
+        /// <summary>
+        /// Logger used for validation diagnostics and user-facing messages.
+        /// </summary>
         private readonly Logger m_Logger;
 
         /// <summary>
         /// Gets the file system abstraction used for validation.
         /// </summary>
-        protected IFileSystem FileSystem { get; private set; }
+        protected IFileSystem FileSystem
+        {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// Gets the Windows service controller abstraction used for validation.
         /// </summary>
-        protected IServiceController ServiceController { get; private set; }
+        protected IServiceController ServiceController
+        {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseValidator"/> class.
@@ -70,7 +81,7 @@ namespace Nexus.Setup.Validation
                 if (!string.IsNullOrEmpty(installationParentDir))
                 {
                     // Check if the installation's parent directory exists and is writable
-                    if (!m_FileSystem.DirectoryExists(installationParentDir))
+                    if (!FileSystem.DirectoryExists(installationParentDir))
                     {
                         m_Logger.Error("{DirectoryName} installation parent directory does not exist: {InstallationParentDirectory}", directoryName, installationParentDir);
                         m_Logger.Error("Please ensure the installation parent directory exists and you have write permissions");

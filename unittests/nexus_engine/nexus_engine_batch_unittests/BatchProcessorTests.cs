@@ -9,7 +9,6 @@ namespace Nexus.Engine.Batch.Tests;
 /// </summary>
 public class BatchProcessorTests
 {
-
     /// <summary>
     /// Verifies that Instance returns a non-null singleton instance.
     /// </summary>
@@ -37,8 +36,6 @@ public class BatchProcessorTests
         // Assert
         _ = instance1.Should().NotBeSameAs(instance2);
     }
-
-
 
     /// <summary>
     /// Verifies that BatchCommands handles null commands list.
@@ -75,8 +72,6 @@ public class BatchProcessorTests
         _ = result.Should().BeEmpty();
     }
 
-
-
     /// <summary>
     /// Verifies that BatchCommands handles a single command.
     /// </summary>
@@ -99,8 +94,6 @@ public class BatchProcessorTests
         _ = result[0].CommandId.Should().Be("cmd-1");
         _ = result[0].CommandText.Should().Be("!analyze");
     }
-
-
 
     /// <summary>
     /// Verifies that BatchCommands handles two simple commands.
@@ -172,8 +165,6 @@ public class BatchProcessorTests
         _ = result.Count.Should().BeGreaterThan(0);
     }
 
-
-
     /// <summary>
     /// Verifies that BatchCommands handles excluded commands correctly.
     /// </summary>
@@ -241,8 +232,6 @@ public class BatchProcessorTests
         _ = result[0].CommandId.Should().Be("cmd-1");
     }
 
-
-
     /// <summary>
     /// Verifies that UnbatchResults handles null results list.
     /// </summary>
@@ -278,8 +267,6 @@ public class BatchProcessorTests
         _ = result.Should().BeEmpty();
     }
 
-
-
     /// <summary>
     /// Verifies that UnbatchResults handles a single result.
     /// </summary>
@@ -302,8 +289,6 @@ public class BatchProcessorTests
         _ = result[0].CommandId.Should().Be("cmd-1");
         _ = result[0].ResultText.Should().Be("Output 1");
     }
-
-
 
     /// <summary>
     /// Verifies that UnbatchResults handles multiple non-batched results.
@@ -356,8 +341,6 @@ public class BatchProcessorTests
         _ = result[1].ResultText.Should().Be("Second");
         _ = result[2].ResultText.Should().Be("Third");
     }
-
-
 
     /// <summary>
     /// Verifies that batching and unbatching work together for simple commands.
@@ -424,8 +407,6 @@ public class BatchProcessorTests
         _ = unbatchedResults.Count.Should().Be(1);
         _ = unbatchedResults[0].CommandId.Should().Be("cmd-1");
     }
-
-
 
     /// <summary>
     /// Verifies that BatchCommands handles commands with empty CommandText.
@@ -511,12 +492,10 @@ public class BatchProcessorTests
         _ = result.Count.Should().Be(1);
     }
 
-
-
     /// <summary>
     /// Verifies that BatchCommands is thread-safe.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task BatchCommands_ConcurrentCalls_IsThreadSafe()
     {
@@ -546,7 +525,7 @@ public class BatchProcessorTests
     /// <summary>
     /// Verifies that UnbatchResults is thread-safe.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task UnbatchResults_ConcurrentCalls_IsThreadSafe()
     {
@@ -572,8 +551,6 @@ public class BatchProcessorTests
             _ = result.Count.Should().Be(2);
         }
     }
-
-
 
     /// <summary>
     /// Verifies that GetBatchCommandId returns null for a non-existent command ID.
@@ -672,8 +649,6 @@ public class BatchProcessorTests
         // Assert
         _ = foundBatchId.Should().BeNull();
     }
-
-
 
     /// <summary>
     /// Verifies that ClearSessionBatchMappings removes mappings for the specified session.

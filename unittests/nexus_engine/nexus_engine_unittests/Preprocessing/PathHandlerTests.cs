@@ -11,10 +11,10 @@ namespace Nexus.Engine.Tests.Preprocessing;
 /// </summary>
 public class PathHandlerTests
 {
-
     /// <summary>
     /// Verifies that IsWindowsPath returns true for drive letter paths.
     /// </summary>
+    /// <param name="path">Input path to evaluate.</param>
     [Theory]
     [InlineData("C:\\path\\to\\file")]
     [InlineData("D:\\")]
@@ -35,6 +35,7 @@ public class PathHandlerTests
     /// <summary>
     /// Verifies that IsWindowsPath returns true for UNC paths.
     /// </summary>
+    /// <param name="path">Input UNC path.</param>
     [Theory]
     [InlineData("\\\\server\\share")]
     [InlineData("\\\\server\\share\\folder")]
@@ -54,6 +55,7 @@ public class PathHandlerTests
     /// <summary>
     /// Verifies that IsWindowsPath returns false for WSL paths.
     /// </summary>
+    /// <param name="path">Input WSL path.</param>
     [Theory]
     [InlineData("/mnt/c/path")]
     [InlineData("/home/user")]
@@ -73,6 +75,7 @@ public class PathHandlerTests
     /// <summary>
     /// Verifies that IsWindowsPath returns false for null or whitespace.
     /// </summary>
+    /// <param name="path">Nullable or whitespace path.</param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -89,11 +92,10 @@ public class PathHandlerTests
         _ = result.Should().BeFalse();
     }
 
-
-
     /// <summary>
     /// Verifies that ConvertToWindowsPath returns input for null or whitespace.
     /// </summary>
+    /// <param name="path">Nullable or whitespace path.</param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -113,6 +115,7 @@ public class PathHandlerTests
     /// <summary>
     /// Verifies that ConvertToWindowsPath returns input for Windows paths.
     /// </summary>
+    /// <param name="path">Windows path.</param>
     [Theory]
     [InlineData("C:\\path\\to\\file")]
     [InlineData("D:\\folder")]
@@ -131,6 +134,7 @@ public class PathHandlerTests
     /// <summary>
     /// Verifies that ConvertToWindowsPath returns input for UNC paths.
     /// </summary>
+    /// <param name="path">UNC path.</param>
     [Theory]
     [InlineData("\\\\server\\share")]
     [InlineData("\\\\server\\share\\folder")]
@@ -149,6 +153,7 @@ public class PathHandlerTests
     /// <summary>
     /// Verifies that ConvertToWindowsPath returns input for non-Unix paths.
     /// </summary>
+    /// <param name="path">Relative path.</param>
     [Theory]
     [InlineData("relative\\path")]
     [InlineData("file.txt")]

@@ -11,7 +11,6 @@ namespace Nexus.Engine.Batch.Tests.Internal;
 /// </summary>
 public class SessionBatchCacheTests
 {
-
     /// <summary>
     /// Verifies that AddBatch stores both forward and reverse mappings.
     /// </summary>
@@ -66,8 +65,6 @@ public class SessionBatchCacheTests
         _ = Assert.Throws<ArgumentNullException>(() => cache.AddBatch(batchId, null!));
     }
 
-
-
     /// <summary>
     /// Verifies that GetOriginalCommandIds returns all command IDs in a batch.
     /// </summary>
@@ -119,8 +116,6 @@ public class SessionBatchCacheTests
         _ = Assert.Throws<ArgumentNullException>(() => cache.GetOriginalCommandIds(null!));
     }
 
-
-
     /// <summary>
     /// Verifies that GetBatchCommandId returns correct batch ID for command in batch.
     /// </summary>
@@ -171,8 +166,6 @@ public class SessionBatchCacheTests
         _ = Assert.Throws<ArgumentNullException>(() => cache.GetBatchCommandId(null!));
     }
 
-
-
     /// <summary>
     /// Verifies that Clear removes all mappings.
     /// </summary>
@@ -213,8 +206,6 @@ public class SessionBatchCacheTests
         // Act & Assert
         cache.Clear(); // Should not throw
     }
-
-
 
     /// <summary>
     /// Verifies that multiple batches can coexist in the same cache.

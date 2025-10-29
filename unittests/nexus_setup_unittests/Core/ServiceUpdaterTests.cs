@@ -30,7 +30,6 @@ public class ServiceUpdaterTests
         m_ServiceControllerMock = new Mock<IServiceController>();
     }
 
-
     /// <summary>
     /// Verifies that parameterless constructor creates updater successfully.
     /// </summary>
@@ -57,12 +56,10 @@ public class ServiceUpdaterTests
         _ = updater.Should().NotBeNull();
     }
 
-
-
     /// <summary>
     /// Verifies that UpdateServiceAsync throws ArgumentException when service name is empty.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task UpdateServiceAsync_WithEmptyServiceName_ThrowsArgumentException()
     {
@@ -76,7 +73,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that UpdateServiceAsync throws ArgumentException when executable path is empty.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task UpdateServiceAsync_WithEmptyExecutablePath_ThrowsArgumentException()
     {
@@ -90,7 +87,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that UpdateServiceAsync returns failure when new executable file not found.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task UpdateServiceAsync_WhenNewExecutableNotFound_ReturnsFailure()
     {
@@ -112,7 +109,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that UpdateServiceAsync returns failure when service is not installed.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task UpdateServiceAsync_WhenServiceNotInstalled_ReturnsFailure()
     {
@@ -135,7 +132,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that UpdateServiceAsync returns failure when current path cannot be determined.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task UpdateServiceAsync_WhenCurrentPathUndetermined_ReturnsFailure()
     {
@@ -156,12 +153,10 @@ public class ServiceUpdaterTests
         _ = result.Message.Should().Contain("current executable path");
     }
 
-
-
     /// <summary>
     /// Verifies that BackupServiceAsync throws ArgumentException when service name is empty.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task BackupServiceAsync_WithEmptyServiceName_ThrowsArgumentException()
     {
@@ -175,7 +170,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that BackupServiceAsync throws ArgumentException when backup path is empty.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task BackupServiceAsync_WithEmptyBackupPath_ThrowsArgumentException()
     {
@@ -189,7 +184,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that BackupServiceAsync returns false when executable path cannot be determined.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task BackupServiceAsync_WhenExecutablePathUndetermined_ReturnsFalse()
     {
@@ -207,12 +202,10 @@ public class ServiceUpdaterTests
         _ = result.Should().BeFalse();
     }
 
-
-
     /// <summary>
     /// Verifies that RestoreServiceAsync throws ArgumentException when service name is empty.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task RestoreServiceAsync_WithEmptyServiceName_ThrowsArgumentException()
     {
@@ -226,7 +219,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that RestoreServiceAsync throws ArgumentException when backup path is empty.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task RestoreServiceAsync_WithEmptyBackupPath_ThrowsArgumentException()
     {
@@ -240,7 +233,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that RestoreServiceAsync returns failure when backup directory not found.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task RestoreServiceAsync_WhenBackupDirectoryNotFound_ReturnsFailure()
     {
@@ -262,7 +255,7 @@ public class ServiceUpdaterTests
     /// <summary>
     /// Verifies that RestoreServiceAsync returns failure when executable path cannot be determined.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task RestoreServiceAsync_WhenExecutablePathUndetermined_ReturnsFailure()
     {

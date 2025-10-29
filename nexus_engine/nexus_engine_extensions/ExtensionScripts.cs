@@ -120,20 +120,20 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         m_Disposed = false;
 
         // Start the callback server asynchronously with error handling
-        m_CallbackServerInitTask = StartCallbackServerAsync().ContinueWith(
-            t =>
+        Action<Task> onInitCompleted = t =>
         {
             if (t.IsFaulted)
             {
                 m_Logger.Error(t.Exception, "Critical: Extension callback server initialization failed");
             }
-        }, TaskScheduler.Default);
+        };
+        m_CallbackServerInitTask = StartCallbackServerAsync().ContinueWith(onInitCompleted, TaskScheduler.Default);
     }
 
     /// <summary>
     /// Starts the extension callback HTTP server asynchronously.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A task representing the asynchronous start operation.</returns>
     private async Task StartCallbackServerAsync()
     {
         try
@@ -155,7 +155,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// <summary>
     /// Ensures the callback server is initialized before use.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A task that completes when initialization finishes.</returns>
     private async Task EnsureCallbackServerInitializedAsync()
     {
         if (m_CallbackServerInitTask != null)
@@ -215,7 +215,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// <param name="commandId">The command ID.</param>
     /// <param name="queuedTime">When the command was queued.</param>
     /// <param name="cts">Cancellation token source.</param>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A task representing the asynchronous execution.</returns>
     private async Task ExecuteExtensionAsync(string extensionName, string sessionId, object? parameters, string commandId, DateTime queuedTime, CancellationTokenSource cts)
     {
         try

@@ -44,12 +44,11 @@ public class DebugSessionTests : IDisposable
     /// <summary>
     /// Creates a command preprocessor for testing.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>A command preprocessor instance configured for tests.</returns>
     private Nexus.Engine.Preprocessing.CommandPreprocessor CreatePreprocessor()
     {
         return new Nexus.Engine.Preprocessing.CommandPreprocessor(m_MockFileSystem.Object);
     }
-
 
     /// <summary>
     /// Verifies that constructor throws when sessionId is null.
@@ -102,8 +101,6 @@ public class DebugSessionTests : IDisposable
         _ = session.Should().NotBeNull();
         _ = session.SessionId.Should().Be(TestSessionId);
     }
-
-
 
     /// <summary>
     /// Verifies that SessionId property returns correct value.
@@ -176,8 +173,6 @@ public class DebugSessionTests : IDisposable
         _ = isActive.Should().BeFalse();
     }
 
-
-
     /// <summary>
     /// Verifies that CommandStateChanged event can be subscribed to.
     /// </summary>
@@ -208,8 +203,6 @@ public class DebugSessionTests : IDisposable
         _ = eventRaised.Should().BeFalse();
     }
 
-
-
     /// <summary>
     /// Verifies that Dispose can be called multiple times safely.
     /// </summary>
@@ -225,8 +218,6 @@ public class DebugSessionTests : IDisposable
 
         // Assert - Should not throw
     }
-
-
 
     /// <summary>
     /// Verifies that SetState changes the state correctly.
@@ -386,11 +377,11 @@ public class DebugSessionTests : IDisposable
         accessor.ThrowIfNotActive();
     }
 
-
-
     /// <summary>
     /// Verifies all valid state transitions.
     /// </summary>
+    /// <param name="fromState">Starting state.</param>
+    /// <param name="toState">Target state.</param>
     [Theory]
     [InlineData(SessionState.Initializing, SessionState.Active)]
     [InlineData(SessionState.Active, SessionState.Closing)]
@@ -413,6 +404,8 @@ public class DebugSessionTests : IDisposable
     /// <summary>
     /// Verifies that state changes are reflected in IsActive property.
     /// </summary>
+    /// <param name="state">State to evaluate.</param>
+    /// <param name="expectedIsActive">Expected IsActive value for the state.</param>
     [Theory]
     [InlineData(SessionState.Initializing, false)]
     [InlineData(SessionState.Active, true)]

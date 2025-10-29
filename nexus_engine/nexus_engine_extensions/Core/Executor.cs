@@ -75,8 +75,8 @@ internal class Executor
     /// <param name="parameters">Optional parameters to pass to the extension.</param>
     /// <param name="commandId">The command ID for tracking this execution.</param>
     /// <param name="progressCallback">Optional progress callback.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     /// <param name="onProcessStarted">Optional callback invoked with the process ID right after process start.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The result of the extension execution.</returns>
     public async Task<CommandInfo> ExecuteAsync(
         string extensionName,
@@ -87,9 +87,7 @@ internal class Executor
         Action<int>? onProcessStarted = null,
         CancellationToken cancellationToken = default)
     {
-        m_Logger.Info(
-            "Executing extension {ExtensionName} with command ID {CommandId} in session {SessionId}",
-            extensionName, commandId, sessionId);
+        m_Logger.Info("Executing extension {ExtensionName} with command ID {CommandId} in session {SessionId}", extensionName, commandId, sessionId);
 
         var startTime = DateTime.Now;
 
@@ -142,8 +140,7 @@ internal class Executor
         }
         catch (Exception ex)
         {
-            m_Logger.Error(ex, "Error executing extension {ExtensionName} with command ID {CommandId}",
-                extensionName, commandId);
+            m_Logger.Error(ex, "Error executing extension {ExtensionName} with command ID {CommandId}", extensionName, commandId);
 
             return CommandInfo.Failed(
                 sessionId,
@@ -161,7 +158,11 @@ internal class Executor
     /// <summary>
     /// Starts the PowerShell process for the extension script and returns the running process.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <param name="metadata">The extension metadata used to build the process command line.</param>
+    /// <param name="parameters">Optional parameters object to pass to the script (serialized to JSON).</param>
+    /// <param name="token">Security token used by the script to authenticate callbacks.</param>
+    /// <param name="sessionId">The debugging session identifier associated with this execution.</param>
+    /// <returns>A task that resolves to the started <see cref="Process"/> instance or null on failure.</returns>
     private Task<Process?> StartProcessAsync(
         ExtensionMetadata metadata,
         object? parameters,
@@ -232,9 +233,7 @@ internal class Executor
             }
             else
             {
-                m_Logger.Debug(
-                    "Successfully started extensions script {ProcessId} for extension {ExtensionName}",
-                    process.Id, metadata.Name);
+            m_Logger.Debug("Successfully started extensions script {ProcessId} for extension {ExtensionName}", process.Id, metadata.Name);
             }
 
             return Task.FromResult<Process?>(process);
@@ -249,7 +248,14 @@ internal class Executor
     /// <summary>
     /// Attaches output/error handlers to the running process and waits for completion.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <param name="process">The running process to monitor.</param>
+    /// <param name="sessionId">The debugging session identifier.</param>
+    /// <param name="commandId">The command identifier associated with this execution.</param>
+    /// <param name="extensionName">The name of the extension being executed.</param>
+    /// <param name="metadata">The extension metadata.</param>
+    /// <param name="progressCallback">Optional callback invoked for each output line.</param>
+    /// <param name="cancellationToken">Cancellation token to abort monitoring and execution.</param>
+    /// <returns>A task that resolves to the final <see cref="CommandInfo"/>.</returns>
     private async Task<CommandInfo> MonitorScriptAsync(
         Process process,
         string sessionId,
@@ -291,25 +297,19 @@ internal class Executor
             process.ErrorDataReceived += errHandler;
 
             // Process was already started; attach readers now
-            m_Logger.Debug(
-                "Monitoring PowerShell process for extension {ExtensionName}, PID: {ProcessId}",
-                metadata.Name, process.Id);
+            m_Logger.Debug("Monitoring PowerShell process for extension {ExtensionName}, PID: {ProcessId}", metadata.Name, process.Id);
 
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
             // Wait for completion with timeout
             var timeoutMs = metadata.TimeoutMs;
-            m_Logger.Debug(
-                "Waiting for extensions script process completion for extension {ExtensionName}, timeout: {TimeoutMs}ms",
-                metadata.Name, timeoutMs);
+            m_Logger.Debug("Waiting for extensions script process completion for extension {ExtensionName}, timeout: {TimeoutMs}ms", metadata.Name, timeoutMs);
             var completed = await m_ProcessManager.WaitForProcessExitAsync(process, timeoutMs, cancellationToken);
 
             if (!completed)
             {
-                m_Logger.Warn(
-                    "Extension {ExtensionName} exceeded timeout of {TimeoutMs}ms - terminating process",
-                    metadata.Name, timeoutMs);
+                m_Logger.Warn("Extension {ExtensionName} exceeded timeout of {TimeoutMs}ms - terminating process", metadata.Name, timeoutMs);
 
                 EndScriptExecution(process, metadata);
 
@@ -329,9 +329,7 @@ internal class Executor
             var executionTime = (long)(endTime - startTime).TotalMilliseconds;
             var success = process.ExitCode == 0;
 
-            m_Logger.Info(
-                "Extension {ExtensionName} completed with exit code {ExitCode} in {ExecutionTime}ms",
-                metadata.Name, process.ExitCode, executionTime);
+            m_Logger.Info("Extension {ExtensionName} completed with exit code {ExitCode} in {ExecutionTime}ms", metadata.Name, process.ExitCode, executionTime);
 
             return CommandInfo.Completed(
                 sessionId,
@@ -346,9 +344,7 @@ internal class Executor
         }
         catch (OperationCanceledException)
         {
-            m_Logger.Info(
-                "Extension {ExtensionName} was cancelled",
-                metadata.Name);
+            m_Logger.Info("Extension {ExtensionName} was cancelled", metadata.Name);
 
             EndScriptExecution(process, metadata, true);
             return CommandInfo.Cancelled(
@@ -389,6 +385,7 @@ internal class Executor
                 catch
                 {
                 }
+
                 try
                 {
                     process.CancelErrorRead();
@@ -396,6 +393,7 @@ internal class Executor
                 catch
                 {
                 }
+
                 try
                 {
                     process.OutputDataReceived -= outHandler;
@@ -403,6 +401,7 @@ internal class Executor
                 catch
                 {
                 }
+
                 try
                 {
                     process.ErrorDataReceived -= errHandler;

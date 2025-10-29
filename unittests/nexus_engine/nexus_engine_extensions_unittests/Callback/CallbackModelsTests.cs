@@ -11,7 +11,6 @@ namespace Nexus.Engine.Extensions.Tests.Callback;
 /// </summary>
 public class CallbackModelsTests
 {
-
     /// <summary>
     /// Verifies that ExecuteCommandRequest initializes with default values.
     /// </summary>
@@ -43,8 +42,6 @@ public class CallbackModelsTests
         _ = request.Command.Should().Be("!analyze -v");
         _ = request.TimeoutSeconds.Should().Be(600);
     }
-
-
 
     /// <summary>
     /// Verifies that QueueCommandRequest initializes with default values.
@@ -78,8 +75,6 @@ public class CallbackModelsTests
         _ = request.TimeoutSeconds.Should().Be(120);
     }
 
-
-
     /// <summary>
     /// Verifies that ReadCommandRequest initializes with default values.
     /// </summary>
@@ -109,8 +104,6 @@ public class CallbackModelsTests
         _ = request.CommandId.Should().Be("cmd-123");
     }
 
-
-
     /// <summary>
     /// Verifies that StatusCommandRequest initializes with default values.
     /// </summary>
@@ -139,8 +132,6 @@ public class CallbackModelsTests
         // Assert
         _ = request.CommandId.Should().Be("cmd-456");
     }
-
-
 
     /// <summary>
     /// Verifies that BulkStatusRequest initializes with empty list.
@@ -175,8 +166,6 @@ public class CallbackModelsTests
         _ = request.CommandIds.Should().Contain("cmd-3");
     }
 
-
-
     /// <summary>
     /// Verifies that LogRequest initializes with default values.
     /// </summary>
@@ -208,8 +197,6 @@ public class CallbackModelsTests
         _ = request.Level.Should().Be("Error");
         _ = request.Message.Should().Be("Test error message");
     }
-
-
 
     /// <summary>
     /// Verifies that CommandResponse initializes with default values.
@@ -269,8 +256,6 @@ public class CallbackModelsTests
         _ = response.Output.Should().BeEmpty();
     }
 
-
-
     /// <summary>
     /// Verifies that CommandStatus initializes with default values.
     /// </summary>
@@ -306,8 +291,6 @@ public class CallbackModelsTests
         _ = status.Command.Should().Be("!analyze");
     }
 
-
-
     /// <summary>
     /// Verifies that BulkStatusResponse initializes with empty list.
     /// </summary>
@@ -334,7 +317,7 @@ public class CallbackModelsTests
             Commands = new List<CommandStatus>
             {
                 new() { CommandId = "cmd-1", State = "Completed" },
-                new() { CommandId = "cmd-2", State = "Running" }
+                new() { CommandId = "cmd-2", State = "Running" },
             },
         };
 

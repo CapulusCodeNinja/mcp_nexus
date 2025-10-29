@@ -14,6 +14,9 @@ namespace Nexus.Setup.Validation
     [SupportedOSPlatform("windows")]
     internal class UninstallValidator : BaseValidator
     {
+        /// <summary>
+        /// Logger for pre-uninstall validation steps and outcomes.
+        /// </summary>
         private readonly Logger m_Logger;
 
         /// <summary>

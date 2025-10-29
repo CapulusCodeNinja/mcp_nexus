@@ -288,9 +288,7 @@ internal class CommandQueue : IDisposable
             count++;
         }
 
-        m_Logger.Info(
-            "Cancelled {Count} commands in session {SessionId}. Reason: {Reason}",
-            count, m_SessionId, reason ?? "No reason specified");
+        m_Logger.Info("Cancelled {Count} commands in session {SessionId}. Reason: {Reason}", count, m_SessionId, reason ?? "No reason specified");
 
         return count;
     }
@@ -338,7 +336,7 @@ internal class CommandQueue : IDisposable
     /// Main loop that processes commands from the queue, collecting and batching them when appropriate.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A task representing the asynchronous processing loop.</returns>
     private async Task ProcessCommandsAsync(CancellationToken cancellationToken)
     {
         m_Logger.Debug("Starting command processing for session {SessionId}", m_SessionId);
@@ -357,8 +355,7 @@ internal class CommandQueue : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    m_Logger.Error(ex, "Error processing command {CommandId} in session {SessionId}",
-                        command.Id, m_SessionId);
+                    m_Logger.Error(ex, "Error processing command {CommandId} in session {SessionId}", command.Id, m_SessionId);
 
                     // Mark command as failed
                     UpdateCommandState(command, CommandState.Failed);
@@ -447,7 +444,7 @@ internal class CommandQueue : IDisposable
     /// </summary>
     /// <param name="queuedCommandsById">Dictionary of commands by ID for O(1) lookups.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A task representing the asynchronous processing of this batch.</returns>
     private async Task ProcessCommandsAsync(Dictionary<string, QueuedCommand> queuedCommandsById, CancellationToken cancellationToken)
     {
         ValidateCdbSession();
@@ -479,9 +476,7 @@ internal class CommandQueue : IDisposable
         // Apply batching (library decides whether to batch or pass through)
         var commandsToExecute = BatchProcessor.Instance.BatchCommands(m_SessionId, batchCommands);
 
-        m_Logger.Debug(
-            "Processing {OriginalCount} commands as {ExecutionCount} execution units",
-            queuedCommandsById.Count, commandsToExecute.Count);
+        m_Logger.Debug("Processing {OriginalCount} commands as {ExecutionCount} execution units", queuedCommandsById.Count, commandsToExecute.Count);
 
         return commandsToExecute;
     }
@@ -493,7 +488,7 @@ internal class CommandQueue : IDisposable
     /// <param name="queuedCommandsById">Dictionary of queued commands by ID for O(1) lookups.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Tuple containing execution results and command start times.</returns>
-    private async Task<(List<CommandResult> executionResults, Dictionary<string, DateTime> commandStartTimes)> ExecuteCommandsWithTiming(
+    private async Task<(List<CommandResult> ExecutionResults, Dictionary<string, DateTime> CommandStartTimes)> ExecuteCommandsWithTiming(
         List<Command> commandsToExecute,
         Dictionary<string, QueuedCommand> queuedCommandsById,
         CancellationToken cancellationToken)
@@ -672,15 +667,11 @@ internal class CommandQueue : IDisposable
     {
         if (executionCount == individualCount)
         {
-            m_Logger.Trace(
-                "Unbatched {ExecutionCount} execution results into {IndividualCount} individual results",
-                executionCount, individualCount);
+            m_Logger.Trace("Unbatched {ExecutionCount} execution results into {IndividualCount} individual results", executionCount, individualCount);
         }
         else
         {
-            m_Logger.Debug(
-                "Unbatched {ExecutionCount} execution results into {IndividualCount} individual results",
-                executionCount, individualCount);
+            m_Logger.Debug("Unbatched {ExecutionCount} execution results into {IndividualCount} individual results", executionCount, individualCount);
         }
     }
 
@@ -740,7 +731,7 @@ internal class CommandQueue : IDisposable
     /// <param name="startTime">Command start time.</param>
     /// <param name="endTime">Command end time.</param>
     /// <returns>Tuple containing CommandInfo and CommandState.</returns>
-    private (CommandInfo commandInfo, CommandState finalState) CreateCommandInfoFromResult(CommandResult result, QueuedCommand queuedCommand, DateTime startTime, DateTime endTime)
+    private (CommandInfo CommandInfo, CommandState FinalState) CreateCommandInfoFromResult(CommandResult result, QueuedCommand queuedCommand, DateTime startTime, DateTime endTime)
     {
         if (result.IsCancelled)
         {
@@ -768,9 +759,7 @@ internal class CommandQueue : IDisposable
         }
 
         // Default to failed for any unexpected state - this will make missing cases obvious
-        m_Logger.Error(
-            "Unexpected command result state for command {CommandId}: Cancelled={IsCancelled}, Timeout={IsTimeout}, Failed={IsFailed}",
-            result.CommandId, result.IsCancelled, result.IsTimeout, result.IsFailed);
+        m_Logger.Error("Unexpected command result state for command {CommandId}: Cancelled={IsCancelled}, Timeout={IsTimeout}, Failed={IsFailed}", result.CommandId, result.IsCancelled, result.IsTimeout, result.IsFailed);
 
         var errorCommandInfo = new CommandInfo(m_SessionId, queuedCommand.Id, queuedCommand.Command, CommandState.Failed, queuedCommand.QueuedTime, queuedCommand.ProcessId, startTime, endTime, $"UNEXPECTED STATE: {result.ResultText}", "Command result in unexpected state");
         return (errorCommandInfo, CommandState.Failed);
@@ -781,7 +770,7 @@ internal class CommandQueue : IDisposable
     /// </summary>
     /// <param name="command">The command to process.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <returns>A task representing the asynchronous command processing.</returns>
     protected async Task ProcessCommandAsync(QueuedCommand command, CancellationToken cancellationToken)
     {
         ValidateCdbSession();
@@ -863,9 +852,7 @@ internal class CommandQueue : IDisposable
         var queueTime = startTime - command.QueuedTime;
         var totalTime = endTime - command.QueuedTime;
 
-        m_Logger.Debug(
-            "Command {CommandId} completed successfully in {Elapsed}ms",
-            command.Id, executionTime.TotalMilliseconds);
+        m_Logger.Debug("Command {CommandId} completed successfully in {Elapsed}ms", command.Id, executionTime.TotalMilliseconds);
 
         // Emit detailed statistics
         Statistics.EmitCommandStats(

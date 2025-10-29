@@ -26,7 +26,6 @@ public class WslPathConverterTests
         m_ProcessManagerMock = new Mock<IProcessManager>();
     }
 
-
     /// <summary>
     /// Verifies that constructor throws ArgumentNullException when processManager is null.
     /// </summary>
@@ -36,8 +35,6 @@ public class WslPathConverterTests
         // Act & Assert
         _ = Assert.Throws<ArgumentNullException>(() => new WslPathConverter(null!));
     }
-
-
 
     /// <summary>
     /// Verifies that TryConvertToWindowsPath returns false when process fails to start.
@@ -127,8 +124,6 @@ public class WslPathConverterTests
         _ = result.Should().BeFalse();
         _ = windowsPath.Should().Be("/mnt/c/test");
     }
-
-
 
     /// <summary>
     /// Verifies that LoadFstabMappings returns empty dictionary when process fails to start.

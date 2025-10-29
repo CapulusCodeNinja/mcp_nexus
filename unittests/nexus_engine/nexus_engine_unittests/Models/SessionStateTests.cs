@@ -14,6 +14,8 @@ public class SessionStateTests
     /// <summary>
     /// Verifies that SessionState enum values have correct numeric values.
     /// </summary>
+    /// <param name="state">The enum value under test.</param>
+    /// <param name="expectedValue">The expected integer representation.</param>
     [Theory]
     [InlineData(SessionState.Initializing, 0)]
     [InlineData(SessionState.Active, 1)]

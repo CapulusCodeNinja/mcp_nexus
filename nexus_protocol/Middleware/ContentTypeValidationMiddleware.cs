@@ -84,7 +84,7 @@ internal class ContentTypeValidationMiddleware
             {
                 code = -32700,
                 message = "Parse error",
-                data = "Content-Type must be application/json"
+                data = "Content-Type must be application/json",
             },
         };
 

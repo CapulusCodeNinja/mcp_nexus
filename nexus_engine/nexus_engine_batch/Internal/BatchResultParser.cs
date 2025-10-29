@@ -10,6 +10,10 @@ internal class BatchResultParser
     private readonly Logger m_Logger;
     private readonly BatchProcessor m_BatchProcessor;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BatchResultParser"/> class.
+    /// </summary>
+    /// <param name="batchProcessor">The owning batch processor used for cache lookups.</param>
     public BatchResultParser(BatchProcessor batchProcessor)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
@@ -51,7 +55,7 @@ internal class BatchResultParser
                 {
                     CommandId = originalCommandIds[0],
                     SessionId = result.SessionId,
-                    ResultText = result.ResultText
+                    ResultText = result.ResultText,
                 },
             };
         }
@@ -95,9 +99,7 @@ internal class BatchResultParser
                 ResultText = individualResult,
             });
 
-            m_Logger.Trace(
-                "Extracted result for command {CommandId} ({Length} chars)",
-                commandId, individualResult.Length);
+            m_Logger.Trace("Extracted result for command {CommandId} ({Length} chars)", commandId, individualResult.Length);
         }
 
         return results;

@@ -29,7 +29,6 @@ public class ProductInstallationTests
         m_ServiceControllerMock = new Mock<IServiceController>();
     }
 
-
     /// <summary>
     /// Verifies that internal constructor creates instance successfully.
     /// </summary>
@@ -61,12 +60,10 @@ public class ProductInstallationTests
         _ = instance1.Should().BeSameAs(instance2);
     }
 
-
-
     /// <summary>
     /// Verifies that InstallServiceAsync calls internal method with default service controller.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InstallServiceAsync_CallsInternalMethodWithDefaultController()
     {
@@ -83,12 +80,10 @@ public class ProductInstallationTests
         _ = result.GetType().Should().Be(typeof(bool));
     }
 
-
-
     /// <summary>
     /// Verifies that UpdateServiceAsync returns a boolean result.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task UpdateServiceAsync_ReturnsBoolean()
     {
@@ -105,12 +100,10 @@ public class ProductInstallationTests
         _ = result.GetType().Should().Be(typeof(bool));
     }
 
-
-
     /// <summary>
     /// Verifies that UninstallServiceAsync calls internal method with default service controller.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task UninstallServiceAsync_CallsInternalMethodWithDefaultController()
     {

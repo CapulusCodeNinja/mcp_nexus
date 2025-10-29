@@ -89,9 +89,7 @@ public class BatchProcessor : IBatchProcessor
                 sessionCache.AddBatch(batchedCommand.CommandId, commandIds);
                 batchedCommands.Add(batchedCommand);
 
-                m_Logger.Info(
-                    "Batched {Count} commands into {BatchId}",
-                    batch.Count, batchedCommand.CommandId);
+                m_Logger.Info("Batched {Count} commands into {BatchId}", batch.Count, batchedCommand.CommandId);
             }
             else
             {
@@ -103,15 +101,11 @@ public class BatchProcessor : IBatchProcessor
 
         if (commands.Count == batchedCommands.Count)
         {
-            m_Logger.Trace(
-                "Transformed {InputCount} commands into {OutputCount} batched commands",
-                commands.Count, batchedCommands.Count);
+            m_Logger.Trace("Transformed {InputCount} commands into {OutputCount} batched commands", commands.Count, batchedCommands.Count);
         }
         else
         {
-            m_Logger.Info(
-                "Transformed {InputCount} commands into {OutputCount} batched commands",
-                commands.Count, batchedCommands.Count);
+            m_Logger.Info("Transformed {InputCount} commands into {OutputCount} batched commands", commands.Count, batchedCommands.Count);
         }
 
         return batchedCommands;
@@ -139,15 +133,11 @@ public class BatchProcessor : IBatchProcessor
 
             if (parsedResults.Count > 1)
             {
-                m_Logger.Info(
-                    "Unbatched {BatchId} into {Count} individual results",
-                    result.CommandId, parsedResults.Count);
+                m_Logger.Info("Unbatched {BatchId} into {Count} individual results", result.CommandId, parsedResults.Count);
             }
         }
 
-        m_Logger.Info(
-            "Transformed {InputCount} results into {OutputCount} individual results",
-            results.Count, unbatchedResults.Count);
+        m_Logger.Info("Transformed {InputCount} results into {OutputCount} individual results", results.Count, unbatchedResults.Count);
 
         return unbatchedResults;
     }

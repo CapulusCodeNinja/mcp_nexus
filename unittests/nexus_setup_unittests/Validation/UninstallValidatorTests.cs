@@ -36,12 +36,11 @@ public class UninstallValidatorTests
                 {
                     ServiceName = "TestService",
                     InstallPath = @"C:\Program Files\MCP-Nexus",
-                    BackupPath = @"C:\Program Files\MCP-Nexus\backup"
-                }
+                    BackupPath = @"C:\Program Files\MCP-Nexus\backup",
+                },
             },
         };
     }
-
 
     /// <summary>
     /// Verifies that parameterless constructor creates validator successfully.
@@ -68,8 +67,6 @@ public class UninstallValidatorTests
         // Assert
         _ = validator.Should().NotBeNull();
     }
-
-
 
     /// <summary>
     /// Verifies that ValidateUninstall returns false when service is not installed.

@@ -11,7 +11,6 @@ namespace Nexus.Tests.CommandLine;
 /// </summary>
 public class CommandLineContextTests
 {
-
     /// <summary>
     /// Verifies that constructor throws ArgumentNullException when args is null.
     /// </summary>
@@ -52,8 +51,6 @@ public class CommandLineContextTests
         _ = context.Args.Should().BeSameAs(args);
     }
 
-
-
     /// <summary>
     /// Verifies that IsHttpMode returns true when --http argument is present.
     /// </summary>
@@ -73,6 +70,7 @@ public class CommandLineContextTests
     /// <summary>
     /// Verifies that IsHttpMode is case insensitive.
     /// </summary>
+    /// <param name="arg">HTTP mode argument with varying casing.</param>
     [Theory]
     [InlineData("--HTTP")]
     [InlineData("--Http")]
@@ -104,8 +102,6 @@ public class CommandLineContextTests
         // Assert
         _ = result.Should().BeFalse();
     }
-
-
 
     /// <summary>
     /// Verifies that IsStdioMode returns true when --stdio argument is present.
@@ -139,8 +135,6 @@ public class CommandLineContextTests
         _ = result.Should().BeFalse();
     }
 
-
-
     /// <summary>
     /// Verifies that IsServiceMode returns true when --service argument is present.
     /// </summary>
@@ -172,8 +166,6 @@ public class CommandLineContextTests
         // Assert
         _ = result.Should().BeFalse();
     }
-
-
 
     /// <summary>
     /// Verifies that IsInstallMode returns true when --install argument is present.
@@ -207,8 +199,6 @@ public class CommandLineContextTests
         _ = result.Should().BeFalse();
     }
 
-
-
     /// <summary>
     /// Verifies that IsUpdateMode returns true when --update argument is present.
     /// </summary>
@@ -241,8 +231,6 @@ public class CommandLineContextTests
         _ = result.Should().BeFalse();
     }
 
-
-
     /// <summary>
     /// Verifies that IsUninstallMode returns true when --uninstall argument is present.
     /// </summary>
@@ -274,8 +262,6 @@ public class CommandLineContextTests
         // Assert
         _ = result.Should().BeFalse();
     }
-
-
 
     /// <summary>
     /// Verifies that multiple mode flags can be detected.

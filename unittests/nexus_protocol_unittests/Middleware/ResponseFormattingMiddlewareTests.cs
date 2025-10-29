@@ -43,7 +43,7 @@ public class ResponseFormattingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync calls next middleware with normal execution.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithNormalExecution_CallsNext()
     {
@@ -65,7 +65,7 @@ public class ResponseFormattingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync returns error response when exception occurs.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithException_ReturnsErrorResponse()
     {
@@ -90,7 +90,7 @@ public class ResponseFormattingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync returns 500 with ArgumentException.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithArgumentException_Returns500()
     {
@@ -111,7 +111,7 @@ public class ResponseFormattingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync returns 500 with ArgumentNullException.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithArgumentNullException_Returns500()
     {
@@ -132,7 +132,7 @@ public class ResponseFormattingMiddlewareTests
     /// <summary>
     /// Verifies that InvokeAsync returns 500 with FileNotFoundException.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task InvokeAsync_WithFileNotFoundException_Returns500()
     {

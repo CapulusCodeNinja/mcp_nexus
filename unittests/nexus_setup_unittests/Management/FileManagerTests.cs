@@ -47,7 +47,7 @@ public class FileManagerTests
     /// <summary>
     /// Verifies that CopyApplicationFilesAsync calls CreateDirectory.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CopyApplicationFilesAsync_WithValidDirectories_CallsCreateDirectory()
     {
@@ -68,7 +68,7 @@ public class FileManagerTests
     /// <summary>
     /// Verifies that CopyApplicationFilesAsync returns false on exception.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CopyApplicationFilesAsync_WithException_ShouldReturnFalse()
     {
@@ -142,7 +142,7 @@ public class FileManagerTests
     /// <summary>
     /// Verifies that CopyApplicationFilesAsync with empty source still calls CreateDirectory.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CopyApplicationFilesAsync_WithEmptySource_CallsCreateDirectory()
     {

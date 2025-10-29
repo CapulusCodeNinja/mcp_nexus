@@ -24,7 +24,6 @@ public class DirectoryCopyUtilityTests
         m_FileSystemMock = new Mock<IFileSystem>();
     }
 
-
     /// <summary>
     /// Verifies that parameterless constructor creates utility successfully.
     /// </summary>
@@ -51,12 +50,10 @@ public class DirectoryCopyUtilityTests
         _ = utility.Should().NotBeNull();
     }
 
-
-
     /// <summary>
     /// Verifies that CopyDirectoryAsync prevents infinite loops when destination is inside source.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CopyDirectoryAsync_WhenDestinationInsideSource_SkipsCopy()
     {
@@ -76,7 +73,7 @@ public class DirectoryCopyUtilityTests
     /// <summary>
     /// Verifies that CopyDirectoryAsync handles paths with trailing slashes correctly.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CopyDirectoryAsync_WithTrailingSlashes_PreventInfiniteLoop()
     {
@@ -96,7 +93,7 @@ public class DirectoryCopyUtilityTests
     /// <summary>
     /// Verifies that CopyDirectoryAsync handles paths with alternate directory separators.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task CopyDirectoryAsync_WithAltDirectorySeparator_PreventInfiniteLoop()
     {

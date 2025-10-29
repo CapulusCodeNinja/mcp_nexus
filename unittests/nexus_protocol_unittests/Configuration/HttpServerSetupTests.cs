@@ -12,7 +12,6 @@ namespace Nexus.Protocol.Unittests.Configuration;
 /// </summary>
 public class HttpServerSetupTests
 {
-
     /// <summary>
     /// Verifies that ConfigureHttpServices with default configuration succeeds.
     /// </summary>
@@ -74,8 +73,6 @@ public class HttpServerSetupTests
         Assert.NotNull(services);
     }
 
-
-
     /// <summary>
     /// Verifies that ConfigureStdioServices configures services successfully.
     /// </summary>
@@ -103,8 +100,6 @@ public class HttpServerSetupTests
         _ = Assert.Throws<ArgumentNullException>(() =>
             HttpServerSetup.ConfigureStdioServices(null!));
     }
-
-
 
     /// <summary>
     /// Verifies that CreateConfiguredHost creates host in non-service mode.

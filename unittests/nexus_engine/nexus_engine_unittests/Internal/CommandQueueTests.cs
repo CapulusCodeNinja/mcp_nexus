@@ -322,7 +322,7 @@ public class CommandQueueTests : IDisposable
     /// <summary>
     /// Verifies that GetCommandInfoAsync throws ArgumentException for null commandId.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task GetCommandInfoAsync_WithNullCommandId_ThrowsArgumentException()
     {
@@ -334,7 +334,7 @@ public class CommandQueueTests : IDisposable
     /// <summary>
     /// Verifies that GetCommandInfoAsync throws ArgumentException for empty commandId.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task GetCommandInfoAsync_WithEmptyCommandId_ThrowsArgumentException()
     {
@@ -346,7 +346,7 @@ public class CommandQueueTests : IDisposable
     /// <summary>
     /// Verifies that GetCommandInfoAsync throws KeyNotFoundException for non-existent command.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task GetCommandInfoAsync_WithNonExistentCommandId_ThrowsKeyNotFoundException()
     {
@@ -510,7 +510,7 @@ public class CommandQueueTests : IDisposable
     /// <summary>
     /// Verifies that StartAsync throws ArgumentNullException for null CdbSession.
     /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous unit test.</placeholder></returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task StartAsync_WithNullCdbSession_ThrowsArgumentNullException()
     {

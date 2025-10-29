@@ -52,9 +52,7 @@ public class TokenValidator : IDisposable
             };
         }
 
-        m_Logger.Debug(
-            "Generated token for session {SessionId}, command {CommandId}, expires at {ExpiresAt}",
-            sessionId, commandId, expiresAt);
+        m_Logger.Debug("Generated token for session {SessionId}, command {CommandId}, expires at {ExpiresAt}", sessionId, commandId, expiresAt);
 
         return token;
     }
@@ -86,9 +84,7 @@ public class TokenValidator : IDisposable
                 return (false, null, null);
             }
 
-            m_Logger.Trace(
-                "Valid token for session {SessionId}, command {CommandId}",
-                tokenInfo.SessionId, tokenInfo.CommandId);
+            m_Logger.Trace("Valid token for session {SessionId}, command {CommandId}", tokenInfo.SessionId, tokenInfo.CommandId);
 
             return (true, tokenInfo.SessionId, tokenInfo.CommandId);
         }
@@ -191,10 +187,19 @@ public class TokenValidator : IDisposable
     /// </summary>
     private class TokenInfo
     {
+        /// <summary>
+        /// Gets or sets the associated session identifier.
+        /// </summary>
         public string SessionId { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Gets or sets the associated command identifier.
+        /// </summary>
         public string CommandId { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Gets or sets the expiration time for the token.
+        /// </summary>
         public DateTime ExpiresAt
         {
             get; set;

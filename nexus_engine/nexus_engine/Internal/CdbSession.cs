@@ -27,7 +27,11 @@ internal class CdbSession : ICdbSession
     private StreamWriter? m_InputWriter;
     private ProcessOutputAggregator? m_OutputAggregator;
     private volatile bool m_Disposed = false;
-    protected volatile bool m_Initialized = false;
+
+    /// <summary>
+    /// Backing field indicating whether the session has completed initialization.
+    /// </summary>
+    private volatile bool m_Initialized = false;
 
     /// <summary>
     /// Gets a value indicating whether the session is active.
@@ -325,6 +329,15 @@ internal class CdbSession : ICdbSession
     {
         m_Disposed = true;
         m_Initialized = false;
+    }
+
+    /// <summary>
+    /// Sets the initialized state flag. Intended for use by test accessors.
+    /// </summary>
+    /// <param name="initialized">The initialized state to set.</param>
+    protected void SetInitializedForTesting(bool initialized)
+    {
+        m_Initialized = initialized;
     }
 
     /// <summary>

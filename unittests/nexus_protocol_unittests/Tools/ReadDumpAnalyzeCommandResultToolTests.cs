@@ -11,7 +11,9 @@ namespace Nexus.Protocol.Tests.Tools;
 /// </summary>
 public class ReadDumpAnalyzeCommandResultToolTests
 {
-    /// <inheritdoc/>
+    /// <summary>
+    /// Ensures non-extension command output is wrapped in a code block.
+    /// </summary>
     [Fact]
     public void AppendOutputForCommand_NonExtension_WrapsInCodeBlock()
     {
@@ -28,7 +30,9 @@ public class ReadDumpAnalyzeCommandResultToolTests
         _ = result.Should().Contain("line2");
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Ensures extension command output is returned verbatim.
+    /// </summary>
     [Fact]
     public void AppendOutputForCommand_Extension_ReturnsVerbatim()
     {

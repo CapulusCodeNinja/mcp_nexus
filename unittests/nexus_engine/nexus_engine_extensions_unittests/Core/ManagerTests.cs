@@ -39,7 +39,6 @@ public class ManagerTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-
     /// <summary>
     /// Verifies that constructor throws ArgumentNullException when fileSystem is null.
     /// </summary>
@@ -65,8 +64,6 @@ public class ManagerTests : IDisposable
         // Assert
         m_FileSystemMock.Verify(fs => fs.CreateDirectory(It.IsAny<string>()), Times.AtLeastOnce);
     }
-
-
 
     /// <summary>
     /// Verifies that GetExtension returns null for null extension name.
@@ -132,8 +129,6 @@ public class ManagerTests : IDisposable
         _ = result.Should().BeNull();
     }
 
-
-
     /// <summary>
     /// Verifies that GetAllExtensions returns empty collection when no extensions loaded.
     /// </summary>
@@ -150,8 +145,6 @@ public class ManagerTests : IDisposable
         _ = result.Should().NotBeNull();
         _ = result.Should().BeEmpty();
     }
-
-
 
     /// <summary>
     /// Verifies that ExtensionExists returns false for null extension name.
@@ -217,8 +210,6 @@ public class ManagerTests : IDisposable
         _ = result.Should().BeFalse();
     }
 
-
-
     /// <summary>
     /// Verifies that ValidateExtension returns invalid for unknown extension.
     /// </summary>
@@ -253,8 +244,6 @@ public class ManagerTests : IDisposable
         _ = errorMessage.Should().NotBeNullOrEmpty();
     }
 
-
-
     /// <summary>
     /// Verifies that GetExtensionsVersion returns non-negative value.
     /// </summary>
@@ -270,8 +259,6 @@ public class ManagerTests : IDisposable
         // Assert
         _ = version.Should().BeGreaterThanOrEqualTo(0);
     }
-
-
 
     /// <summary>
     /// Verifies that Dispose can be called multiple times without throwing.

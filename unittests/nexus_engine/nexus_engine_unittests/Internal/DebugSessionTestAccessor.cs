@@ -32,6 +32,8 @@ internal class DebugSessionTestAccessor : DebugSession
     /// <summary>
     /// Exposes OnCommandStateChanged for testing.
     /// </summary>
+    /// <param name="sender">Event sender.</param>
+    /// <param name="e">Event args.</param>
     public new void OnCommandStateChanged(object? sender, CommandStateChangedEventArgs e)
     {
         base.OnCommandStateChanged(sender, e);
@@ -40,6 +42,7 @@ internal class DebugSessionTestAccessor : DebugSession
     /// <summary>
     /// Exposes SetState for testing.
     /// </summary>
+    /// <param name="newState">New state to set.</param>
     public new void SetState(SessionState newState)
     {
         base.SetState(newState);
