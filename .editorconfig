@@ -720,46 +720,152 @@ csharp_preserve_single_line_blocks = false
 # // Stays on one line           |     DoWork();
 csharp_preserve_single_line_statements = true
 
+# Namespace declarations style
+# Options: block_scoped | file_scoped
+# block_scoped:                  | file_scoped:
+# namespace MyApp               | namespace MyApp;
+# {                             | // file content below without braces
+#     class C { }               |
+# }                             |
 csharp_style_namespace_declarations = block_scoped:silent
 
+# Prefer method group conversions when lambda is a direct pass-through
+# true:                          | false:
+# numbers.ForEach(Print);        | numbers.ForEach(x => Print(x));
+# list.Sort(CompareByName);      | list.Sort((a, b) => CompareByName(a, b));
 csharp_style_prefer_method_group_conversion = true:silent
 
+# Prefer top-level statements for simple apps (no Program/Main boilerplate)
+# true:                          | false:
+# Console.WriteLine("Hi");       | public class Program
+#                                 | {
+#                                 |     public static void Main()
+#                                 |     {
+#                                 |         Console.WriteLine("Hi");
+#                                 |     }
+#                                 | }
 csharp_style_prefer_top_level_statements = true:silent
 
+# Prefer primary constructors when the language feature is applicable
+# true:                          | false:
+# public class Person(string      | public class Person
+#     name)                       | {
+# {                               |     private readonly string _name;
+#     public string Name => name;  |     public Person(string name)
+# }                               |     {
+#                                 |         _name = name;
+#                                 |     }
+#                                 |     public string Name => _name;
+#                                 | }
 csharp_style_prefer_primary_constructors = true:suggestion
 
+# Prefer System.Threading.Lock API where applicable
+# true:                          | false:
+# using var l = new Lock();      | lock (gate)
+# l.Enter(); try { ... }         | { ... }
+# finally { l.Exit(); }          |
 csharp_prefer_system_threading_lock = true:suggestion
 
+# Prefer direct null checks over type-based null tests
+# true:                          | false:
+# if (obj is null) { }           | if (obj is object == false) { }
+# if (obj is not null) { }       | if (!(obj is object)) { }
 csharp_style_prefer_null_check_over_type_check = true:suggestion
 
+# Prefer local functions over anonymous delegates when both are valid
+# true:                          | false:
+# int Add(int a, int b)          | Func<int, int, int> Add =
+# { return a + b; }              |     (a, b) => a + b;
 csharp_style_prefer_local_over_anonymous_function = true:suggestion
 
+# Prefer implicit object creation 'new()' when the type is apparent from context
+# true:                          | false:
+# List<int> xs = new();          | List<int> xs = new List<int>();
+# var d = new Dictionary<int,    | var d = new Dictionary<int, string>();
+#     string>();                 |
 csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
 
+# Prefer implicitly typed lambda parameters when types are evident from context
+# true:                          | false:
+# (x, y) => x + y                | (int x, int y) => x + y
 csharp_style_prefer_implicitly_typed_lambda_expression = true:suggestion
 
+# Prefer tuple swap idiom for swapping values
+# true:                          | false:
+# (a, b) = (b, a);               | var t = a; a = b; b = t;
 csharp_style_prefer_tuple_swap = true:suggestion
 
+# Prefer unbound generic type in nameof for generic types
+# true:                          | false:
+# nameof(List<>)                 | nameof(List<int>)
 csharp_style_prefer_unbound_generic_type_in_nameof = true:suggestion
 
+# Prefer UTF-8 string literal suffix u8 where appropriate
+# true:                          | false:
+# ReadOnlySpan<byte> b =         | ReadOnlySpan<byte> b =
+#     "Hello"u8;                |     Encoding.UTF8.GetBytes("Hello");
 csharp_style_prefer_utf8_string_literals = true:suggestion
 
+# Prefer static anonymous functions when closures are not required (avoids captures)
+# true:                          | false:
+# static x => x + 1              | x => x + 1
 csharp_prefer_static_anonymous_function = true:suggestion
 
+# Prefer readonly struct when the type is immutable
+# true:                          | false:
+# public readonly struct Point    | public struct Point
+# { public int X { get; } }       | { public int X { get; } }
 csharp_style_prefer_readonly_struct = true:suggestion
 
+# Prefer readonly members inside structs to prevent defensive copies
+# true:                          | false:
+# public readonly int GetX()     | public int GetX()
+# { return X; }                  | { return X; }
 csharp_style_prefer_readonly_struct_member = true:suggestion
 
+# Allow single embedded statements on the same line (experimental formatting)
+# true:                          | false:
+# if (x) DoWork();               | if (x)
+#                                 | {
+#                                 |     DoWork();
+#                                 | }
 csharp_style_allow_embedded_statements_on_same_line_experimental = true:silent
 
+# Allow blank lines between directly consecutive braces (experimental)
+# true:                          | false:
+# if (x)
+# {                              | if (x)
+#                                | {
+# }                              | }
+#                                | else
+# else                           | {
+# {                              | }
+# }                              |
 csharp_style_allow_blank_lines_between_consecutive_braces_experimental = true:silent
 
+# Allow a blank line after ':' in constructor initializer (experimental)
+# true:                          | false:
+# public C() :                   | public C() : base()
+#     base()                     | { }
+# { }                            |
 csharp_style_allow_blank_line_after_colon_in_constructor_initializer_experimental = true:silent
 
+# Allow a blank line after a token inside conditional expressions (experimental)
+# true:                          | false:
+# return condition               | return condition ? a : b;
+#     ? a : b;                   |
 csharp_style_allow_blank_line_after_token_in_conditional_expression_experimental = true:silent
 
+# Allow a blank line after '=>' arrow expression token (experimental)
+# true:                          | false:
+# x =>                           | x => x + 1;
+#     x + 1;                     |
 csharp_style_allow_blank_line_after_token_in_arrow_expression_clause_experimental = true:silent
 
+# Prefer extended property pattern in pattern matching for clarity and brevity
+# true:                          | false:
+# if (p is { Address.City:      | if (p is { Address: { City:
+#     "NY" }) { }               |     "NY" } }) { }
 csharp_style_prefer_extended_property_pattern = true:suggestion
 
 #### Naming styles ####
@@ -1018,13 +1124,33 @@ dotnet_naming_style.s_camelcase.required_prefix = m_
 dotnet_naming_style.s_camelcase.required_suffix = 
 dotnet_naming_style.s_camelcase.word_separator = 
 dotnet_naming_style.s_camelcase.capitalization = camel_case
-
+# Prefer collection expressions when types loosely match
+# Options: always | when_types_loosely_match | never
+# when_types_loosely_match:        | never:
+# var xs = [1, 2, 3];             | var xs = new List<int> { 1, 2, 3 };
+# var d = [1: "a", 2: "b"];     | var d = new Dictionary<int, string>
+#                                 | {
+#                                 |     { 1, "a" }, { 2, "b" }
+#                                 | };
 dotnet_style_prefer_collection_expression = when_types_loosely_match:suggestion
-
+# Require namespace to match the folder path
+# true:                          | false:
+# File: Services/Logging/        | File: Services/Logging/
+#   Namespace: MyApp.Services.   |   Namespace: MyApp
+#              Logging           |
 dotnet_style_namespace_match_folder = true:suggestion
-
+# Allow multiple consecutive blank lines (experimental)
+# true:                          | false:
+# line 1                         | line 1
+#                                | line 2
+#                                | line 3
+# line 4                         |
 dotnet_style_allow_multiple_blank_lines_experimental = true:silent
-
+# Allow a statement immediately after a closing block without a blank line (experimental)
+# true:                          | false:
+# }                              | }
+# DoWork();                      | 
+#                                | DoWork();
 dotnet_style_allow_statement_immediately_after_block_experimental = true:silent
 
 # StyleCop Analyzers – documentation rules (apply to private/internal too)
