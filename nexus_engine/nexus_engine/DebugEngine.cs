@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 
 using Nexus.Config;
+using Nexus.Engine.Batch;
 using Nexus.Engine.Extensions;
 using Nexus.Engine.Internal;
 using Nexus.Engine.Preprocessing;
@@ -211,19 +212,38 @@ public class DebugEngine : IDebugEngine
 
                 var totalCount = allCommands.Count;
 
-                // Emit session statistics
-                Statistics.EmitSessionStats(
-                    m_Logger,
-                    sessionId,
-                    openedAt,
-                    closedAt,
-                    totalDuration,
-                    totalCount,
-                    completedCount,
-                    failedCount,
-                    cancelledCount,
-                    timedOutCount,
-                    allCommands);
+                // Capture batch mappings before disposal (used for summary only)
+                var commandIdToBatchId = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+                foreach (var cmd in allCommands)
+                {
+                    var bId = BatchProcessor.Instance.GetBatchCommandId(sessionId, cmd.CommandId);
+                    commandIdToBatchId[cmd.CommandId] = bId;
+                }
+
+                // Fire-and-forget emission of session statistics using in-memory snapshot
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        Statistics.EmitSessionStats(
+                            m_Logger,
+                            sessionId,
+                            openedAt,
+                            closedAt,
+                            totalDuration,
+                            totalCount,
+                            completedCount,
+                            failedCount,
+                            cancelledCount,
+                            timedOutCount,
+                            allCommands,
+                            commandIdToBatchId);
+                    }
+                    catch (Exception ex)
+                    {
+                        m_Logger.Error(ex, "Error emitting session statistics for {SessionId}", sessionId);
+                    }
+                });
 
                 // Close all extension scripts for this session
                 m_ExtensionScripts.CloseSession(sessionId);
