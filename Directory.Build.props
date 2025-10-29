@@ -1,10 +1,8 @@
 <Project>
-
   <!-- 
     This file is automatically imported by all projects in subdirectories.
     It defines common properties and version management for the entire solution.
   -->
-
   <PropertyGroup Label="Common Project Properties">
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -14,7 +12,7 @@
 
   <PropertyGroup Label="Shared Build Output">
     <!-- All projects build to a common directory structure -->
-    <BaseOutputPath>$(MSBuildThisFileDirectory)build\bin\</BaseOutputPath>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)build\bin\$(MSBuildProjectName)\</BaseOutputPath>
     <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)build\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
   </PropertyGroup>
 
@@ -36,7 +34,7 @@
   <PropertyGroup Label="Default Versioning">
     <!-- Default version for all projects (can be overridden per project) -->
     <VersionPrefix>1.1.1</VersionPrefix>
-        <VersionSuffix>0</VersionSuffix>
+        <VersionSuffix>1</VersionSuffix>
     
     <!-- Calculated version -->
     <Version Condition="'$(Version)' == ''">$(VersionPrefix).$(VersionSuffix)</Version>

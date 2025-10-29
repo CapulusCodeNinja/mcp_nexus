@@ -33,6 +33,7 @@ if ($LastExitCode -ne 0) {
 Push-Location $solutionRoot
 try {
     dotnet test `
+    --no-build `
     --settings $runSettings `
     --collect "XPlat Code Coverage" `
     --results-directory $testResultsDir

@@ -4,6 +4,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <AssemblyName>nexus_unittests</AssemblyName>
     <RootNamespace>Nexus.Unittests</RootNamespace>
   </PropertyGroup>
 
@@ -25,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\nexus\nexus.csproj" />
+    <ProjectReference Include="..\..\nexus_protocol\nexus_protocol.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -233,7 +233,7 @@ internal class Executor
             }
             else
             {
-            m_Logger.Debug("Successfully started extensions script {ProcessId} for extension {ExtensionName}", process.Id, metadata.Name);
+                m_Logger.Debug("Successfully started extensions script {ProcessId} for extension {ExtensionName}", process.Id, metadata.Name);
             }
 
             return Task.FromResult<Process?>(process);

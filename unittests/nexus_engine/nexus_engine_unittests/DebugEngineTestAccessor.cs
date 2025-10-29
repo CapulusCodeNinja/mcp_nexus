@@ -71,6 +71,6 @@ internal class DebugEngineTestAccessor : DebugEngine
     /// </summary>
     public void InvokeCleanupIdleSessions()
     {
-        this.CleanupIdleSessions();
+        CleanupIdleSessions();
     }
 }
