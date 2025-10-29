@@ -70,8 +70,9 @@ public static class Statistics
         _ = sb.AppendLine($"    │ SessionId: {sessionId}");
         _ = sb.AppendLine($"    │ CommandId: {commandId}");
         _ = sb.AppendLine($"    │ BatchCommandId: {batchCommandId}");
+        _ = sb.AppendLine($"    │ Command: {command}");
         _ = sb.AppendLine($"    │ Status: {status}");
-        _ = sb.AppendLine("    │ ───────────────────────────────────────────────────────────────────");
+        _ = sb.AppendLine("    │ ──────────────────────────────────────────────────────────────────");
 
         // Context header clarifying execution scope
         if (!string.IsNullOrWhiteSpace(batchCommandId))
@@ -87,7 +88,6 @@ public static class Statistics
             _ = sb.AppendLine("    │ Single-command execution");
         }
 
-        _ = sb.AppendLine($"    │ Command: {command}");
         _ = sb.AppendLine($"    │ QueuedAt: {queuedAt:yyyy-MM-dd HH:mm:ss.fff}");
         _ = sb.AppendLine($"    │ StartedAt: {startedAt:yyyy-MM-dd HH:mm:ss.fff}");
         _ = sb.AppendLine($"    │ CompletedAt: {completedAt:yyyy-MM-dd HH:mm:ss.fff}");
