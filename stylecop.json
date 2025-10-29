@@ -1,0 +1,14 @@
+{
+  "settings": {
+    "documentationRules": {
+      "documentPrivateElements": true,
+      "documentInternalElements": true,
+      "documentExposedElements": true,
+      "documentInterfaces": true,
+      "companyName": "",
+      "copyrightText": "",
+      "variables": {}
+    }
+  }
+}
+

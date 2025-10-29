@@ -1026,3 +1026,10 @@ dotnet_style_namespace_match_folder = true:suggestion
 dotnet_style_allow_multiple_blank_lines_experimental = true:silent
 
 dotnet_style_allow_statement_immediately_after_block_experimental = true:silent
+
+# StyleCop Analyzers – documentation rules (apply to private/internal too)
+dotnet_analyzer_diagnostic.category-StyleCop.severity = warning
+dotnet_diagnostic.SA1600.severity = error   # Elements should be documented
+dotnet_diagnostic.SA1611.severity = error   # Parameters should be documented
+dotnet_diagnostic.SA1615.severity = error   # Return value should be documented
+dotnet_diagnostic.SA1618.severity = error   # Generic type parameters should be documented

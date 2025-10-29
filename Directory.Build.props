@@ -43,6 +43,10 @@
     <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(Version)</AssemblyVersion>
     <FileVersion Condition="'$(FileVersion)' == ''">$(Version)</FileVersion>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" Condition="Exists('$(MSBuildThisFileDirectory)stylecop.json')" />
+  </ItemGroup>
 
   <PropertyGroup Label="NuGet Package Versions">
     <!-- Microsoft Extensions -->
@@ -61,6 +65,7 @@
     <ModelContextProtocolVersion>0.4.0-preview.1</ModelContextProtocolVersion>
     <AspNetCoreRateLimitVersion>5.0.0</AspNetCoreRateLimitVersion>
     <NLogWebAspNetCoreVersion>6.0.4</NLogWebAspNetCoreVersion>
+    <StyleCopAnalyzersVersion>1.2.0-beta.507</StyleCopAnalyzersVersion>
     
     <!-- Test packages -->
     <MicrosoftNetTestSdkVersion>17.11.1</MicrosoftNetTestSdkVersion>
@@ -72,4 +77,3 @@
   </PropertyGroup>
 
 </Project>
-

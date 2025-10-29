@@ -27,5 +27,9 @@
     <ProjectReference Include="..\..\nexus_engine\nexus_engine\nexus_engine.csproj" />
     <ProjectReference Include="..\..\nexus_protocol\nexus_protocol.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="$(StyleCopAnalyzersVersion)" PrivateAssets="all" />
+  </ItemGroup>
 </Project>
 

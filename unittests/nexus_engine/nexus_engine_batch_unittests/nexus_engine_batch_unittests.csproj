@@ -29,5 +29,9 @@
     <ProjectReference Include="..\..\..\nexus_engine\nexus_engine_batch\nexus_engine_batch.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="$(StyleCopAnalyzersVersion)" PrivateAssets="all" />
+  </ItemGroup>
+
 </Project>
 
