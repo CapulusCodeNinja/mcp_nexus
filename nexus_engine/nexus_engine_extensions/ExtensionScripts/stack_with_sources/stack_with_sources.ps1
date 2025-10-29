@@ -78,17 +78,21 @@ try {
         
         Write-NexusLog "[$threadDisplay] Thread not found or invalid (ThreadId: $ThreadId)" -Level Error
         
-        $result = @{
-            success = $false
-            threadId = $ThreadId
-            totalFrames = 0
-            sourcesDownloaded = 0
-            addresses = @()
-            error = "Thread '$ThreadId' not found. The thread ID may be invalid or the thread may not exist in this dump file."
-            suggestion = "Use the '!threads' or '~' command to list available threads, then try again with a valid thread ID."
-            stackTrace = $stackOutput
-        } | ConvertTo-Json -Depth 10
-        Write-Output $result
+        $md = @"
+## Stack With Sources
+
+**Success:** False
+**Thread ID:** `$ThreadId`
+**Message:** Thread '$ThreadId' not found. The thread ID may be invalid or may not exist in this dump.
+**Suggestion:** Use `!threads` or `~` to list available threads, then retry with a valid thread ID.
+
+### Stack Trace
+
+```
+$stackOutput
+```
+"@
+        Write-Output $md
         exit 0
     }
 
@@ -116,16 +120,20 @@ try {
 
     if ($addresses.Count -eq 0) {
         Write-NexusLog "No valid return addresses found in stack trace" -Level Warning
-        $result = @{
-            success = $false
-            threadId = $ThreadId
-            totalFrames = 0
-            sourcesDownloaded = 0
-            addresses = @()
-            error = "No valid return addresses found in stack trace"
-            stackTrace = $stackOutput
-        } | ConvertTo-Json -Depth 10
-        Write-Output $result
+        $md = @"
+## Stack With Sources
+
+**Success:** False
+**Thread ID:** `$ThreadId`
+**Message:** No valid return addresses found in stack trace
+
+### Stack Trace
+
+```
+$stackOutput
+```
+"@
+        Write-Output $md
         exit 0
     }
 
@@ -161,21 +169,31 @@ try {
     
     if ($addressesWithSymbols.Count -eq 0) {
         Write-NexusLog "No addresses with symbols found to download sources for" -Level Warning
-        $result = @{
-            success = $true
-            threadId = $ThreadId
-            totalFrames = $addresses.Count
-            framesWithSymbols = 0
-            sourcesDownloaded = 0
-            sourcesMissing = 0
-            successRate = 0
-            addresses = $addresses
-            failedAddresses = @()
-            message = "No addresses with symbols found, nothing to download"
-            stackTrace = $stackOutput
-            sourceOutputs = @{}
-        } | ConvertTo-Json -Depth 10
-        Write-Output $result
+        $addrList = ($addresses -join "\n")
+        $md = @"
+## Stack With Sources
+
+**Success:** True
+**Thread ID:** `$ThreadId`
+**Total Frames:** $($addresses.Count)
+**Frames With Symbols:** 0
+**Sources Downloaded:** 0
+**Success Rate:** 0%
+**Message:** No addresses with symbols found, nothing to download
+
+### Stack Trace
+
+```
+$stackOutput
+```
+
+### Addresses (All)
+
+```
+$addrList
+```
+"@
+        Write-Output $md
         exit 0
     }
 
@@ -232,24 +250,64 @@ try {
         Write-NexusLog "Failed to download sources for $($failedAddresses.Count) addresses" -Level Warning
     }
 
-    # Return structured result with all command outputs
-    $result = @{
-        success = $true
-        threadId = $ThreadId
-        totalFrames = $addresses.Count
-        framesWithSymbols = $addressesWithSymbols.Count
-        sourcesDownloaded = $downloadedCount
-        sourcesMissing = $failedAddresses.Count
-        successRate = $successRate
-        addresses = $addresses
-        addressesWithSymbols = $addressesWithSymbols
-        failedAddresses = $failedAddresses
-        message = "Successfully downloaded and verified $downloadedCount of $($addressesWithSymbols.Count) source files (filtered from $($addresses.Count) total addresses)"
-        stackTrace = $stackOutput
-        sourceOutputs = $sourceOutputs
-    } | ConvertTo-Json -Depth 10
+    # Compose Markdown report with summary and outputs
+    $now = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $addrAll = ($addresses -join "\n")
+    $addrWithSymbols = ($addressesWithSymbols -join "\n")
+    $failedList = ($failedAddresses -join "\n")
 
-    Write-Output $result
+    # Flatten sourceOutputs into a readable section
+    $sourceOutputsText = New-Object System.Text.StringBuilder
+    foreach ($kv in $sourceOutputs.GetEnumerator()) {
+        [void]$sourceOutputsText.AppendLine("[$($kv.Key)]")
+        [void]$sourceOutputsText.AppendLine($kv.Value)
+        [void]$sourceOutputsText.AppendLine()
+    }
+
+    $md = @"
+## Stack With Sources
+
+**Success:** True
+**Thread ID:** `$ThreadId`
+**Executed:** $now
+**Total Frames:** $($addresses.Count)
+**Frames With Symbols:** $($addressesWithSymbols.Count)
+**Sources Downloaded:** $downloadedCount
+**Sources Missing:** $($failedAddresses.Count)
+**Success Rate:** $successRate%
+
+### Stack Trace
+
+```
+$stackOutput
+```
+
+### Addresses With Symbols
+
+```
+$addrWithSymbols
+```
+
+### Failed Addresses
+
+```
+$failedList
+```
+
+### All Addresses
+
+```
+$addrAll
+```
+
+### Source Verification Outputs
+
+```
+$($sourceOutputsText.ToString())
+```
+"@
+
+    Write-Output $md
     exit 0
 }
 catch {

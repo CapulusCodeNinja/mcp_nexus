@@ -441,6 +441,27 @@ internal static class MarkdownFormatter
     }
 
     /// <summary>
+    /// Appends command output according to its origin. For extension commands (prefix "Extension: "),
+    /// returns the output verbatim (expected to be Markdown). For all other commands, wraps output
+    /// in a code block with an optional title.
+    /// </summary>
+    /// <param name="command">The command label as stored in command info.</param>
+    /// <param name="output">The raw output to append.</param>
+    /// <param name="titleForNonExtension">Optional title when wrapping non-extension output.</param>
+    /// <returns>Markdown to append for the given output.</returns>
+    public static string AppendOutputForCommand(string? command, string? output, string? titleForNonExtension = "Output")
+    {
+        if (string.IsNullOrEmpty(output))
+        {
+            return string.Empty;
+        }
+
+        return !string.IsNullOrEmpty(command) && command.StartsWith("Extension: ", StringComparison.Ordinal)
+            ? output
+            : CreateCodeBlock(output, titleForNonExtension);
+    }
+
+    /// <summary>
     /// Helper method to get property value from anonymous object.
     /// </summary>
     private static object? GetPropertyValue(object obj, string propertyName)

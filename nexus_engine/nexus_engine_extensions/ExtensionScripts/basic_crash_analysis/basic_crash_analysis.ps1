@@ -55,36 +55,47 @@ try {
 
     Write-NexusLog "Basic crash analysis completed successfully (5 commands executed, 4 using async batching)" -Level Information
 
-    # Return structured result
-    $result = @{
-        success = $true
-        workflow = "basic_crash_analysis"
-        steps = @{
-            automaticAnalysis = @{
-                command = "!analyze -v"
-                output = $results["analyze"]
-            }
-            threadInfo = @{
-                command = "!threads"
-                output = $results["threads"]
-            }
-            allThreadStacks = @{
-                command = "~*k"
-                output = $results["allStacks"]
-            }
-            locks = @{
-                command = "!locks"
-                output = $results["locks"]
-            }
-            cpuUsage = @{
-                command = "!runaway"
-                output = $results["runaway"]
-            }
-        }
-        message = "Basic crash analysis completed successfully using async batching. Review the outputs to identify faulting thread, exception type, and crash context."
-    } | ConvertTo-Json -Depth 10
+    # Compose Markdown report
+    $now = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $md = @"
+## Basic Crash Analysis
 
-    Write-Output $result
+**Workflow:** `basic_crash_analysis`
+**Executed:** $now
+
+### !analyze -v
+
+```
+$($results["analyze"])
+```
+
+### !threads
+
+```
+$($results["threads"])
+```
+
+### ~*k
+
+```
+$($results["allStacks"])
+```
+
+### !locks
+
+```
+$($results["locks"])
+```
+
+### !runaway
+
+```
+$($results["runaway"])
+```
+
+"@
+
+    Write-Output $md
     exit 0
 }
 catch {

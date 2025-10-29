@@ -51,7 +51,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
 
             if (!string.IsNullOrEmpty(commandInfo.AggregatedOutput))
             {
-                markdown += MarkdownFormatter.CreateCodeBlock(commandInfo.AggregatedOutput, "Output");
+                markdown += MarkdownFormatter.AppendOutputForCommand(commandInfo.Command, commandInfo.AggregatedOutput, "Output");
             }
 
             if (!string.IsNullOrEmpty(commandInfo.ErrorMessage))
