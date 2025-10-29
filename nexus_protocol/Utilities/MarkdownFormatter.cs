@@ -451,12 +451,9 @@ internal static class MarkdownFormatter
     /// <returns>Markdown to append for the given output.</returns>
     public static string AppendOutputForCommand(string? command, string? output, string? titleForNonExtension = "Output")
     {
-        if (string.IsNullOrEmpty(output))
-        {
-            return string.Empty;
-        }
-
-        return !string.IsNullOrEmpty(command) && command.StartsWith("Extension: ", StringComparison.Ordinal)
+        return string.IsNullOrEmpty(output)
+            ? string.Empty
+            : !string.IsNullOrEmpty(command) && command.StartsWith("Extension: ", StringComparison.Ordinal)
             ? output
             : CreateCodeBlock(output, titleForNonExtension);
     }

@@ -645,7 +645,7 @@ public class DebugEngine : IDebugEngine
                 var anyActive = session
                     .GetAllCommandInfos()
                     .Values
-                    .Any(ci => ci.State == CommandState.Queued || ci.State == CommandState.Executing);
+                    .Any(ci => ci.State is CommandState.Queued or CommandState.Executing);
 
                 if (anyActive)
                 {

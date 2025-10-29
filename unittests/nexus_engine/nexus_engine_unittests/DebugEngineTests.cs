@@ -100,14 +100,14 @@ public class DebugEngineTests : IDisposable
         // Inject the session into engine's session dictionary via reflection
         var sessionsField = typeof(DebugEngine)
             .GetField("m_Sessions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        sessionsField.Should().NotBeNull();
+        _ = sessionsField.Should().NotBeNull();
         var sessions = (System.Collections.Concurrent.ConcurrentDictionary<string, Nexus.Engine.Internal.DebugSession>)sessionsField!.GetValue(accessor)!;
         _ = sessions.TryAdd(sessionId, debugSession);
 
         // Backdate last activity to force timeout
         var ticksField = typeof(Nexus.Engine.Internal.DebugSession)
             .GetField("m_LastActivityTicks", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        ticksField.Should().NotBeNull();
+        _ = ticksField.Should().NotBeNull();
         var oldTicks = DateTime.Now.AddHours(-1).Ticks;
         ticksField!.SetValue(debugSession, oldTicks);
 

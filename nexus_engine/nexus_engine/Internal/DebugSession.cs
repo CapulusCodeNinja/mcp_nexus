@@ -334,13 +334,7 @@ internal class DebugSession : IDisposable
     /// <summary>
     /// Gets the last activity time for this session.
     /// </summary>
-    public DateTime LastActivityTime
-    {
-        get
-        {
-            return new DateTime(Volatile.Read(ref m_LastActivityTicks));
-        }
-    }
+    public DateTime LastActivityTime => new DateTime(Volatile.Read(ref m_LastActivityTicks));
 
     /// <summary>
     /// Registers an activity on this session by updating the last activity timestamp.

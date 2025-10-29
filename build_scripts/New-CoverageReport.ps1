@@ -19,19 +19,30 @@ if (Test-Path $testResultsDir) {
 }
 
 # ---------------------------
-# Build projects and run tests with coverage
+# Build projects 
+# ---------------------------
+& $solutionRoot\build_scripts\New-SolutionBuild.ps1
+if ($LastExitCode -ne 0) {
+    Write-Error "Failed to build solution"
+    Exit 1
+}
+
+# ---------------------------
+# Run tests with coverage
 # ---------------------------
 Push-Location $solutionRoot
 try {
-    dotnet build
-
     dotnet test `
-    --no-build `
     --settings $runSettings `
     --collect "XPlat Code Coverage" `
     --results-directory $testResultsDir
 } finally {
     Pop-Location
+}
+
+if ($LastExitCode -ne 0) {
+    Write-Error "Failed to run the tests with coverage"
+    Exit 1
 }
 
 # ---------------------------
@@ -47,6 +58,11 @@ reportgenerator -verbosity:"Verbose" `
     -reports:"$coverageFiles" `
     -targetdir:$coverageReportDir `
     -reporttypes:"Html"
+
+if ($LastExitCode -ne 0) {
+    Write-Error "Failed to generate the coverage report"
+    Exit 1
+}
 
 # ---------------------------
 # Open report
