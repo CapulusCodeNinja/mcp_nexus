@@ -228,7 +228,7 @@ public class SharedConfigurationTests
         // Assert
         _ = settings.MaxConcurrentSessions.Should().Be(1000);
         _ = settings.SessionTimeoutMinutes.Should().Be(30);
-        _ = settings.CleanupIntervalMinutes.Should().Be(5);
+        _ = settings.CleanupIntervalSeconds.Should().Be(5);
         _ = settings.DisposalTimeoutSeconds.Should().Be(30);
         _ = settings.DefaultCommandTimeoutMinutes.Should().Be(10);
         _ = settings.MemoryCleanupThresholdMB.Should().Be(1024);
@@ -395,7 +395,7 @@ public class SharedConfigurationTests
         {
             MaxConcurrentSessions = 50,
             SessionTimeoutMinutes = 60,
-            CleanupIntervalMinutes = 10,
+            CleanupIntervalSeconds = 10,
             DisposalTimeoutSeconds = 60,
             DefaultCommandTimeoutMinutes = 20,
             MemoryCleanupThresholdMB = 2048
@@ -404,7 +404,7 @@ public class SharedConfigurationTests
         // Assert
         _ = settings.MaxConcurrentSessions.Should().Be(50);
         _ = settings.SessionTimeoutMinutes.Should().Be(60);
-        _ = settings.CleanupIntervalMinutes.Should().Be(10);
+        _ = settings.CleanupIntervalSeconds.Should().Be(10);
         _ = settings.DisposalTimeoutSeconds.Should().Be(60);
         _ = settings.DefaultCommandTimeoutMinutes.Should().Be(20);
         _ = settings.MemoryCleanupThresholdMB.Should().Be(2048);

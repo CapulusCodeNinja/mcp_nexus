@@ -114,6 +114,7 @@ public static class Statistics
     /// <param name="timedOutCommands">Number of timed out commands.</param>
     /// <param name="commands">Collection of all commands in the session.</param>
     /// <param name="commandIdToBatchId">Optional mapping of individual command IDs to batch command IDs for summary metrics.</param>
+    /// <param name="closeReason">Optional reason for session closure (e.g., IdleTimeout, UserRequest).</param>
     public static void EmitSessionStats(
         Logger logger,
         string sessionId,
@@ -126,7 +127,8 @@ public static class Statistics
         int cancelledCommands,
         int timedOutCommands,
         IEnumerable<CommandInfo> commands,
-        IDictionary<string, string?>? commandIdToBatchId = null)
+        IDictionary<string, string?>? commandIdToBatchId = null,
+        string? closeReason = null)
     {
         var sb = new StringBuilder();
         _ = sb.AppendLine();
@@ -135,6 +137,10 @@ public static class Statistics
         _ = sb.AppendLine($"    ║ OpenedAt: {openedAt:yyyy-MM-dd HH:mm:ss.fff}");
         _ = sb.AppendLine($"    ║ ClosedAt: {closedAt:yyyy-MM-dd HH:mm:ss.fff}");
         _ = sb.AppendLine($"    ║ TotalDuration: {totalDuration}");
+        if (!string.IsNullOrWhiteSpace(closeReason))
+        {
+            _ = sb.AppendLine($"    ║ CloseReason: {closeReason}");
+        }
         _ = sb.AppendLine("    ║ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
         _ = sb.AppendLine($"    ║ TotalCommands: {totalCommands}");
         _ = sb.AppendLine($"    ║ CompletedCommands: {completedCommands}");

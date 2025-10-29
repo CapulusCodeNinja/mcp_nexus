@@ -21,6 +21,11 @@ internal class DebugSession : IDisposable
     private readonly ReaderWriterLockSlim m_StateLock = new();
     private SessionState m_State = SessionState.Initializing;
     private volatile bool m_Disposed = false;
+    
+    /// <summary>
+    /// Stores the last activity timestamp for this session as ticks, updated lock-free for performance.
+    /// </summary>
+    private long m_LastActivityTicks;
 
     /// <summary>
     /// Gets the session identifier.
@@ -96,6 +101,9 @@ internal class DebugSession : IDisposable
 
         // Subscribe to command queue events
         m_CommandQueue.CommandStateChanged += OnCommandStateChanged;
+
+        // Seed last activity to now
+        m_LastActivityTicks = DateTime.Now.Ticks;
     }
 
     /// <summary>
@@ -117,6 +125,9 @@ internal class DebugSession : IDisposable
             await m_CommandQueue.StartAsync(m_CdbSession, cancellationToken);
 
             SetState(SessionState.Active);
+
+            UpdateLastActivity();
+            
             m_Logger.Info("Debug session {SessionId} initialized successfully", SessionId);
         }
         catch (Exception ex)
@@ -136,6 +147,8 @@ internal class DebugSession : IDisposable
     {
         ThrowIfDisposed();
         ThrowIfNotActive();
+        
+        UpdateLastActivity();
 
         return m_CommandQueue.EnqueueCommand(command);
     }
@@ -269,6 +282,9 @@ internal class DebugSession : IDisposable
     /// <param name="e">The event arguments.</param>
     protected void OnCommandStateChanged(object? sender, CommandStateChangedEventArgs e)
     {
+        // Update last activity whenever a command state changes
+        UpdateLastActivity();
+        
         // Forward the event with session context
         var args = new CommandStateChangedEventArgs
         {
@@ -313,6 +329,33 @@ internal class DebugSession : IDisposable
 
             SessionStateChanged?.Invoke(this, args);
         }
+    }
+
+    /// <summary>
+    /// Gets the last activity time for this session.
+    /// </summary>
+    public DateTime LastActivityTime
+    {
+        get
+        {
+            return new DateTime(Volatile.Read(ref m_LastActivityTicks));
+        }
+    }
+
+    /// <summary>
+    /// Registers an activity on this session by updating the last activity timestamp.
+    /// </summary>
+    internal void RegisterActivity()
+    {
+        UpdateLastActivity();
+    }
+
+    /// <summary>
+    /// Updates the last activity timestamp to the current local time in a lock-free manner.
+    /// </summary>
+    protected void UpdateLastActivity()
+    {
+        _ = Interlocked.Exchange(ref m_LastActivityTicks, DateTime.Now.Ticks);
     }
 
     /// <summary>

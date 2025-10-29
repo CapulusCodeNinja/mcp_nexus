@@ -57,5 +57,13 @@ internal class DebugEngineTestAccessor : DebugEngine
     {
         base.ThrowIfDisposed();
     }
+
+    /// <summary>
+    /// Invokes the protected idle session cleanup for testing.
+    /// </summary>
+    public void InvokeCleanupIdleSessions()
+    {
+        base.CleanupIdleSessions();
+    }
 }
 

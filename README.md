@@ -224,7 +224,8 @@ MCP Nexus intelligently batches commands for improved throughput:
     "SessionManagement": {
       "MaxConcurrentSessions": 10,
       "SessionTimeoutMinutes": 30,
-      "DefaultCommandTimeoutSeconds": 300
+      "CleanupIntervalSeconds": 300,
+      "DefaultCommandTimeoutMinutes": 10
     }
   }
 }

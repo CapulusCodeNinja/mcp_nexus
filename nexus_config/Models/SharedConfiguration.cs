@@ -246,9 +246,9 @@ public class SessionManagementSettings
     public int SessionTimeoutMinutes { get; set; } = 30;
 
     /// <summary>
-    /// Gets or sets the cleanup interval in minutes.
+    /// Gets or sets the cleanup interval in seconds.
     /// </summary>
-    public int CleanupIntervalMinutes { get; set; } = 5;
+    public int CleanupIntervalSeconds { get; set; } = 5;
 
     /// <summary>
     /// Gets the cleanup interval as a TimeSpan.
@@ -256,7 +256,7 @@ public class SessionManagementSettings
     /// <returns>The cleanup interval.</returns>
     public TimeSpan GetCleanupInterval()
     {
-        return TimeSpan.FromMinutes(CleanupIntervalMinutes);
+        return TimeSpan.FromSeconds(CleanupIntervalSeconds);
     }
 
     /// <summary>

@@ -50,6 +50,11 @@ public class DebugEngine : IDebugEngine
     private readonly ConcurrentDictionary<string, DateTime> m_SessionCreationTimes = new();
 
     /// <summary>
+    /// Periodic timer that checks for idle sessions and closes them when they exceed the configured timeout.
+    /// </summary>
+    private readonly System.Threading.Timer m_SessionCleanupTimer;
+
+    /// <summary>
     /// Indicates whether this instance has been disposed.
     /// </summary>
     private volatile bool m_Disposed = false;
@@ -81,6 +86,9 @@ public class DebugEngine : IDebugEngine
 
         m_Logger = LogManager.GetCurrentClassLogger();
         m_Logger.Info("DebugEngine initialized with max {MaxSessions} concurrent sessions", Settings.Instance.Get().McpNexus.SessionManagement.MaxConcurrentSessions);
+
+        var cleanupInterval = Settings.Instance.Get().McpNexus.SessionManagement.GetCleanupInterval();
+        m_SessionCleanupTimer = new System.Threading.Timer(_ => CleanupIdleSessions(), null, cleanupInterval, cleanupInterval);
     }
 
     /// <summary>
@@ -159,9 +167,10 @@ public class DebugEngine : IDebugEngine
     /// Closes a debug session and cleans up resources.
     /// </summary>
     /// <param name="sessionId">The session ID to close.</param>
+    /// <param name="closeReason">Optional reason for session closure (e.g., "IdleTimeout", "UserRequest").</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     /// <exception cref="ArgumentException">Thrown when sessionId is null or empty.</exception>
-    public async Task CloseSessionAsync(string sessionId)
+    public async Task CloseSessionAsync(string sessionId, string? closeReason = null)
     {
         ThrowIfDisposed();
         ValidateSessionId(sessionId, nameof(sessionId));
@@ -237,7 +246,8 @@ public class DebugEngine : IDebugEngine
                             cancelledCount,
                             timedOutCount,
                             allCommands,
-                            commandIdToBatchId);
+                            commandIdToBatchId,
+                            closeReason);
                     }
                     catch (Exception ex)
                     {
@@ -257,7 +267,7 @@ public class DebugEngine : IDebugEngine
                 // Remove session creation time tracking
                 _ = m_SessionCreationTimes.TryRemove(sessionId, out _);
 
-                m_Logger.Info("Debug session {SessionId} closed successfully", sessionId);
+                m_Logger.Info("Debug session {SessionId} closed successfully{ReasonSuffix}", sessionId, string.IsNullOrWhiteSpace(closeReason) ? string.Empty : $" (Reason: {closeReason})");
             }
             catch (Exception ex)
             {
@@ -352,6 +362,12 @@ public class DebugEngine : IDebugEngine
             Timestamp = DateTime.Now,
             Command = $"Extension: {extensionName}"
         });
+
+        // Register session activity for extension command enqueue
+        if (m_Sessions.TryGetValue(sessionId, out var extSession))
+        {
+            extSession.RegisterActivity();
+        }
 
         return commandId;
     }
@@ -525,6 +541,9 @@ public class DebugEngine : IDebugEngine
 
         m_Logger.Info("Disposing DebugEngine with {SessionCount} active sessions", m_Sessions.Count);
 
+        // Stop cleanup timer
+        m_SessionCleanupTimer?.Dispose();
+
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var failedSessions = new List<string>();
 
@@ -590,6 +609,65 @@ public class DebugEngine : IDebugEngine
     {
         // Forward the event
         SessionStateChanged?.Invoke(this, e);
+    }
+
+
+    /// <summary>
+    /// Scans active sessions and automatically closes those that have been idle beyond the configured timeout.
+    /// Sessions with queued or executing commands are never closed by this cleanup.
+    /// </summary>
+    protected void CleanupIdleSessions()
+    {
+        if (m_Disposed)
+        {
+            return;
+        }
+
+        var now = DateTime.Now;
+        var sessionTimeout = TimeSpan.FromMinutes(Settings.Instance.Get().McpNexus.SessionManagement.SessionTimeoutMinutes);
+
+        foreach (var kvp in m_Sessions)
+        {
+            var sessionId = kvp.Key;
+            var session = kvp.Value;
+
+            try
+            {
+                var lastActivity = session.LastActivityTime;
+
+                // If within timeout, skip
+                if (now - lastActivity < sessionTimeout)
+                {
+                    continue;
+                }
+
+                // Skip if there are any active (queued/executing) commands
+                var anyActive = session
+                    .GetAllCommandInfos()
+                    .Values
+                    .Any(ci => ci.State == CommandState.Queued || ci.State == CommandState.Executing);
+
+                if (anyActive)
+                {
+                    continue;
+                }
+
+                // Close idle session synchronously for determinism
+                try
+                {
+                    m_Logger.Info("Auto-closing idle session {SessionId} after {Minutes} minutes of inactivity", sessionId, sessionTimeout.TotalMinutes);
+                    CloseSessionAsync(sessionId, "IdleTimeout").GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.Error(ex, "Error auto-closing idle session {SessionId}", sessionId);
+                }
+            }
+            catch (Exception ex)
+            {
+                m_Logger.Warn(ex, "Cleanup check failed for session {SessionId}", sessionId);
+            }
+        }
     }
 
 

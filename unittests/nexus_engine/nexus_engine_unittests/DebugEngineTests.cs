@@ -75,6 +75,52 @@ public class DebugEngineTests : IDisposable
 
     #endregion
 
+    #region Idle Cleanup Tests
+
+    /// <summary>
+    /// Verifies that idle cleanup closes a session that has exceeded the inactivity timeout and has no active commands.
+    /// </summary>
+    [Fact]
+    public void CleanupIdleSessions_WhenSessionIdleAndNoActiveCommands_ClosesSession()
+    {
+        // Arrange
+        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Create a debug session without initializing CDB (so no process is started)
+        var sessionId = "test-session-id";
+        var fileSystem = m_MockFileSystem.Object;
+        var processManager = m_MockProcessManager.Object;
+        var debugSession = new Nexus.Engine.Unittests.Internal.DebugSessionTestAccessor(
+            sessionId,
+            @"C:\\dummy\\dump.dmp",
+            null,
+            fileSystem,
+            processManager);
+
+        // Inject the session into engine's session dictionary via reflection
+        var sessionsField = typeof(DebugEngine)
+            .GetField("m_Sessions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        sessionsField.Should().NotBeNull();
+        var sessions = (System.Collections.Concurrent.ConcurrentDictionary<string, Nexus.Engine.Internal.DebugSession>)sessionsField!.GetValue(accessor)!;
+        _ = sessions.TryAdd(sessionId, debugSession);
+
+        // Backdate last activity to force timeout
+        var ticksField = typeof(Nexus.Engine.Internal.DebugSession)
+            .GetField("m_LastActivityTicks", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        ticksField.Should().NotBeNull();
+        var oldTicks = DateTime.Now.AddHours(-1).Ticks;
+        ticksField!.SetValue(debugSession, oldTicks);
+
+        // Act: run cleanup
+        accessor.InvokeCleanupIdleSessions();
+
+        // Assert: session should be closed and no longer active
+        var isActive = accessor.IsSessionActive(sessionId);
+        _ = isActive.Should().BeFalse();
+    }
+
+    #endregion
+
     #region CreateSessionAsync Tests
 
     /// <summary>

@@ -24,9 +24,10 @@ public interface IDebugEngine : IDisposable
     /// Closes a debug session and cleans up resources.
     /// </summary>
     /// <param name="sessionId">The session ID to close.</param>
+    /// <param name="closeReason">Optional reason for session closure (e.g., "IdleTimeout", "UserRequest").</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     /// <exception cref="ArgumentException">Thrown when sessionId is null or empty.</exception>
-    Task CloseSessionAsync(string sessionId);
+    Task CloseSessionAsync(string sessionId, string? closeReason = null);
 
     /// <summary>
     /// Checks if a session is currently active.
