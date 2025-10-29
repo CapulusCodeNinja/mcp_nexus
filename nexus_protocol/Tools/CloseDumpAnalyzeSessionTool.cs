@@ -41,11 +41,13 @@ internal static class CloseDumpAnalyzeSessionTool
                 { "Status", "Success" }
             };
 
-            return MarkdownFormatter.CreateOperationResult(
+            var markdown = MarkdownFormatter.CreateOperationResult(
                 "Session Closed",
                 keyValues,
                 $"Session {sessionId} closed successfully",
                 true);
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
+            return markdown;
         }
         catch (ArgumentException ex)
         {
@@ -56,11 +58,13 @@ internal static class CloseDumpAnalyzeSessionTool
                 { "Status", "Failed" }
             };
 
-            return MarkdownFormatter.CreateOperationResult(
+            var markdown = MarkdownFormatter.CreateOperationResult(
                 "Session Close Failed",
                 keyValues,
                 ex.Message,
                 false);
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
+            return markdown;
         }
         catch (Exception ex)
         {
@@ -71,11 +75,13 @@ internal static class CloseDumpAnalyzeSessionTool
                 { "Status", "Failed" }
             };
 
-            return MarkdownFormatter.CreateOperationResult(
+            var markdown = MarkdownFormatter.CreateOperationResult(
                 "Session Close Failed",
                 keyValues,
                 $"Unexpected error: {ex.Message}",
                 false);
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
+            return markdown;
         }
     }
 }

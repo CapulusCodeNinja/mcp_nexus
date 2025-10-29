@@ -134,8 +134,8 @@ public static class Statistics
         if (totalCommands > 0)
         {
             _ = sb.AppendLine("    ║ ────────────────────────────────────────────────────────────────────");
-            _ = sb.AppendLine("    ║ CommandId | Command                  | Status    | ReadCount | TimeInQueue         | ExecutionTime         | TotalTime         |");
-            _ = sb.AppendLine("    ║ ----------|--------------------------|-----------|-----------|---------------------|-----------------------|-------------------|");
+            _ = sb.AppendLine("    ║ CommandId  | Command                    | Status    | RC | TimeInQueue        | ExecutionTime      | TotalTime          |");
+            _ = sb.AppendLine("    ║ -----------|----------------------------|-----------|----|--------------------|--------------------|--------------------|");
 
             // Sort commands by status using static array: Completed, Failed, Cancelled, Timeout, Queued, Executing
             var sortedCommands = commands.OrderBy(c => m_StatusSortOrder[(int)c.State]).ThenBy(c => c.CommandNumber);
@@ -158,7 +158,7 @@ public static class Statistics
                     ? cmd.Command
                     : cmd.Command[..25];
 
-                _ = sb.AppendLine($"    ║ {cmd.CommandNumber,-10} | {commandText,-26} | {cmd.State,-9} | {cmd.ReadCount,-9} | {queueTime,-18} | {executionTime,-18} | {totalTime,-18} |");
+                _ = sb.AppendLine($"    ║ {cmd.CommandNumber,-10} | {commandText,-26} | {cmd.State,-9} | {cmd.ReadCount,-2} | {queueTime,-18} | {executionTime,-18} | {totalTime,-18} |");
             }
         }
 

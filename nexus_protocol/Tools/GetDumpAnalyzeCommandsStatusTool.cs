@@ -43,13 +43,13 @@ internal static class GetDumpAnalyzeCommandsStatusTool
                 endTime = cmd.EndTime,
                 executionTime = cmd.ExecutionTime,
                 totalTime = cmd.TotalTime,
-                isSuccess = cmd.IsSuccess,
-                hasOutput = !string.IsNullOrEmpty(cmd.AggregatedOutput)
+                isSuccess = cmd.IsSuccess
             }).ToArray();
 
             logger.Info("Retrieved status for {Count} commands in session {SessionId}", commandStatuses.Length, sessionId);
 
             var markdown = MarkdownFormatter.CreateCommandStatusSummary(sessionId, commandStatuses);
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
         catch (ArgumentException ex)
@@ -57,6 +57,7 @@ internal static class GetDumpAnalyzeCommandsStatusTool
             logger.Error(ex, "Invalid session ID: {Message}", ex.Message);
             var markdown = MarkdownFormatter.CreateCommandStatusSummary(sessionId, Array.Empty<object>());
             markdown += MarkdownFormatter.CreateCodeBlock(ex.Message, "Error");
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
         catch (Exception ex)
@@ -64,6 +65,7 @@ internal static class GetDumpAnalyzeCommandsStatusTool
             logger.Error(ex, "Unexpected error getting command statuses");
             var markdown = MarkdownFormatter.CreateCommandStatusSummary(sessionId, Array.Empty<object>());
             markdown += MarkdownFormatter.CreateCodeBlock($"Unexpected error: {ex.Message}", "Error");
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
     }

@@ -56,42 +56,51 @@ internal static class OpenDumpAnalyzeSessionTool
 
             logger.Info("Successfully created session: {SessionId}", sessionId);
 
-            return MarkdownFormatter.CreateSessionResult(
+            var markdown = MarkdownFormatter.CreateSessionResult(
                 sessionId,
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Success",
                 symbolsPath,
                 $"Session {sessionId} created successfully");
+
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
+            return markdown;
         }
         catch (FileNotFoundException ex)
         {
             logger.Error(ex, "Dump file not found: {DumpPath}", dumpPath);
-            return MarkdownFormatter.CreateSessionResult(
+            var markdown = MarkdownFormatter.CreateSessionResult(
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Failed",
                 null,
                 ex.Message);
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
+            return markdown;
         }
         catch (InvalidOperationException ex)
         {
             logger.Error(ex, "Cannot create session: {Message}", ex.Message);
-            return MarkdownFormatter.CreateSessionResult(
+            var markdown = MarkdownFormatter.CreateSessionResult(
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Failed",
                 null,
                 ex.Message);
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
+            return markdown;
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error creating session");
-            return MarkdownFormatter.CreateSessionResult(
+            var markdown = MarkdownFormatter.CreateSessionResult(
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Failed",
                 null,
                 $"Unexpected error: {ex.Message}");
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
+            return markdown;
         }
     }
 }

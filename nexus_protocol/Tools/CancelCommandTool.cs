@@ -54,7 +54,7 @@ internal static class CancelCommandTool
                 keyValues,
                 message,
                 cancelled);
-
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
         catch (ArgumentException ex)
@@ -68,11 +68,13 @@ internal static class CancelCommandTool
                 { "Status", "Failed" }
             };
 
-            return Task.FromResult<object>(MarkdownFormatter.CreateOperationResult(
+            var markdown = MarkdownFormatter.CreateOperationResult(
                 "Command Cancellation Failed",
                 keyValues,
                 ex.Message,
-                false));
+                false);
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
+            return Task.FromResult<object>(markdown);
         }
         catch (Exception ex)
         {
@@ -85,11 +87,13 @@ internal static class CancelCommandTool
                 { "Status", "Failed" }
             };
 
-            return Task.FromResult<object>(MarkdownFormatter.CreateOperationResult(
+            var markdown = MarkdownFormatter.CreateOperationResult(
                 "Command Cancellation Failed",
                 keyValues,
                 $"Unexpected error: {ex.Message}",
-                false));
+                false);
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
+            return Task.FromResult<object>(markdown);
         }
     }
 }

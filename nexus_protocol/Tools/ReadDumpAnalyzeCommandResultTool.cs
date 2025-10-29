@@ -59,6 +59,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
                 markdown += MarkdownFormatter.CreateCodeBlock(commandInfo.ErrorMessage, "Error");
             }
 
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
         }
         catch (ArgumentException ex)
@@ -73,6 +74,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
                 DateTime.Now);
 
             markdown += MarkdownFormatter.CreateCodeBlock(ex.Message, "Error");
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
         }
         catch (KeyNotFoundException ex)
@@ -87,6 +89,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
                 DateTime.Now);
 
             markdown += MarkdownFormatter.CreateCodeBlock("Command not found", "Error");
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
         }
         catch (Exception ex)
@@ -101,6 +104,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
                 DateTime.Now);
 
             markdown += MarkdownFormatter.CreateCodeBlock($"Unexpected error: {ex.Message}", "Error");
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
         }
     }

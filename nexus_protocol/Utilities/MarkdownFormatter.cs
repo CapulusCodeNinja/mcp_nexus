@@ -9,6 +9,113 @@ namespace Nexus.Protocol.Utilities;
 internal static class MarkdownFormatter
 {
     /// <summary>
+    /// Gets the standardized Usage Guide in Markdown format to append to AI client responses.
+    /// </summary>
+    /// <returns>Usage guide markdown.</returns>
+    public static string GetUsageGuideMarkdown()
+    {
+        var md = new StringBuilder();
+        _ = md.AppendLine();
+        _ = md.AppendLine("## Usage Guide");
+        _ = md.AppendLine();
+        _ = md.AppendLine("### Overview");
+        _ = md.AppendLine();
+        _ = md.AppendLine("- **Description**: Complete guide for using the Nexus MCP server tools and resources.");
+        _ = md.AppendLine();
+        _ = md.AppendLine("### MCP Tools");
+        _ = md.AppendLine();
+        _ = md.AppendLine("- **Description**: Core debugging tools for crash dump analysis");
+        _ = md.AppendLine("- **General notes**:");
+        _ = md.AppendLine("- **TOOLS**: Use `tools/call` to execute operations (open session, run commands, close session)");
+        _ = md.AppendLine("- **RESOURCES**: Use `resources/read` to access data (command lists, session lists, documentation, metrics)");
+        _ = md.AppendLine("- **Async execution**: After opening an analyze session, WinDBG commands can be executed asynchronously");
+        _ = md.AppendLine("- **Command results**: Retrieve via `nexus_read_dump_analyze_command_result` or the `commands` resource");
+        _ = md.AppendLine("- **Sessions**: Opening a session without executing commands has no effect");
+        _ = md.AppendLine();
+        _ = md.AppendLine("#### Tooling - Open Session");
+        _ = md.AppendLine();
+        _ = md.AppendLine("- **Tool name**: `nexus_open_dump_analyze_session`");
+        _ = md.AppendLine("- **Action**: Open the analyze session for the dump file");
+        _ = md.AppendLine("- **Input**:");
+        _ = md.AppendLine("- **dumpPath**: string (required)");
+        _ = md.AppendLine("- **symbolsPath**: string (optional)");
+        _ = md.AppendLine("- **Output**: `sessionId`");
+        _ = md.AppendLine("- **Note**: This EXACT `sessionId` IS REQUIRED for all following commands in the session");
+        _ = md.AppendLine();
+        _ = md.AppendLine("#### Tooling - Exec Command");
+        _ = md.AppendLine();
+        _ = md.AppendLine("- **Tool name**: `nexus_enqueue_async_dump_analyze_command`");
+        _ = md.AppendLine("- **Action**: Start asynchronous execution of a WinDBG/CDB command");
+        _ = md.AppendLine("- **Input**:");
+        _ = md.AppendLine("- **command**: string (required)");
+        _ = md.AppendLine("- **sessionId**: string (required)");
+        _ = md.AppendLine("- **Output**: `commandId`");
+        _ = md.AppendLine("- **Note**: This EXACT `commandId` IS REQUIRED for `nexus_read_dump_analyze_command_result`");
+        _ = md.AppendLine();
+        _ = md.AppendLine("#### Tooling - Close Session");
+        _ = md.AppendLine();
+        _ = md.AppendLine("- **Tool name**: `nexus_close_dump_analyze_session`");
+        _ = md.AppendLine("- **Action**: Close the analyze session after commands complete or when no longer needed");
+        _ = md.AppendLine("- **Input**:");
+        _ = md.AppendLine("- **sessionId**: string (required)");
+        _ = md.AppendLine("- **Output**: none");
+        _ = md.AppendLine();
+        _ = md.AppendLine("#### Tooling - Get Command Result");
+        _ = md.AppendLine();
+        _ = md.AppendLine("- **Tool name**: `nexus_read_dump_analyze_command_result`");
+        _ = md.AppendLine("- **Action**: Get status and results of a previously queued async command");
+        _ = md.AppendLine("- **Input**:");
+        _ = md.AppendLine("- **sessionId**: string (required)");
+        _ = md.AppendLine("- **commandId**: string (required)");
+        _ = md.AppendLine("- **Output**: command result and status");
+        _ = md.AppendLine("- **Note**: Use for results from `nexus_enqueue_async_dump_analyze_command` or `nexus_enqueue_async_extension_command`");
+        _ = md.AppendLine();
+        _ = md.AppendLine("#### Tooling - Cancel Command");
+        _ = md.AppendLine();
+        _ = md.AppendLine("- **Tool name**: `nexus_cancel_dump_analyze_command`");
+        _ = md.AppendLine("- **Action**: Cancel a queued or executing command in a session");
+        _ = md.AppendLine("- **Input**:");
+        _ = md.AppendLine("- **sessionId**: string (required)");
+        _ = md.AppendLine("- **commandId**: string (required)");
+        _ = md.AppendLine("- **Output**: cancellation result (Cancelled/NotFound)");
+        _ = md.AppendLine("- **Note**: No effect if the command already completed; returns NotFound in that case");
+        _ = md.AppendLine();
+        _ = md.AppendLine("#### Tooling - Queue Extension");
+        _ = md.AppendLine();
+        _ = md.AppendLine("- **Tool name**: `nexus_enqueue_async_extension_command`");
+        _ = md.AppendLine("- **Action**: Queue an extension script for complex workflows (may run multiple commands)");
+        _ = md.AppendLine("- **Input**:");
+        _ = md.AppendLine("- **sessionId**: string (required)");
+        _ = md.AppendLine("- **extensionName**: string (required)");
+        _ = md.AppendLine("- **parameters**: object (optional)");
+        _ = md.AppendLine("- **Output**: `commandId` (prefixed with `ext-`)");
+        _ = md.AppendLine("- **Note**: If an invalid extension name is provided, the error lists available extensions. Use `nexus_read_dump_analyze_command_result` to get results. Extensions may take several minutes.");
+        _ = md.AppendLine();
+        _ = md.AppendLine("### MCP Resources");
+        _ = md.AppendLine();
+        _ = md.AppendLine("- **Description**: Access data and results using `resources/read` (NOT `tools/call`)");
+        _ = md.AppendLine("- **Usage notes**:");
+        _ = md.AppendLine("- **Access**: Use `resources/read` to access these resources");
+        _ = md.AppendLine("- **Separation**: Resources provide data access; tools perform actions");
+        _ = md.AppendLine();
+        _ = md.AppendLine("#### Resource: `sessions`");
+        _ = md.AppendLine();
+        _ = md.AppendLine("- **Name**: List Sessions");
+        _ = md.AppendLine("- **Description**: List all debugging sessions with status and activity information");
+        _ = md.AppendLine("- **Input**: none");
+        _ = md.AppendLine("- **Note**: Use `sessions` resource (no parameters; returns all sessions)");
+        _ = md.AppendLine();
+        _ = md.AppendLine("#### Resource: `commands`");
+        _ = md.AppendLine();
+        _ = md.AppendLine("- **Name**: List Commands");
+        _ = md.AppendLine("- **Description**: List async commands from all sessions with status and timing information");
+        _ = md.AppendLine("- **Input**: none");
+        _ = md.AppendLine("- **Note**: Use `commands` resource (no parameters; returns all commands)");
+        _ = md.AppendLine();
+
+        return md.ToString();
+    }
+    /// <summary>
     /// Creates a header section with title and optional subtitle.
     /// </summary>
     /// <param name="title">The main title.</param>

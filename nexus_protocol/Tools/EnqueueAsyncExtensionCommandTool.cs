@@ -63,7 +63,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 keyValues,
                 $"Extension Script '{extensionName}' with command ID {commandId} queued successfully",
                 true);
-
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
         }
         catch (ArgumentException ex)
@@ -83,7 +83,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 keyValues,
                 ex.Message,
                 false);
-
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
         }
         catch (InvalidOperationException ex)
@@ -103,7 +103,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 keyValues,
                 ex.Message,
                 false);
-
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
         }
         catch (Exception ex)
@@ -123,7 +123,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 keyValues,
                 $"Unexpected error: {ex.Message}",
                 false);
-
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
         }
     }

@@ -60,7 +60,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
                 keyValues,
                 $"Command {commandId} queued successfully",
                 true);
-
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
         catch (ArgumentException ex)
@@ -79,7 +79,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
                 keyValues,
                 ex.Message,
                 false);
-
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
         catch (InvalidOperationException ex)
@@ -98,7 +98,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
                 keyValues,
                 ex.Message,
                 false);
-
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
         catch (Exception ex)
@@ -117,7 +117,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
                 keyValues,
                 $"Unexpected error: {ex.Message}",
                 false);
-
+            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
     }
