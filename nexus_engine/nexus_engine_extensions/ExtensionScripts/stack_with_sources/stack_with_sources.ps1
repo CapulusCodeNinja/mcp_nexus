@@ -82,15 +82,15 @@ try {
 ## Stack With Sources
 
 **Success:** False
-**Thread ID:** `$ThreadId`
-**Message:** Thread '$ThreadId' not found. The thread ID may be invalid or may not exist in this dump.
-**Suggestion:** Use `!threads` or `~` to list available threads, then retry with a valid thread ID.
+**Thread ID:** ``$ThreadId``
+**Message:** Thread ``$ThreadId`` not found. The thread ID may be invalid or may not exist in this dump.
+**Suggestion:** Use ``!threads`` or ``~`` to list available threads, then retry with a valid thread ID.
 
 ### Stack Trace
 
-```
+``````
 $stackOutput
-```
+``````
 "@
         Write-Output $md
         exit 0
@@ -124,14 +124,14 @@ $stackOutput
 ## Stack With Sources
 
 **Success:** False
-**Thread ID:** `$ThreadId`
+**Thread ID:** ``$ThreadId``
 **Message:** No valid return addresses found in stack trace
 
 ### Stack Trace
 
-```
+``````
 $stackOutput
-```
+``````
 "@
         Write-Output $md
         exit 0
@@ -174,7 +174,7 @@ $stackOutput
 ## Stack With Sources
 
 **Success:** True
-**Thread ID:** `$ThreadId`
+**Thread ID:** ``$ThreadId``
 **Total Frames:** $($addresses.Count)
 **Frames With Symbols:** 0
 **Sources Downloaded:** 0
@@ -183,15 +183,15 @@ $stackOutput
 
 ### Stack Trace
 
-```
+``````
 $stackOutput
-```
+``````
 
 ### Addresses (All)
 
-```
+``````
 $addrList
-```
+``````
 "@
         Write-Output $md
         exit 0
@@ -268,7 +268,7 @@ $addrList
 ## Stack With Sources
 
 **Success:** True
-**Thread ID:** `$ThreadId`
+**Thread ID:** ``$ThreadId``
 **Executed:** $now
 **Total Frames:** $($addresses.Count)
 **Frames With Symbols:** $($addressesWithSymbols.Count)
@@ -278,33 +278,33 @@ $addrList
 
 ### Stack Trace
 
-```
+``````
 $stackOutput
-```
+``````
 
 ### Addresses With Symbols
 
-```
+``````
 $addrWithSymbols
-```
+``````
 
 ### Failed Addresses
 
-```
+``````
 $failedList
-```
+``````
 
 ### All Addresses
 
-```
+``````
 $addrAll
-```
+``````
 
 ### Source Verification Outputs
 
-```
+``````
 $($sourceOutputsText.ToString())
-```
+``````
 "@
 
     Write-Output $md

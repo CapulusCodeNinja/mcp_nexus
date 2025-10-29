@@ -60,38 +60,38 @@ try {
     $md = @"
 ## Basic Crash Analysis
 
-**Workflow:** `basic_crash_analysis`
+**Workflow:** ``basic_crash_analysis``
 **Executed:** $now
 
 ### !analyze -v
 
-```
+``````
 $($results["analyze"])
-```
+``````
 
 ### !threads
 
-```
+``````
 $($results["threads"])
-```
+``````
 
 ### ~*k
 
-```
+``````
 $($results["allStacks"])
-```
+``````
 
 ### !locks
 
-```
+``````
 $($results["locks"])
-```
+``````
 
 ### !runaway
 
-```
+``````
 $($results["runaway"])
-```
+``````
 
 "@
 
