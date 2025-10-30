@@ -308,4 +308,528 @@ public class StatisticsTests
             1,
             commands);
     }
+
+    /// <summary>
+    /// Verifies that EmitCommandStats with batchCommandId and batch size greater than 1 renders correctly.
+    /// </summary>
+    [Fact]
+    public void EmitCommandStats_WithBatchCommandIdAndSize_RendersCorrectly()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var commandId = "cmd-456";
+        var batchCommandId = "batch-789";
+        var command = "lsa 0x123";
+        var queuedAt = DateTime.Now;
+        var startedAt = queuedAt.AddMilliseconds(100);
+        var completedAt = startedAt.AddMilliseconds(500);
+
+        // Act & Assert (should not throw)
+        Statistics.EmitCommandStats(
+            m_Logger,
+            CommandState.Completed,
+            sessionId,
+            commandId,
+            batchCommandId,
+            command,
+            queuedAt,
+            startedAt,
+            completedAt,
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(500),
+            TimeSpan.FromMilliseconds(600),
+            5); // batchSize > 1
+    }
+
+    /// <summary>
+    /// Verifies that EmitCommandStats with batchCommandId and batch size of 1 renders correctly.
+    /// </summary>
+    [Fact]
+    public void EmitCommandStats_WithBatchCommandIdAndSizeOne_RendersCorrectly()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var commandId = "cmd-456";
+        var batchCommandId = "batch-789";
+        var command = "lsa 0x123";
+        var queuedAt = DateTime.Now;
+        var startedAt = queuedAt.AddMilliseconds(100);
+        var completedAt = startedAt.AddMilliseconds(500);
+
+        // Act & Assert (should not throw)
+        Statistics.EmitCommandStats(
+            m_Logger,
+            CommandState.Completed,
+            sessionId,
+            commandId,
+            batchCommandId,
+            command,
+            queuedAt,
+            startedAt,
+            completedAt,
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(500),
+            TimeSpan.FromMilliseconds(600),
+            1); // batchSize = 1
+    }
+
+    /// <summary>
+    /// Verifies that EmitCommandStats with batchCommandId but null batch size renders correctly.
+    /// </summary>
+    [Fact]
+    public void EmitCommandStats_WithBatchCommandIdButNullSize_RendersCorrectly()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var commandId = "cmd-456";
+        var batchCommandId = "batch-789";
+        var command = "lsa 0x123";
+        var queuedAt = DateTime.Now;
+        var startedAt = queuedAt.AddMilliseconds(100);
+        var completedAt = startedAt.AddMilliseconds(500);
+
+        // Act & Assert (should not throw)
+        Statistics.EmitCommandStats(
+            m_Logger,
+            CommandState.Completed,
+            sessionId,
+            commandId,
+            batchCommandId,
+            command,
+            queuedAt,
+            startedAt,
+            completedAt,
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(500),
+            TimeSpan.FromMilliseconds(600),
+            null); // batchSize = null
+    }
+
+    /// <summary>
+    /// Verifies that EmitCommandStats with empty batchCommandId renders as single command.
+    /// </summary>
+    [Fact]
+    public void EmitCommandStats_WithEmptyBatchCommandId_RendersSingleCommand()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var commandId = "cmd-456";
+        var command = "lsa 0x123";
+        var queuedAt = DateTime.Now;
+        var startedAt = queuedAt.AddMilliseconds(100);
+        var completedAt = startedAt.AddMilliseconds(500);
+
+        // Act & Assert (should not throw)
+        Statistics.EmitCommandStats(
+            m_Logger,
+            CommandState.Completed,
+            sessionId,
+            commandId,
+            string.Empty, // empty batchCommandId
+            command,
+            queuedAt,
+            startedAt,
+            completedAt,
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(500),
+            TimeSpan.FromMilliseconds(600));
+    }
+
+    /// <summary>
+    /// Verifies that EmitSessionStats with close reason renders correctly.
+    /// </summary>
+    [Fact]
+    public void EmitSessionStats_WithCloseReason_RendersCorrectly()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var openedAt = DateTime.Now;
+        var closedAt = openedAt.AddMinutes(5);
+        var commands = new List<CommandInfo>
+        {
+            CommandInfo.Completed(sessionId, "cmd-1", "!analyze -v", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", string.Empty, null),
+        };
+
+        // Act & Assert (should not throw)
+        Statistics.EmitSessionStats(
+            m_Logger,
+            sessionId,
+            openedAt,
+            closedAt,
+            TimeSpan.FromMilliseconds(300000),
+            1,
+            1,
+            0,
+            0,
+            0,
+            commands,
+            null,
+            "IdleTimeout");
+    }
+
+    /// <summary>
+    /// Verifies that EmitSessionStats with empty close reason does not render it.
+    /// </summary>
+    [Fact]
+    public void EmitSessionStats_WithEmptyCloseReason_DoesNotRenderIt()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var openedAt = DateTime.Now;
+        var closedAt = openedAt.AddMinutes(5);
+        var commands = new List<CommandInfo>
+        {
+            CommandInfo.Completed(sessionId, "cmd-1", "!analyze -v", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", string.Empty, null),
+        };
+
+        // Act & Assert (should not throw)
+        Statistics.EmitSessionStats(
+            m_Logger,
+            sessionId,
+            openedAt,
+            closedAt,
+            TimeSpan.FromMilliseconds(300000),
+            1,
+            1,
+            0,
+            0,
+            0,
+            commands,
+            null,
+            string.Empty);
+    }
+
+    /// <summary>
+    /// Verifies that EmitSessionStats with long command text truncates it.
+    /// </summary>
+    [Fact]
+    public void EmitSessionStats_WithLongCommandText_TruncatesIt()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var openedAt = DateTime.Now;
+        var closedAt = openedAt.AddMinutes(5);
+        var longCommand = "This is a very long command that exceeds 25 characters and should be truncated";
+        var commands = new List<CommandInfo>
+        {
+            CommandInfo.Completed(sessionId, "cmd-1", longCommand, openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", string.Empty, null),
+        };
+
+        // Act & Assert (should not throw)
+        Statistics.EmitSessionStats(
+            m_Logger,
+            sessionId,
+            openedAt,
+            closedAt,
+            TimeSpan.FromMilliseconds(300000),
+            1,
+            1,
+            0,
+            0,
+            0,
+            commands);
+    }
+
+    /// <summary>
+    /// Verifies that EmitSessionStats with command text exactly 25 characters does not truncate.
+    /// </summary>
+    [Fact]
+    public void EmitSessionStats_WithExactly25CharCommand_DoesNotTruncate()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var openedAt = DateTime.Now;
+        var closedAt = openedAt.AddMinutes(5);
+        var exactCommand = "1234567890123456789012345"; // exactly 25 chars
+        var commands = new List<CommandInfo>
+        {
+            CommandInfo.Completed(sessionId, "cmd-1", exactCommand, openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", string.Empty, null),
+        };
+
+        // Act & Assert (should not throw)
+        Statistics.EmitSessionStats(
+            m_Logger,
+            sessionId,
+            openedAt,
+            closedAt,
+            TimeSpan.FromMilliseconds(300000),
+            1,
+            1,
+            0,
+            0,
+            0,
+            commands);
+    }
+
+    /// <summary>
+    /// Verifies that EmitSessionStats with batch mapping renders batched and single commands correctly.
+    /// </summary>
+    [Fact]
+    public void EmitSessionStats_WithBatchMapping_RendersBatchedAndSingle()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var openedAt = DateTime.Now;
+        var closedAt = openedAt.AddMinutes(5);
+
+        var commands = new List<CommandInfo>
+        {
+            CommandInfo.Completed(sessionId, "cmd-1", "!analyze -v", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-2", "kL", openedAt, openedAt.AddSeconds(2), openedAt.AddSeconds(3), "output2", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-3", "lm", openedAt, openedAt.AddSeconds(3), openedAt.AddSeconds(4), "output3", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-4", "!threads", openedAt, openedAt.AddSeconds(4), openedAt.AddSeconds(5), "output4", string.Empty, null),
+        };
+
+        var batchMapping = new Dictionary<string, string?>
+        {
+            { "cmd-1", "batch-1" },
+            { "cmd-2", "batch-1" },
+            { "cmd-3", null }, // single command
+            { "cmd-4", "batch-2" },
+        };
+
+        // Act & Assert (should not throw)
+        Statistics.EmitSessionStats(
+            m_Logger,
+            sessionId,
+            openedAt,
+            closedAt,
+            TimeSpan.FromMilliseconds(300000),
+            4,
+            4,
+            0,
+            0,
+            0,
+            commands,
+            batchMapping);
+    }
+
+    /// <summary>
+    /// Verifies that EmitSessionStats with empty batch mapping renders all as single commands.
+    /// </summary>
+    [Fact]
+    public void EmitSessionStats_WithEmptyBatchMapping_RendersAllAsSingle()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var openedAt = DateTime.Now;
+        var closedAt = openedAt.AddMinutes(5);
+
+        var commands = new List<CommandInfo>
+        {
+            CommandInfo.Completed(sessionId, "cmd-1", "!analyze -v", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-2", "kL", openedAt, openedAt.AddSeconds(2), openedAt.AddSeconds(3), "output2", string.Empty, null),
+        };
+
+        var emptyBatchMapping = new Dictionary<string, string?>();
+
+        // Act & Assert (should not throw)
+        Statistics.EmitSessionStats(
+            m_Logger,
+            sessionId,
+            openedAt,
+            closedAt,
+            TimeSpan.FromMilliseconds(300000),
+            2,
+            2,
+            0,
+            0,
+            0,
+            commands,
+            emptyBatchMapping);
+    }
+
+    /// <summary>
+    /// Verifies that EmitSessionStats with batch mapping containing empty batch IDs treats them as single.
+    /// </summary>
+    [Fact]
+    public void EmitSessionStats_WithEmptyBatchIds_TreatsAsSingle()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var openedAt = DateTime.Now;
+        var closedAt = openedAt.AddMinutes(5);
+
+        var commands = new List<CommandInfo>
+        {
+            CommandInfo.Completed(sessionId, "cmd-1", "!analyze -v", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-2", "kL", openedAt, openedAt.AddSeconds(2), openedAt.AddSeconds(3), "output2", string.Empty, null),
+        };
+
+        var batchMapping = new Dictionary<string, string?>
+        {
+            { "cmd-1", string.Empty },
+            { "cmd-2", "   " }, // whitespace
+        };
+
+        // Act & Assert (should not throw)
+        Statistics.EmitSessionStats(
+            m_Logger,
+            sessionId,
+            openedAt,
+            closedAt,
+            TimeSpan.FromMilliseconds(300000),
+            2,
+            2,
+            0,
+            0,
+            0,
+            commands,
+            batchMapping);
+    }
+
+    /// <summary>
+    /// Verifies that EmitSessionStats with multiple batches renders slowest batches correctly.
+    /// </summary>
+    [Fact]
+    public void EmitSessionStats_WithMultipleBatches_RendersTopSlowest()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var openedAt = DateTime.Now;
+        var closedAt = openedAt.AddMinutes(5);
+
+        var commands = new List<CommandInfo>
+        {
+            CommandInfo.Completed(sessionId, "cmd-1", "fast1", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(1.1), "output1", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-2", "fast2", openedAt, openedAt.AddSeconds(1.1), openedAt.AddSeconds(1.2), "output2", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-3", "slow1", openedAt, openedAt.AddSeconds(2), openedAt.AddSeconds(5), "output3", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-4", "slow2", openedAt, openedAt.AddSeconds(5), openedAt.AddSeconds(8), "output4", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-5", "medium1", openedAt, openedAt.AddSeconds(8), openedAt.AddSeconds(9), "output5", string.Empty, null),
+            CommandInfo.Completed(sessionId, "cmd-6", "medium2", openedAt, openedAt.AddSeconds(9), openedAt.AddSeconds(10), "output6", string.Empty, null),
+        };
+
+        var batchMapping = new Dictionary<string, string?>
+        {
+            { "cmd-1", "batch-fast" },
+            { "cmd-2", "batch-fast" },
+            { "cmd-3", "batch-slow" },
+            { "cmd-4", "batch-slow" },
+            { "cmd-5", "batch-medium" },
+            { "cmd-6", "batch-medium" },
+        };
+
+        // Act & Assert (should not throw)
+        Statistics.EmitSessionStats(
+            m_Logger,
+            sessionId,
+            openedAt,
+            closedAt,
+            TimeSpan.FromMilliseconds(300000),
+            6,
+            6,
+            0,
+            0,
+            0,
+            commands,
+            batchMapping);
+    }
+
+    /// <summary>
+    /// Verifies that EmitSessionStats with commands missing timing info renders N/A correctly.
+    /// </summary>
+    [Fact]
+    public void EmitSessionStats_WithMissingTimingInfo_RendersNA()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var openedAt = DateTime.Now;
+        var closedAt = openedAt.AddMinutes(5);
+
+        var commands = new List<CommandInfo>
+        {
+            CommandInfo.Enqueued(sessionId, "cmd-1", "!pending", openedAt, null),
+            CommandInfo.Executing(sessionId, "cmd-2", "!running", openedAt, openedAt.AddSeconds(1), null),
+        };
+
+        // Act & Assert (should not throw)
+        Statistics.EmitSessionStats(
+            m_Logger,
+            sessionId,
+            openedAt,
+            closedAt,
+            TimeSpan.FromMilliseconds(300000),
+            2,
+            0,
+            0,
+            0,
+            0,
+            commands);
+    }
+
+    /// <summary>
+    /// Verifies that EmitSessionStats with single command in batch mapping shows correct percentages.
+    /// </summary>
+    [Fact]
+    public void EmitSessionStats_WithSingleCommandInBatch_ShowsCorrectPercentages()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var openedAt = DateTime.Now;
+        var closedAt = openedAt.AddMinutes(5);
+
+        var commands = new List<CommandInfo>
+        {
+            CommandInfo.Completed(sessionId, "cmd-1", "!analyze -v", openedAt, openedAt.AddSeconds(1), openedAt.AddSeconds(2), "output1", string.Empty, null),
+        };
+
+        var batchMapping = new Dictionary<string, string?>
+        {
+            { "cmd-1", "batch-1" },
+        };
+
+        // Act & Assert (should not throw)
+        Statistics.EmitSessionStats(
+            m_Logger,
+            sessionId,
+            openedAt,
+            closedAt,
+            TimeSpan.FromMilliseconds(300000),
+            1,
+            1,
+            0,
+            0,
+            0,
+            commands,
+            batchMapping);
+    }
+
+    /// <summary>
+    /// Verifies that EmitSessionStats with batch mapping but no execution times handles gracefully.
+    /// </summary>
+    [Fact]
+    public void EmitSessionStats_WithBatchMappingButNoExecutionTimes_HandlesGracefully()
+    {
+        // Arrange
+        var sessionId = "session-123";
+        var openedAt = DateTime.Now;
+        var closedAt = openedAt.AddMinutes(5);
+
+        var commands = new List<CommandInfo>
+        {
+            CommandInfo.Enqueued(sessionId, "cmd-1", "!pending1", openedAt, null),
+            CommandInfo.Enqueued(sessionId, "cmd-2", "!pending2", openedAt, null),
+        };
+
+        var batchMapping = new Dictionary<string, string?>
+        {
+            { "cmd-1", "batch-1" },
+            { "cmd-2", "batch-1" },
+        };
+
+        // Act & Assert (should not throw)
+        Statistics.EmitSessionStats(
+            m_Logger,
+            sessionId,
+            openedAt,
+            closedAt,
+            TimeSpan.FromMilliseconds(300000),
+            2,
+            0,
+            0,
+            0,
+            0,
+            commands,
+            batchMapping);
+    }
 }

@@ -26,7 +26,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\nexus\nexus.csproj" />
-    <ProjectReference Include="..\..\nexus_protocol\nexus_protocol.csproj" />
   </ItemGroup>
 
   <ItemGroup>

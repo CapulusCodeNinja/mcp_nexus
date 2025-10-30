@@ -185,4 +185,28 @@ public class WslPathConverterTests
         // Assert
         _ = result.Should().BeEmpty();
     }
+
+    /// <summary>
+    /// Verifies that LoadFstabMappings handles kill exceptions gracefully when timeout occurs.
+    /// </summary>
+    [Fact]
+    public void LoadFstabMappings_WhenKillThrows_HandlesGracefully()
+    {
+        // Arrange
+        var mockProcess = new Mock<Process>();
+        _ = m_ProcessManagerMock.Setup(pm => pm.StartProcess(It.IsAny<ProcessStartInfo>()))
+            .Returns(mockProcess.Object);
+        _ = m_ProcessManagerMock.Setup(pm => pm.WaitForProcessExit(mockProcess.Object, It.IsAny<int>()))
+            .Returns(false);
+        _ = m_ProcessManagerMock.Setup(pm => pm.KillProcess(mockProcess.Object))
+            .Throws(new InvalidOperationException("Process already exited"));
+
+        var converter = new WslPathConverter(m_ProcessManagerMock.Object);
+
+        // Act
+        var result = converter.LoadFstabMappings();
+
+        // Assert - should not throw
+        _ = result.Should().BeEmpty();
+    }
 }
