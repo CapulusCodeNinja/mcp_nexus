@@ -1,6 +1,9 @@
 using FluentAssertions;
 
+using Moq;
+
 using Nexus.CommandLine;
+using Nexus.Config;
 using Nexus.Startup;
 
 using Xunit;
@@ -12,6 +15,16 @@ namespace Nexus.Tests.Startup;
 /// </summary>
 public class StartupBannerTests
 {
+    private readonly Mock<ISettings> m_Settings;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StartupBannerTests"/> class.
+    /// </summary>
+    public StartupBannerTests()
+    {
+        m_Settings = new Mock<ISettings>();
+    }
+
     /// <summary>
     /// Verifies that constructor creates banner successfully in non-service mode.
     /// </summary>
@@ -22,7 +35,7 @@ public class StartupBannerTests
         var context = new CommandLineContext(Array.Empty<string>());
 
         // Act
-        var banner = new StartupBanner(false, context);
+        var banner = new StartupBanner(false, context, m_Settings.Object);
 
         // Assert
         _ = banner.Should().NotBeNull();
@@ -38,7 +51,7 @@ public class StartupBannerTests
         var context = new CommandLineContext(new[] { "--service" });
 
         // Act
-        var banner = new StartupBanner(true, context);
+        var banner = new StartupBanner(true, context, m_Settings.Object);
 
         // Assert
         _ = banner.Should().NotBeNull();
@@ -52,7 +65,7 @@ public class StartupBannerTests
     {
         // Arrange
         var context = new CommandLineContext(Array.Empty<string>());
-        var banner = new StartupBanner(false, context);
+        var banner = new StartupBanner(false, context, m_Settings.Object);
 
         // Act
         banner.DisplayBanner();
@@ -68,7 +81,7 @@ public class StartupBannerTests
     {
         // Arrange
         var context = new CommandLineContext(new[] { "--service" });
-        var banner = new StartupBanner(true, context);
+        var banner = new StartupBanner(true, context, m_Settings.Object);
 
         // Act
         banner.DisplayBanner();
@@ -84,7 +97,7 @@ public class StartupBannerTests
     {
         // Arrange
         var context = new CommandLineContext(new[] { "--http" });
-        var banner = new StartupBanner(false, context);
+        var banner = new StartupBanner(false, context, m_Settings.Object);
 
         // Act
         banner.DisplayBanner();
@@ -100,7 +113,7 @@ public class StartupBannerTests
     {
         // Arrange
         var context = new CommandLineContext(new[] { "--stdio" });
-        var banner = new StartupBanner(false, context);
+        var banner = new StartupBanner(false, context, m_Settings.Object);
 
         // Act
         banner.DisplayBanner();
@@ -116,7 +129,7 @@ public class StartupBannerTests
     {
         // Arrange
         var context = new CommandLineContext(new[] { "--install" });
-        var banner = new StartupBanner(false, context);
+        var banner = new StartupBanner(false, context, m_Settings.Object);
 
         // Act
         banner.DisplayBanner();
@@ -132,7 +145,7 @@ public class StartupBannerTests
     {
         // Arrange
         var context = new CommandLineContext(new[] { "--update" });
-        var banner = new StartupBanner(false, context);
+        var banner = new StartupBanner(false, context, m_Settings.Object);
 
         // Act
         banner.DisplayBanner();
@@ -148,7 +161,7 @@ public class StartupBannerTests
     {
         // Arrange
         var context = new CommandLineContext(new[] { "--uninstall" });
-        var banner = new StartupBanner(false, context);
+        var banner = new StartupBanner(false, context, m_Settings.Object);
 
         // Act
         banner.DisplayBanner();

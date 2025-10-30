@@ -1,6 +1,9 @@
 using FluentAssertions;
 
+using Moq;
+
 using Nexus.CommandLine;
+using Nexus.Config;
 using Nexus.Startup;
 
 using Xunit;
@@ -12,6 +15,16 @@ namespace Nexus.Tests.Startup;
 /// </summary>
 public class MainHostedServiceTests
 {
+    private readonly Mock<ISettings> m_Settings;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MainHostedServiceTests"/> class.
+    /// </summary>
+    public MainHostedServiceTests()
+    {
+        m_Settings = new Mock<ISettings>();
+    }
+
     /// <summary>
     /// Verifies that constructor creates service successfully.
     /// </summary>
@@ -22,7 +35,7 @@ public class MainHostedServiceTests
         var context = new CommandLineContext(Array.Empty<string>());
 
         // Act
-        var service = new MainHostedService(context);
+        var service = new MainHostedService(context, m_Settings.Object);
 
         // Assert
         _ = service.Should().NotBeNull();
@@ -37,7 +50,7 @@ public class MainHostedServiceTests
     {
         // Arrange
         var context = new CommandLineContext(Array.Empty<string>());
-        var service = new MainHostedService(context);
+        var service = new MainHostedService(context, m_Settings.Object);
 
         // Act
         await service.StopAsync(CancellationToken.None);
@@ -54,7 +67,7 @@ public class MainHostedServiceTests
     {
         // Arrange
         var context = new CommandLineContext(Array.Empty<string>());
-        var service = new MainHostedService(context);
+        var service = new MainHostedService(context, m_Settings.Object);
         var cts = new CancellationTokenSource();
         cts.Cancel();
 

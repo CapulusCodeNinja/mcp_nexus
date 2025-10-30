@@ -1,5 +1,8 @@
 using FluentAssertions;
 
+using Moq;
+
+using Nexus.Config;
 using Nexus.Engine.Batch.Internal;
 
 using Xunit;
@@ -13,13 +16,15 @@ namespace Nexus.Engine.Batch.Tests.Internal;
 public class BatchCommandFilterTests
 {
     private readonly BatchCommandFilter m_Filter;
+    private readonly Mock<ISettings> m_Settings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchCommandFilterTests"/> class.
     /// </summary>
     public BatchCommandFilterTests()
     {
-        m_Filter = new BatchCommandFilter();
+        m_Settings = new Mock<ISettings>();
+        m_Filter = new BatchCommandFilter(m_Settings.Object);
     }
 
     /// <summary>

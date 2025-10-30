@@ -1,6 +1,8 @@
 using System.Text;
 
+using Nexus.Config;
 using Nexus.Engine.Internal;
+using Nexus.Engine.Preprocessing;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 
@@ -14,10 +16,11 @@ internal class CdbSessionTestAccessor : CdbSession
     /// <summary>
     /// Initializes a new instance of the <see cref="CdbSessionTestAccessor"/> class.
     /// </summary>
+    /// <param name="settings">The product settings.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
-    public CdbSessionTestAccessor(IFileSystem fileSystem, IProcessManager processManager)
-        : base(fileSystem, processManager, new Nexus.Engine.Preprocessing.CommandPreprocessor(fileSystem))
+    public CdbSessionTestAccessor(ISettings settings, IFileSystem fileSystem, IProcessManager processManager)
+        : base(settings, fileSystem, processManager, new CommandPreprocessor(fileSystem, settings))
     {
     }
 

@@ -1,5 +1,8 @@
 using FluentAssertions;
 
+using Moq;
+
+using Nexus.Config;
 using Nexus.Engine.Batch.Internal;
 
 using Xunit;
@@ -14,13 +17,15 @@ public class BatchResultParserTests
 {
     private readonly BatchProcessor m_Processor;
     private readonly BatchResultParser m_Parser;
+    private readonly Mock<ISettings> m_Settings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchResultParserTests"/> class.
     /// </summary>
     public BatchResultParserTests()
     {
-        m_Processor = new BatchProcessor();
+        m_Settings = new Mock<ISettings>();
+        m_Processor = new BatchProcessor(m_Settings.Object);
         m_Parser = new BatchResultParser(m_Processor);
     }
 

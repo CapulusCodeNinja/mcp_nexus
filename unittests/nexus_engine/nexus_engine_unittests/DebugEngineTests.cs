@@ -2,6 +2,9 @@ using FluentAssertions;
 
 using Moq;
 
+using Nexus.Config;
+using Nexus.Engine.Batch;
+using Nexus.Engine.Unittests.Internal;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 
@@ -15,7 +18,9 @@ namespace Nexus.Engine.Unittests;
 /// </summary>
 public class DebugEngineTests : IDisposable
 {
+    private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IFileSystem> m_MockFileSystem;
+    private readonly Mock<IBatchProcessor> m_BatchProcessor;
     private readonly Mock<IProcessManager> m_MockProcessManager;
     private readonly DebugEngine m_Engine;
 
@@ -24,9 +29,11 @@ public class DebugEngineTests : IDisposable
     /// </summary>
     public DebugEngineTests()
     {
+        m_Settings = new Mock<ISettings>();
         m_MockFileSystem = new Mock<IFileSystem>();
+        m_BatchProcessor = new Mock<IBatchProcessor>();
         m_MockProcessManager = new Mock<IProcessManager>();
-        m_Engine = new DebugEngine(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        m_Engine = new DebugEngine(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
     }
 
     /// <summary>
@@ -45,7 +52,7 @@ public class DebugEngineTests : IDisposable
     public void Constructor_WithNullFileSystem_ThrowsArgumentNullException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => new DebugEngine(null!, m_MockProcessManager.Object));
+        _ = Assert.Throws<ArgumentNullException>(() => new DebugEngine(null!, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object));
     }
 
     /// <summary>
@@ -55,7 +62,7 @@ public class DebugEngineTests : IDisposable
     public void Constructor_WithNullProcessManager_ThrowsArgumentNullException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => new DebugEngine(m_MockFileSystem.Object, null!));
+        _ = Assert.Throws<ArgumentNullException>(() => new DebugEngine(m_MockFileSystem.Object, null!, m_BatchProcessor.Object, m_Settings.Object));
     }
 
     /// <summary>
@@ -65,7 +72,7 @@ public class DebugEngineTests : IDisposable
     public void Constructor_WithValidDependencies_Succeeds()
     {
         // Arrange & Act
-        using var engine = new DebugEngine(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        using var engine = new DebugEngine(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
 
         // Assert
         _ = engine.Should().NotBeNull();
@@ -78,18 +85,20 @@ public class DebugEngineTests : IDisposable
     public void CleanupIdleSessions_WhenSessionIdleAndNoActiveCommands_ClosesSession()
     {
         // Arrange
-        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
 
         // Create a debug session without initializing CDB (so no process is started)
         var sessionId = "test-session-id";
         var fileSystem = m_MockFileSystem.Object;
         var processManager = m_MockProcessManager.Object;
-        var debugSession = new Nexus.Engine.Unittests.Internal.DebugSessionTestAccessor(
+        var debugSession = new DebugSessionTestAccessor(
             sessionId,
             @"C:\\dummy\\dump.dmp",
             null,
+            m_Settings.Object,
             fileSystem,
-            processManager);
+            processManager,
+            m_BatchProcessor.Object);
 
         // Inject the session into engine's session dictionary via reflection
         var sessionsField = typeof(DebugEngine)
@@ -684,33 +693,6 @@ public class DebugEngineTests : IDisposable
     }
 
     /// <summary>
-    /// Verifies that Instance returns non-null singleton.
-    /// </summary>
-    [Fact]
-    public void Instance_ReturnsNonNull()
-    {
-        // Act
-        var instance = DebugEngine.Instance;
-
-        // Assert
-        _ = instance.Should().NotBeNull();
-    }
-
-    /// <summary>
-    /// Verifies that Instance returns same instance on multiple calls.
-    /// </summary>
-    [Fact]
-    public void Instance_ReturnsSameInstance()
-    {
-        // Act
-        var instance1 = DebugEngine.Instance;
-        var instance2 = DebugEngine.Instance;
-
-        // Assert
-        _ = instance1.Should().BeSameAs(instance2);
-    }
-
-    /// <summary>
     /// Verifies that ValidateSessionId throws when sessionId is null.
     /// </summary>
     [Fact]
@@ -878,7 +860,7 @@ public class DebugEngineTests : IDisposable
     public void ThrowIfDisposed_WhenDisposed_ThrowsObjectDisposedException()
     {
         // Arrange
-        var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
         accessor.Dispose();
 
         // Act & Assert
@@ -892,7 +874,7 @@ public class DebugEngineTests : IDisposable
     public void ThrowIfDisposed_WhenNotDisposed_DoesNotThrow()
     {
         // Arrange
-        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
 
         // Act & Assert - Should not throw
         accessor.ThrowIfDisposed();

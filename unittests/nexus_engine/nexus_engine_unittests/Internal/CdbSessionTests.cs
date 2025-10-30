@@ -5,7 +5,9 @@ using FluentAssertions;
 
 using Moq;
 
+using Nexus.Config;
 using Nexus.Engine.Internal;
+using Nexus.Engine.Preprocessing;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 
@@ -18,6 +20,7 @@ namespace Nexus.Engine.Tests.Internal;
 /// </summary>
 public class CdbSessionTests
 {
+    private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IFileSystem> m_MockFileSystem;
     private readonly Mock<IProcessManager> m_MockProcessManager;
     private readonly Mock<Process> m_MockProcess;
@@ -27,6 +30,7 @@ public class CdbSessionTests
     /// </summary>
     public CdbSessionTests()
     {
+        m_Settings = new Mock<ISettings>();
         m_MockFileSystem = new Mock<IFileSystem>();
         m_MockProcessManager = new Mock<IProcessManager>();
         m_MockProcess = new Mock<Process>();
@@ -38,7 +42,7 @@ public class CdbSessionTests
     /// <returns>A command preprocessor instance configured for tests.</returns>
     private Nexus.Engine.Preprocessing.CommandPreprocessor CreatePreprocessor()
     {
-        return new Nexus.Engine.Preprocessing.CommandPreprocessor(m_MockFileSystem.Object);
+        return new CommandPreprocessor(m_MockFileSystem.Object, m_Settings.Object);
     }
 
     /// <summary>
@@ -47,7 +51,7 @@ public class CdbSessionTests
     /// <returns>An initialized CdbSessionTestAccessor instance.</returns>
     private CdbSessionTestAccessor CreateInitializedAccessor()
     {
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
         accessor.SetInitializedForTesting(true);
         return accessor;
     }
@@ -59,7 +63,7 @@ public class CdbSessionTests
     public void Constructor_NullFileSystem_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var act = () => new CdbSession(null!, m_MockProcessManager.Object, CreatePreprocessor());
+        var act = () => new CdbSession(m_Settings.Object, null!, m_MockProcessManager.Object, CreatePreprocessor());
         _ = act.Should().Throw<ArgumentNullException>().WithParameterName("fileSystem");
     }
 
@@ -70,7 +74,7 @@ public class CdbSessionTests
     public void Constructor_NullProcessManager_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var act = () => new CdbSession(m_MockFileSystem.Object, null!, CreatePreprocessor());
+        var act = () => new CdbSession(m_Settings.Object, m_MockFileSystem.Object, null!, CreatePreprocessor());
         _ = act.Should().Throw<ArgumentNullException>().WithParameterName("processManager");
     }
 
@@ -81,7 +85,7 @@ public class CdbSessionTests
     public void Constructor_ValidParameters_InitializesProperties()
     {
         // Act
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Assert
         _ = session.Should().NotBeNull();
@@ -99,7 +103,7 @@ public class CdbSessionTests
     public async Task InitializeAsync_NullDumpFilePath_ThrowsArgumentException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         var act = async () => await session.InitializeAsync("test-session-id", null!, null);
@@ -116,7 +120,7 @@ public class CdbSessionTests
     public async Task InitializeAsync_EmptyDumpFilePath_ThrowsArgumentException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         var act = async () => await session.InitializeAsync("test-session-id", string.Empty, null);
@@ -133,7 +137,7 @@ public class CdbSessionTests
     public async Task InitializeAsync_WhitespaceDumpFilePath_ThrowsArgumentException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         var act = async () => await session.InitializeAsync("test-session-id", "   ", null);
@@ -150,7 +154,7 @@ public class CdbSessionTests
     public async Task InitializeAsync_DumpFileDoesNotExist_ThrowsFileNotFoundException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         var dumpPath = @"C:\test\dump.dmp";
         _ = m_MockFileSystem.Setup(f => f.FileExists(dumpPath)).Returns(false);
 
@@ -169,7 +173,7 @@ public class CdbSessionTests
     public async Task InitializeAsync_DisposedSession_ThrowsObjectDisposedException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         await session.DisposeAsync();
 
         // Act
@@ -238,7 +242,7 @@ public class CdbSessionTests
     public async Task ExecuteCommandAsync_DisposedSession_ThrowsObjectDisposedException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         await session.DisposeAsync();
 
         // Act
@@ -256,7 +260,7 @@ public class CdbSessionTests
     public async Task ExecuteCommandAsync_NotInitialized_ThrowsInvalidOperationException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         var act = async () => await session.ExecuteCommandAsync("test");
@@ -308,7 +312,7 @@ public class CdbSessionTests
     public async Task ExecuteBatchCommandAsync_DisposedSession_ThrowsObjectDisposedException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         await session.DisposeAsync();
 
         // Act
@@ -326,7 +330,7 @@ public class CdbSessionTests
     public async Task ExecuteBatchCommandAsync_NotInitialized_ThrowsInvalidOperationException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         var act = async () => await session.ExecuteBatchCommandAsync(new[] { "test" });
@@ -344,7 +348,7 @@ public class CdbSessionTests
     public async Task FindCdbExecutableAsync_CdbNotFound_ThrowsInvalidOperationException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         _ = m_MockFileSystem.Setup(f => f.FileExists(It.IsAny<string>())).Returns(false);
 
         // Act
@@ -363,7 +367,7 @@ public class CdbSessionTests
     public async Task StopCdbProcess_DisposedSession_ThrowsObjectDisposedException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         await session.DisposeAsync();
 
         // Act
@@ -380,7 +384,7 @@ public class CdbSessionTests
     public void StopCdbProcess_NullProcess_DoesNotThrow()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         var act = () => session.StopCdbProcess();
@@ -397,7 +401,7 @@ public class CdbSessionTests
     public async Task DisposeAsync_CalledMultipleTimes_DoesNotThrow()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         await session.DisposeAsync();
@@ -415,7 +419,7 @@ public class CdbSessionTests
     public async Task DisposeAsync_MarksSessionAsDisposed()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         await session.DisposeAsync();
@@ -432,7 +436,7 @@ public class CdbSessionTests
     public void Dispose_CalledMultipleTimes_DoesNotThrow()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         session.Dispose();
@@ -449,7 +453,7 @@ public class CdbSessionTests
     public void Dispose_MarksSessionAsDisposed()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         session.Dispose();
@@ -484,7 +488,7 @@ public class CdbSessionTests
     public void ProcessOutputLine_StartMarkerFound_SetsFlag()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
         var output = new StringBuilder();
         var startMarkerFound = false;
         var line = "MCP_NEXUS_SENTINEL_COMMAND_START";
@@ -506,7 +510,7 @@ public class CdbSessionTests
     public void ProcessOutputLine_BetweenMarkers_AppendsLine()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
         var output = new StringBuilder();
         var startMarkerFound = true;
         var line = "Some output";
@@ -527,7 +531,7 @@ public class CdbSessionTests
     public void ProcessOutputLine_EndMarkerFound_BreaksLoop()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
         var output = new StringBuilder();
         var startMarkerFound = true;
         var line = "MCP_NEXUS_SENTINEL_COMMAND_END";
@@ -548,7 +552,7 @@ public class CdbSessionTests
     public void ProcessOutputLine_BeforeStartMarker_IgnoresLine()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
         var output = new StringBuilder();
         var startMarkerFound = false;
         var line = "Random output";
@@ -570,7 +574,7 @@ public class CdbSessionTests
     public async Task ThrowIfDisposed_DisposedSession_ThrowsObjectDisposedException()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
         await accessor.DisposeAsync();
 
         // Act
@@ -587,7 +591,7 @@ public class CdbSessionTests
     public void ThrowIfDisposed_NotDisposed_DoesNotThrow()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
 
         // Act
         var act = () => accessor.ThrowIfDisposed();
@@ -603,7 +607,7 @@ public class CdbSessionTests
     public void ThrowIfNotInitialized_NotInitialized_ThrowsInvalidOperationException()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
 
         // Act
         var act = () => accessor.ThrowIfNotInitialized();
@@ -636,7 +640,7 @@ public class CdbSessionTests
     public void SetDisposedState_SetsDisposedFlag()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
 
         // Act
         accessor.SetDisposedState();
@@ -653,7 +657,7 @@ public class CdbSessionTests
     public void IsProcessExited_NullProcess_ReturnsFalse()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
 
         // Act
         var result = accessor.IsProcessExited();
@@ -669,7 +673,7 @@ public class CdbSessionTests
     public void IsActive_NotInitialized_ReturnsFalse()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act & Assert
         _ = session.IsActive.Should().BeFalse();
@@ -683,7 +687,7 @@ public class CdbSessionTests
     public async Task IsActive_Disposed_ReturnsFalse()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         await session.DisposeAsync();
 
         // Act & Assert
@@ -697,7 +701,7 @@ public class CdbSessionTests
     public void IsInitialized_Initially_ReturnsFalse()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act & Assert
         _ = session.IsInitialized.Should().BeFalse();
@@ -710,7 +714,7 @@ public class CdbSessionTests
     public void DumpFilePath_Initially_IsEmpty()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act & Assert
         _ = session.DumpFilePath.Should().BeEmpty();
@@ -723,7 +727,7 @@ public class CdbSessionTests
     public void SymbolPath_Initially_IsNull()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act & Assert
         _ = session.SymbolPath.Should().BeNull();
@@ -736,7 +740,7 @@ public class CdbSessionTests
     public void Constructor_NullCommandPreprocessor_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var act = () => new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, null!);
+        var act = () => new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, null!);
         _ = act.Should().Throw<ArgumentNullException>().WithParameterName("commandPreprocessor");
     }
 
@@ -748,7 +752,7 @@ public class CdbSessionTests
     public async Task InitializeAsync_NullSessionId_ThrowsArgumentException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
 
         // Act & Assert
@@ -764,7 +768,7 @@ public class CdbSessionTests
     public async Task InitializeAsync_EmptySessionId_ThrowsArgumentException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
 
         // Act & Assert
@@ -780,7 +784,7 @@ public class CdbSessionTests
     public async Task InitializeAsync_WhitespaceSessionId_ThrowsArgumentException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
 
         // Act & Assert
@@ -796,7 +800,7 @@ public class CdbSessionTests
     public async Task FindCdbExecutableAsync_X64ProgramFilesX86PathExists_ReturnsThatPath()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         var x64Path = @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe";
 
         // Setup file system to return true only for x64 path
@@ -818,7 +822,7 @@ public class CdbSessionTests
     public async Task FindCdbExecutableAsync_X86ProgramFilesX86PathExists_ReturnsThatPath()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         var x86Path = @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe";
 
         // Setup file system to return false for x64, true for x86
@@ -842,7 +846,7 @@ public class CdbSessionTests
     public async Task FindCdbExecutableAsync_X64ProgramFilesPathExists_ReturnsThatPath()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         var x64ProgramFilesPath = @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe";
 
         // Setup file system to return false for first two, true for third
@@ -865,7 +869,7 @@ public class CdbSessionTests
     public async Task FindCdbExecutableAsync_X86ProgramFilesPathExists_ReturnsThatPath()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         var x86ProgramFilesPath = @"C:\Program Files\Windows Kits\10\Debuggers\x86\cdb.exe";
 
         // Setup file system to return false for first three, true for fourth
@@ -888,7 +892,7 @@ public class CdbSessionTests
     public void ProcessId_NullProcess_ReturnsNull()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         var result = session.ProcessId;
@@ -904,7 +908,7 @@ public class CdbSessionTests
     public void SessionId_Initially_IsEmpty()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act & Assert
         _ = session.SessionId.Should().BeEmpty();
@@ -933,7 +937,7 @@ public class CdbSessionTests
     public void ProcessOutputLine_LineWithOnlyStartMarker_SetsFlag()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
         var output = new StringBuilder();
         var startMarkerFound = false;
 
@@ -954,7 +958,7 @@ public class CdbSessionTests
     public void ProcessOutputLine_LineWithOnlyEndMarker_AfterStart_BreaksLoop()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
         var output = new StringBuilder();
         var startMarkerFound = true; // Already found start
 
@@ -974,7 +978,7 @@ public class CdbSessionTests
     public void ProcessOutputLine_MixedContentBeforeStart_Ignores()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
         var output = new StringBuilder();
         var startMarkerFound = false;
 
@@ -995,7 +999,7 @@ public class CdbSessionTests
     public void Dispose_MultipleCalls_AreSafe()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         session.Dispose();
@@ -1013,7 +1017,7 @@ public class CdbSessionTests
     public async Task DisposeAsync_Idempotent_CanBeCalledMultipleTimes()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act
         await session.DisposeAsync();
@@ -1047,7 +1051,7 @@ public class CdbSessionTests
     public async Task StartCdbProcessAsync_NotInitialized_ThrowsInvalidOperationException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
 
         // Act & Assert
         var act = async () => await session.StartCdbProcessAsync();
@@ -1062,7 +1066,7 @@ public class CdbSessionTests
     public async Task StartCdbProcessAsync_Disposed_ThrowsObjectDisposedException()
     {
         // Arrange
-        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
         await session.DisposeAsync();
 
         // Act & Assert
@@ -1092,7 +1096,7 @@ public class CdbSessionTests
     public void ThrowIfNotInitialized_WhenNotInitialized_ThrowsInvalidOperationException()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
 
         // Act & Assert
         var act = () => accessor.ThrowIfNotInitialized();
@@ -1106,7 +1110,7 @@ public class CdbSessionTests
     public void IsProcessExited_NoProcess_ReturnsFalse()
     {
         // Arrange
-        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
 
         // Act
         var result = accessor.IsProcessExited();

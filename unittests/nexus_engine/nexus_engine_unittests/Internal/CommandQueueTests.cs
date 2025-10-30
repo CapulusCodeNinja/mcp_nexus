@@ -1,5 +1,9 @@
 using FluentAssertions;
 
+using Moq;
+
+using Nexus.Config;
+using Nexus.Engine.Batch;
 using Nexus.Engine.Internal;
 using Nexus.Engine.Share.Events;
 using Nexus.Engine.Share.Models;
@@ -14,6 +18,9 @@ namespace Nexus.Engine.Unittests.Internal;
 /// </summary>
 public class CommandQueueTests : IDisposable
 {
+    private readonly Mock<ISettings> m_Settings;
+    private readonly Mock<IBatchProcessor> m_BatchProcessor;
+
     private readonly CommandQueue m_Queue;
     private readonly List<CommandStateChangedEventArgs> m_StateChanges;
 
@@ -22,7 +29,10 @@ public class CommandQueueTests : IDisposable
     /// </summary>
     public CommandQueueTests()
     {
-        m_Queue = new CommandQueue("test-session-1");
+        m_Settings = new Mock<ISettings>();
+        m_BatchProcessor = new Mock<IBatchProcessor>();
+
+        m_Queue = new CommandQueue("test-session-1", m_Settings.Object, m_BatchProcessor.Object);
         m_StateChanges = new List<CommandStateChangedEventArgs>();
         m_Queue.CommandStateChanged += (sender, args) => m_StateChanges.Add(args);
     }
@@ -43,7 +53,7 @@ public class CommandQueueTests : IDisposable
     public void Constructor_WithNullSessionId_ThrowsArgumentNullException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => new CommandQueue(null!));
+        _ = Assert.Throws<ArgumentNullException>(() => new CommandQueue(null!, m_Settings.Object, m_BatchProcessor.Object));
     }
 
     /// <summary>
@@ -855,7 +865,7 @@ public class CommandQueueTests : IDisposable
     public void EnqueueCommand_WithNoSubscribers_DoesNotThrow()
     {
         // Arrange
-        using var queue = new CommandQueue("test-session-no-sub");
+        using var queue = new CommandQueue("test-session-no-sub", m_Settings.Object, m_BatchProcessor.Object);
 
         // Act & Assert - Should not throw
         var commandId = queue.EnqueueCommand("k");

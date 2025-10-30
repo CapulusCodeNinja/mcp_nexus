@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 
+using Nexus.Config;
 using Nexus.Config.Internal;
 
 namespace Nexus.Config_unittests.Internal;
@@ -9,6 +10,14 @@ namespace Nexus.Config_unittests.Internal;
 /// </summary>
 internal class LoggingConfigurationTestAccessor : LoggingConfiguration
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LoggingConfigurationTestAccessor"/> class.
+    /// </summary>
+    public LoggingConfigurationTestAccessor()
+        : base(new Settings())
+    {
+    }
+
     /// <summary>
     /// Exposes the GetLogLevelFromConfiguration method for testing.
     /// </summary>

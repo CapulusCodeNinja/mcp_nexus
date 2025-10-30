@@ -2,6 +2,7 @@ using FluentAssertions;
 
 using Moq;
 
+using Nexus.Config;
 using Nexus.Engine.Preprocessing;
 using Nexus.External.Apis.FileSystem;
 
@@ -14,6 +15,7 @@ namespace Nexus.Engine.Tests.Preprocessing;
 /// </summary>
 public class CommandPreprocessorTests
 {
+    private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IFileSystem> m_FileSystemMock;
 
     /// <summary>
@@ -21,6 +23,7 @@ public class CommandPreprocessorTests
     /// </summary>
     public CommandPreprocessorTests()
     {
+        m_Settings = new Mock<ISettings>();
         m_FileSystemMock = new Mock<IFileSystem>();
 
         // Setup default behavior - all directories exist, no creation needed
@@ -34,7 +37,7 @@ public class CommandPreprocessorTests
     public void Constructor_WithNullFileSystem_ThrowsArgumentNullException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => new CommandPreprocessor(null!));
+        _ = Assert.Throws<ArgumentNullException>(() => new CommandPreprocessor(null!, m_Settings.Object));
     }
 
     /// <summary>
@@ -44,7 +47,7 @@ public class CommandPreprocessorTests
     public void PreprocessCommand_WithNullCommand_ReturnsInput()
     {
         // Arrange
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = preprocessor.PreprocessCommand(null!);
@@ -63,7 +66,7 @@ public class CommandPreprocessorTests
     public void PreprocessCommand_WithEmptyCommand_ReturnsInput(string command)
     {
         // Arrange
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = preprocessor.PreprocessCommand(command);
@@ -83,7 +86,7 @@ public class CommandPreprocessorTests
     public void PreprocessCommand_WithSimpleCommand_ReturnsInput(string command)
     {
         // Arrange
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = preprocessor.PreprocessCommand(command);
@@ -99,7 +102,7 @@ public class CommandPreprocessorTests
     public void PreprocessCommand_WithSameCommand_UsesCaching()
     {
         // Arrange
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = ".sympath C:\\symbols";
 
         // Act - call twice
@@ -118,7 +121,7 @@ public class CommandPreprocessorTests
     {
         // Arrange
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = ".sympath C:\\symbols";
 
         // Act
@@ -136,7 +139,7 @@ public class CommandPreprocessorTests
     {
         // Arrange
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = ".sympath srv*C:\\symbols*https://msdl.microsoft.com/download/symbols";
 
         // Act
@@ -154,7 +157,7 @@ public class CommandPreprocessorTests
     {
         // Arrange
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = ".sympath \\\\server\\share\\symbols";
 
         // Act
@@ -172,7 +175,7 @@ public class CommandPreprocessorTests
     {
         // Arrange
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = ".sympath C:\\symbols1;C:\\symbols2;D:\\symbols3";
 
         // Act
@@ -192,7 +195,7 @@ public class CommandPreprocessorTests
     {
         // Arrange
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = ".srcpath C:\\sources";
 
         // Act
@@ -210,7 +213,7 @@ public class CommandPreprocessorTests
     {
         // Arrange
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = ".srcpath srv*C:\\sources*https://source.server.com";
 
         // Act
@@ -228,7 +231,7 @@ public class CommandPreprocessorTests
     {
         // Arrange
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = ".symfix C:\\symbols";
 
         // Act
@@ -246,7 +249,7 @@ public class CommandPreprocessorTests
     {
         // Arrange
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = "!homedir C:\\debugger";
 
         // Act
@@ -263,7 +266,7 @@ public class CommandPreprocessorTests
     public void PreprocessCommand_WithHomeDirCommand_ConvertsBackslashes()
     {
         // Arrange
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = "!homedir C:\\debugger\\extensions";
 
         // Act
@@ -280,7 +283,7 @@ public class CommandPreprocessorTests
     public void PreprocessCommand_WithHomeDirCommandQuoted_PreservesQuotes()
     {
         // Arrange
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = "!homedir \"C:\\debugger\\extensions\"";
 
         // Act
@@ -298,7 +301,7 @@ public class CommandPreprocessorTests
     {
         // Arrange
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists("C:\\symbols")).Returns(true);
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = ".sympath C:\\symbols";
 
         // Act
@@ -319,7 +322,7 @@ public class CommandPreprocessorTests
         _ = m_FileSystemMock.Setup(fs => fs.CreateDirectory(It.IsAny<string>()))
             .Throws(new UnauthorizedAccessException("Access denied"));
 
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = ".sympath C:\\symbols";
 
         // Act - should not throw
@@ -336,7 +339,7 @@ public class CommandPreprocessorTests
     public void PreprocessCommand_WithWslPath_ReturnsAsIs()
     {
         // Arrange
-        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object);
+        var preprocessor = new CommandPreprocessor(m_FileSystemMock.Object, m_Settings.Object);
         var command = "lsa /mnt/c/sources/file.cpp:123";
 
         // Act

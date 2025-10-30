@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
+using Nexus.Config;
 using Nexus.Logging;
 
 using Xunit;
@@ -15,6 +16,16 @@ namespace Nexus.Tests.Logging;
 /// </summary>
 public class LoggingExtensionsTests
 {
+    private readonly Mock<ISettings> m_Settings;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LoggingExtensionsTests"/> class.
+    /// </summary>
+    public LoggingExtensionsTests()
+    {
+        m_Settings = new Mock<ISettings>();
+    }
+
     /// <summary>
     /// Verifies that AddNexusLogging returns the logging builder for chaining.
     /// </summary>
@@ -25,7 +36,7 @@ public class LoggingExtensionsTests
         var mockLoggingBuilder = new Mock<ILoggingBuilder>();
 
         // Act
-        var result = mockLoggingBuilder.Object.AddNexusLogging(false);
+        var result = mockLoggingBuilder.Object.AddNexusLogging(m_Settings.Object, false);
 
         // Assert
         _ = result.Should().NotBeNull();
@@ -42,7 +53,7 @@ public class LoggingExtensionsTests
         var mockLoggingBuilder = new Mock<ILoggingBuilder>();
 
         // Act
-        var result = mockLoggingBuilder.Object.AddNexusLogging(true);
+        var result = mockLoggingBuilder.Object.AddNexusLogging(m_Settings.Object, true);
 
         // Assert
         _ = result.Should().NotBeNull();

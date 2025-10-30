@@ -1,5 +1,6 @@
 using FluentAssertions;
 
+using Nexus.Config;
 using Nexus.Engine.Batch.Internal;
 
 using Xunit;
@@ -12,6 +13,7 @@ namespace Nexus.Engine.Batch.Tests.Internal;
 /// </summary>
 public class BatchCommandBuilderTests
 {
+    private readonly ISettings m_Settings;
     private readonly BatchCommandBuilder m_Builder;
 
     /// <summary>
@@ -19,7 +21,8 @@ public class BatchCommandBuilderTests
     /// </summary>
     public BatchCommandBuilderTests()
     {
-        m_Builder = new BatchCommandBuilder();
+        m_Settings = new Settings();
+        m_Builder = new BatchCommandBuilder(m_Settings);
     }
 
     /// <summary>

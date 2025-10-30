@@ -1,5 +1,9 @@
 using FluentAssertions;
 
+using Moq;
+
+using Nexus.Config;
+
 using Xunit;
 
 namespace Nexus.Engine.Batch.Tests;
@@ -9,6 +13,16 @@ namespace Nexus.Engine.Batch.Tests;
 /// </summary>
 public class BatchProcessorTests
 {
+    private readonly Mock<ISettings> m_Settings;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BatchProcessorTests"/> class.
+    /// </summary>
+    public BatchProcessorTests()
+    {
+        m_Settings = new Mock<ISettings>();
+    }
+
     /// <summary>
     /// Verifies that Instance returns a non-null singleton instance.
     /// </summary>
@@ -16,7 +30,7 @@ public class BatchProcessorTests
     public void Instance_ReturnsNonNullSingleton()
     {
         // Act
-        var instance = new BatchProcessor();
+        var instance = new BatchProcessor(m_Settings.Object);
 
         // Assert
         _ = instance.Should().NotBeNull();
@@ -30,8 +44,8 @@ public class BatchProcessorTests
     public void NewInstance_CreatesDifferentInstances()
     {
         // Act
-        var instance1 = new BatchProcessor();
-        var instance2 = new BatchProcessor();
+        var instance1 = new BatchProcessor(m_Settings.Object);
+        var instance2 = new BatchProcessor(m_Settings.Object);
 
         // Assert
         _ = instance1.Should().NotBeSameAs(instance2);
@@ -44,7 +58,7 @@ public class BatchProcessorTests
     public void BatchCommands_NullCommands_ReturnsEmptyList()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
 
         // Act
         var result = processor.BatchCommands("test-session", null!);
@@ -61,7 +75,7 @@ public class BatchProcessorTests
     public void BatchCommands_EmptyCommands_ReturnsEmptyList()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>();
 
         // Act
@@ -79,7 +93,7 @@ public class BatchProcessorTests
     public void BatchCommands_SingleCommand_ReturnsUnbatched()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "!analyze" },
@@ -102,7 +116,7 @@ public class BatchProcessorTests
     public void BatchCommands_TwoSimpleCommands_ProcessesCorrectly()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "lm" },
@@ -124,7 +138,7 @@ public class BatchProcessorTests
     public void BatchCommands_MultipleBatchableCommands_ProcessesCorrectly()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "lm" },
@@ -147,7 +161,7 @@ public class BatchProcessorTests
     public void BatchCommands_FiveSimpleCommands_ProcessesCorrectly()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "lm" },
@@ -172,7 +186,7 @@ public class BatchProcessorTests
     public void BatchCommands_ExcludedCommand_PassesThroughIndividually()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "!analyze -v" },
@@ -195,7 +209,7 @@ public class BatchProcessorTests
     public void BatchCommands_MixedExcludedAndBatchable_HandlesCorrectly()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "!analyze -v" },
@@ -218,7 +232,7 @@ public class BatchProcessorTests
     public void BatchCommands_PreservesOrderForNonBatchedCommands()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "lm" },
@@ -239,7 +253,7 @@ public class BatchProcessorTests
     public void UnbatchResults_NullResults_ReturnsEmptyList()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
 
         // Act
         var result = processor.UnbatchResults(null!);
@@ -256,7 +270,7 @@ public class BatchProcessorTests
     public void UnbatchResults_EmptyResults_ReturnsEmptyList()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var results = new List<CommandResult>();
 
         // Act
@@ -274,7 +288,7 @@ public class BatchProcessorTests
     public void UnbatchResults_SingleResult_ReturnsCorrectly()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var results = new List<CommandResult>
         {
             new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "Output 1" },
@@ -297,7 +311,7 @@ public class BatchProcessorTests
     public void UnbatchResults_MultipleNonBatchedResults_ReturnsAll()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var results = new List<CommandResult>
         {
             new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "Output 1" },
@@ -323,7 +337,7 @@ public class BatchProcessorTests
     public void UnbatchResults_PreservesResultOrder()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var results = new List<CommandResult>
         {
             new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "First" },
@@ -349,7 +363,7 @@ public class BatchProcessorTests
     public void BatchAndUnbatch_SimpleCommands_RoundTripCorrectly()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "lm" },
@@ -382,7 +396,7 @@ public class BatchProcessorTests
     public void BatchAndUnbatch_ExcludedCommand_PassesThroughUnchanged()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "!analyze -v" },
@@ -415,7 +429,7 @@ public class BatchProcessorTests
     public void BatchCommands_EmptyCommandText_HandlesGracefully()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = string.Empty },
@@ -436,7 +450,7 @@ public class BatchProcessorTests
     public void BatchCommands_WhitespaceCommandText_HandlesGracefully()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "   " },
@@ -457,7 +471,7 @@ public class BatchProcessorTests
     public void UnbatchResults_EmptyResultText_HandlesGracefully()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var results = new List<CommandResult>
         {
             new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = string.Empty },
@@ -478,7 +492,7 @@ public class BatchProcessorTests
     public void UnbatchResults_WhitespaceResultText_HandlesGracefully()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var results = new List<CommandResult>
         {
             new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "   " },
@@ -500,7 +514,7 @@ public class BatchProcessorTests
     public async Task BatchCommands_ConcurrentCalls_IsThreadSafe()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var commands = new List<Command>
         {
             new() { CommandId = "cmd-1", CommandText = "lm" },
@@ -530,7 +544,7 @@ public class BatchProcessorTests
     public async Task UnbatchResults_ConcurrentCalls_IsThreadSafe()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var results = new List<CommandResult>
         {
             new() { CommandId = "cmd-1", SessionId = "test-session", ResultText = "Output 1" },
@@ -559,7 +573,7 @@ public class BatchProcessorTests
     public void GetBatchCommandId_NonExistentCommand_ReturnsNull()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var sessionId = "test-session";
 
         // Act
@@ -576,7 +590,7 @@ public class BatchProcessorTests
     public void GetBatchCommandId_BatchedCommand_ReturnsBatchId()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var sessionId = "test-session-batch-getid";
         var commands = new List<Command>
         {
@@ -609,7 +623,7 @@ public class BatchProcessorTests
     public void GetBatchCommandId_ExcludedCommand_ReturnsNull()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var sessionId = "test-session-excluded";
         var commands = new List<Command>
         {
@@ -633,7 +647,7 @@ public class BatchProcessorTests
     public void GetBatchCommandId_SingleCommand_ReturnsNull()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var sessionId = "test-session-single";
         var commands = new List<Command>
         {
@@ -657,7 +671,7 @@ public class BatchProcessorTests
     public void ClearSessionBatchMappings_RemovesSessionMappings()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var sessionId = "test-session-clear";
         var commands = new List<Command>
         {
@@ -688,7 +702,7 @@ public class BatchProcessorTests
     public void ClearSessionBatchMappings_DoesNotAffectOtherSessions()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
 
         // Create mappings for two different sessions
         var session1 = "session-1";
@@ -727,7 +741,7 @@ public class BatchProcessorTests
     public void ClearSessionBatchMappings_NonExistentSession_HandlesGracefully()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
         var nonExistentSession = "non-existent-session";
 
         // Act - Should not throw
@@ -744,7 +758,7 @@ public class BatchProcessorTests
     public void ClearSessionBatchMappings_NullSessionId_HandlesGracefully()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
 
         // Act - Should not throw
         var action = () => processor.ClearSessionBatchMappings(null!);
@@ -760,7 +774,7 @@ public class BatchProcessorTests
     public void BatchCommands_NotEnoughCommands_PassesThrough()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
 
         // Single command (< MinBatchSize) ensures pass-through without touching config or filesystem
         var commands = new List<Command>
@@ -782,7 +796,7 @@ public class BatchProcessorTests
     public void BatchCommands_Defaults_WithMultipleCommands_ProducesBatchedOutput()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
 
         // Defaults: Enabled=true, Min=2, Max=5; 4 commands should batch to 1.
         var commands = Enumerable.Range(1, 4)
@@ -803,7 +817,7 @@ public class BatchProcessorTests
     public void BatchCommands_ExcludedCommands_PreventBatching_ByRule()
     {
         // Arrange
-        var processor = new BatchProcessor();
+        var processor = new BatchProcessor(m_Settings.Object);
 
         var commands = new List<Command>
         {

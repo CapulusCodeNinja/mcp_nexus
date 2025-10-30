@@ -3,7 +3,10 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Moq;
+
 using Nexus.CommandLine;
+using Nexus.Config;
 using Nexus.Startup;
 
 using Xunit;
@@ -15,6 +18,16 @@ namespace Nexus.Tests;
 /// </summary>
 public class ProgramTests
 {
+    private readonly Mock<ISettings> m_Settings;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProgramTests"/> class.
+    /// </summary>
+    public ProgramTests()
+    {
+        m_Settings = new Mock<ISettings>();
+    }
+
     /// <summary>
     /// Verifies that CreateHostBuilder creates a valid host builder for HTTP mode.
     /// </summary>
@@ -25,7 +38,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--http" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context);
+        var hostBuilder = Program.CreateHostBuilder(context, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -41,7 +54,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--stdio" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context);
+        var hostBuilder = Program.CreateHostBuilder(context, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -57,7 +70,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--service" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context);
+        var hostBuilder = Program.CreateHostBuilder(context, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -73,7 +86,7 @@ public class ProgramTests
         var context = new CommandLineContext(Array.Empty<string>());
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context);
+        var hostBuilder = Program.CreateHostBuilder(context, m_Settings.Object);
         var host = hostBuilder.Build();
         var registeredContext = host.Services.GetService<CommandLineContext>();
 
@@ -92,7 +105,7 @@ public class ProgramTests
         var context = new CommandLineContext(Array.Empty<string>());
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context);
+        var hostBuilder = Program.CreateHostBuilder(context, m_Settings.Object);
         var host = hostBuilder.Build();
         var hostedServices = host.Services.GetServices<IHostedService>();
 
@@ -110,7 +123,7 @@ public class ProgramTests
         var context = new CommandLineContext(Array.Empty<string>());
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context);
+        var hostBuilder = Program.CreateHostBuilder(context, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -126,7 +139,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--install" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context);
+        var hostBuilder = Program.CreateHostBuilder(context, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -142,7 +155,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--update" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context);
+        var hostBuilder = Program.CreateHostBuilder(context, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -158,7 +171,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--uninstall" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context);
+        var hostBuilder = Program.CreateHostBuilder(context, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();

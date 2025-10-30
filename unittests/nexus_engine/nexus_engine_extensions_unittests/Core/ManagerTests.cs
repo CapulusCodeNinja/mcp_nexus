@@ -2,6 +2,7 @@ using FluentAssertions;
 
 using Moq;
 
+using Nexus.Config;
 using Nexus.Engine.Extensions.Core;
 using Nexus.External.Apis.FileSystem;
 
@@ -16,6 +17,7 @@ public class ManagerTests : IDisposable
 {
     private readonly Mock<IFileSystem> m_FileSystemMock;
     private Manager? m_Manager;
+    private readonly Mock<ISettings> m_Settings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ManagerTests"/> class.
@@ -23,6 +25,7 @@ public class ManagerTests : IDisposable
     public ManagerTests()
     {
         m_FileSystemMock = new Mock<IFileSystem>();
+        m_Settings = new Mock<ISettings>();
 
         // Setup default file system mock behavior
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
@@ -59,7 +62,7 @@ public class ManagerTests : IDisposable
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
 
         // Act
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Assert
         m_FileSystemMock.Verify(fs => fs.CreateDirectory(It.IsAny<string>()), Times.AtLeastOnce);
@@ -72,7 +75,7 @@ public class ManagerTests : IDisposable
     public void GetExtension_WithNullName_ReturnsNull()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = m_Manager.GetExtension(null!);
@@ -88,7 +91,7 @@ public class ManagerTests : IDisposable
     public void GetExtension_WithEmptyName_ReturnsNull()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = m_Manager.GetExtension(string.Empty);
@@ -104,7 +107,7 @@ public class ManagerTests : IDisposable
     public void GetExtension_WithWhitespaceName_ReturnsNull()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = m_Manager.GetExtension("   ");
@@ -120,7 +123,7 @@ public class ManagerTests : IDisposable
     public void GetExtension_WithUnknownName_ReturnsNull()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = m_Manager.GetExtension("NonExistentExtension");
@@ -136,7 +139,7 @@ public class ManagerTests : IDisposable
     public void GetAllExtensions_WhenNoExtensions_ReturnsEmptyCollection()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = m_Manager.GetAllExtensions();
@@ -153,7 +156,7 @@ public class ManagerTests : IDisposable
     public void ExtensionExists_WithNullName_ReturnsFalse()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = m_Manager.ExtensionExists(null!);
@@ -169,7 +172,7 @@ public class ManagerTests : IDisposable
     public void ExtensionExists_WithEmptyName_ReturnsFalse()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = m_Manager.ExtensionExists(string.Empty);
@@ -185,7 +188,7 @@ public class ManagerTests : IDisposable
     public void ExtensionExists_WithWhitespaceName_ReturnsFalse()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = m_Manager.ExtensionExists("   ");
@@ -201,7 +204,7 @@ public class ManagerTests : IDisposable
     public void ExtensionExists_WithUnknownName_ReturnsFalse()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var result = m_Manager.ExtensionExists("NonExistentExtension");
@@ -217,7 +220,7 @@ public class ManagerTests : IDisposable
     public void ValidateExtension_WithUnknownExtension_ReturnsInvalid()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var (isValid, errorMessage) = m_Manager.ValidateExtension("NonExistentExtension");
@@ -234,7 +237,7 @@ public class ManagerTests : IDisposable
     public void ValidateExtension_WithNullName_ReturnsInvalid()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var (isValid, errorMessage) = m_Manager.ValidateExtension(null!);
@@ -251,7 +254,7 @@ public class ManagerTests : IDisposable
     public void GetExtensionsVersion_ReturnsNonNegativeValue()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act
         var version = m_Manager.GetExtensionsVersion();
@@ -267,7 +270,7 @@ public class ManagerTests : IDisposable
     public void Dispose_CanBeCalledMultipleTimes()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
 
         // Act & Assert
         m_Manager.Dispose();
@@ -281,7 +284,7 @@ public class ManagerTests : IDisposable
     public void Operations_AfterDispose_DoNotThrow()
     {
         // Arrange
-        m_Manager = new Manager(m_FileSystemMock.Object);
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
         m_Manager.Dispose();
 
         // Act & Assert - should not throw

@@ -2,6 +2,7 @@ using FluentAssertions;
 
 using Moq;
 
+using Nexus.Config;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 using Nexus.External.Apis.ServiceManagement;
@@ -15,6 +16,7 @@ namespace Nexus.Setup.Unittests;
 /// </summary>
 public class ProductInstallationTests
 {
+    private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IFileSystem> m_FileSystemMock;
     private readonly Mock<IProcessManager> m_ProcessManagerMock;
     private readonly Mock<IServiceController> m_ServiceControllerMock;
@@ -24,6 +26,7 @@ public class ProductInstallationTests
     /// </summary>
     public ProductInstallationTests()
     {
+        m_Settings = new Mock<ISettings>();
         m_FileSystemMock = new Mock<IFileSystem>();
         m_ProcessManagerMock = new Mock<IProcessManager>();
         m_ServiceControllerMock = new Mock<IServiceController>();
@@ -39,7 +42,8 @@ public class ProductInstallationTests
         var installation = new ProductInstallation(
             m_FileSystemMock.Object,
             m_ProcessManagerMock.Object,
-            m_ServiceControllerMock.Object);
+            m_ServiceControllerMock.Object,
+            m_Settings.Object);
 
         // Assert
         _ = installation.Should().NotBeNull();
@@ -56,7 +60,8 @@ public class ProductInstallationTests
         var installation = new ProductInstallation(
             m_FileSystemMock.Object,
             m_ProcessManagerMock.Object,
-            m_ServiceControllerMock.Object);
+            m_ServiceControllerMock.Object,
+            m_Settings.Object);
 
         // Act
         var result = await installation.InstallServiceAsync();
@@ -76,7 +81,8 @@ public class ProductInstallationTests
         var installation = new ProductInstallation(
             m_FileSystemMock.Object,
             m_ProcessManagerMock.Object,
-            m_ServiceControllerMock.Object);
+            m_ServiceControllerMock.Object,
+            m_Settings.Object);
 
         // Act
         var result = await installation.UpdateServiceAsync();
@@ -96,7 +102,8 @@ public class ProductInstallationTests
         var installation = new ProductInstallation(
             m_FileSystemMock.Object,
             m_ProcessManagerMock.Object,
-            m_ServiceControllerMock.Object);
+            m_ServiceControllerMock.Object,
+            m_Settings.Object);
 
         // Act
         var result = await installation.UninstallServiceAsync();

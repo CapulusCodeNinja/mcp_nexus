@@ -1,6 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Moq;
+
+using Nexus.Config;
 using Nexus.Protocol.Configuration;
 
 using Xunit;
@@ -12,6 +15,16 @@ namespace Nexus.Protocol.Unittests.Configuration;
 /// </summary>
 public class HttpServerSetupTests
 {
+    private readonly Mock<ISettings> m_Settings;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HttpServerSetupTests"/> class.
+    /// </summary>
+    public HttpServerSetupTests()
+    {
+        m_Settings = new Mock<ISettings>();
+    }
+
     /// <summary>
     /// Verifies that ConfigureHttpServices with default configuration succeeds.
     /// </summary>
@@ -108,7 +121,7 @@ public class HttpServerSetupTests
     public void CreateConfiguredHost_WithNonServiceMode_CreatesHost()
     {
         // Act
-        var host = HttpServerSetup.CreateConfiguredHost(false);
+        var host = HttpServerSetup.CreateConfiguredHost(m_Settings.Object, false);
 
         // Assert
         Assert.NotNull(host);
@@ -122,7 +135,7 @@ public class HttpServerSetupTests
     public void CreateConfiguredHost_WithServiceMode_CreatesHost()
     {
         // Act
-        var host = HttpServerSetup.CreateConfiguredHost(true);
+        var host = HttpServerSetup.CreateConfiguredHost(m_Settings.Object, true);
 
         // Assert
         Assert.NotNull(host);

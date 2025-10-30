@@ -68,7 +68,7 @@ public class DebugEngine : IDebugEngine
     /// Initializes a new instance of the <see cref="DebugEngine"/> class with default dependencies.
     /// </summary>
     /// <param name="settings">The product settings.</param>
-    internal DebugEngine(ISettings settings)
+    public DebugEngine(ISettings settings)
         : this(new FileSystem(), new ProcessManager(), new BatchProcessor(settings), settings)
     {
     }
