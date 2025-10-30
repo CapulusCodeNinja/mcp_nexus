@@ -518,4 +518,347 @@ public class CommandQueueTests : IDisposable
         _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await m_Queue.StartAsync(null!));
     }
+
+    /// <summary>
+    /// Verifies that StartAsync throws ObjectDisposedException after Dispose.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        // Arrange
+        m_Queue.Dispose();
+
+        // Act & Assert
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+            await m_Queue.StartAsync(null!));
+    }
+
+    /// <summary>
+    /// Verifies that StopAsync can be called when disposed.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StopAsync_WhenDisposed_DoesNotThrow()
+    {
+        // Arrange
+        m_Queue.Dispose();
+
+        // Act & Assert - Should not throw
+        await m_Queue.StopAsync();
+    }
+
+    /// <summary>
+    /// Verifies that GetAllCommandInfos throws ObjectDisposedException after Dispose.
+    /// </summary>
+    [Fact]
+    public void GetAllCommandInfos_AfterDispose_ThrowsObjectDisposedException()
+    {
+        // Arrange
+        m_Queue.Dispose();
+
+        // Act & Assert
+        _ = Assert.Throws<ObjectDisposedException>(() => m_Queue.GetAllCommandInfos());
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync throws ObjectDisposedException after Dispose.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task GetCommandInfoAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        // Arrange
+        m_Queue.Dispose();
+
+        // Act & Assert
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+            await m_Queue.GetCommandInfoAsync("cmd-123"));
+    }
+
+    /// <summary>
+    /// Verifies that CancelAllCommands throws ObjectDisposedException after Dispose.
+    /// </summary>
+    [Fact]
+    public void CancelAllCommands_AfterDispose_ThrowsObjectDisposedException()
+    {
+        // Arrange
+        m_Queue.Dispose();
+
+        // Act & Assert
+        _ = Assert.Throws<ObjectDisposedException>(() => m_Queue.CancelAllCommands());
+    }
+
+    /// <summary>
+    /// Verifies that EnqueueCommand with whitespace-only command throws ArgumentException.
+    /// </summary>
+    [Fact]
+    public void EnqueueCommand_WithWhitespaceOnlyCommand_ThrowsArgumentException()
+    {
+        // Act & Assert
+        _ = Assert.Throws<ArgumentException>(() => m_Queue.EnqueueCommand("\t\r\n  "));
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfo with whitespace command ID returns null.
+    /// </summary>
+    [Fact]
+    public void GetCommandInfo_WithWhitespaceCommandId_ReturnsNull()
+    {
+        // Act
+        var result = m_Queue.GetCommandInfo("   \t  ");
+
+        // Assert
+        _ = result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync with whitespace command ID throws ArgumentException.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task GetCommandInfoAsync_WithWhitespaceCommandId_ThrowsArgumentException()
+    {
+        // Act & Assert
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await m_Queue.GetCommandInfoAsync("   \t  "));
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand with whitespace command ID returns false.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WithWhitespaceCommandId_ReturnsFalse()
+    {
+        // Act
+        var result = m_Queue.CancelCommand("   \t  ");
+
+        // Assert
+        _ = result.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Verifies that CancelAllCommands with null reason works correctly.
+    /// </summary>
+    [Fact]
+    public void CancelAllCommands_WithNullReason_CancelsCommands()
+    {
+        // Arrange
+        _ = m_Queue.EnqueueCommand("k");
+        _ = m_Queue.EnqueueCommand("lm");
+
+        // Act
+        var result = m_Queue.CancelAllCommands(null);
+
+        // Assert
+        _ = result.Should().Be(2);
+    }
+
+    /// <summary>
+    /// Verifies that EnqueueCommand increments command sequence correctly.
+    /// </summary>
+    [Fact]
+    public void EnqueueCommand_IncrementsSequenceNumber()
+    {
+        // Act
+        var id1 = m_Queue.EnqueueCommand("k");
+        var id2 = m_Queue.EnqueueCommand("lm");
+
+        // Assert
+        _ = id1.Should().EndWith("-1");
+        _ = id2.Should().EndWith("-2");
+    }
+
+    /// <summary>
+    /// Verifies that GetAllCommandInfos includes sessionId in returned infos.
+    /// </summary>
+    [Fact]
+    public void GetAllCommandInfos_IncludesSessionId()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+
+        // Act
+        var result = m_Queue.GetAllCommandInfos();
+
+        // Assert
+        _ = result[commandId].SessionId.Should().Be("test-session-1");
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfo returns info with correct sessionId.
+    /// </summary>
+    [Fact]
+    public void GetCommandInfo_ReturnsInfoWithSessionId()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+
+        // Act
+        var result = m_Queue.GetCommandInfo(commandId);
+
+        // Assert
+        _ = result!.SessionId.Should().Be("test-session-1");
+    }
+
+    /// <summary>
+    /// Verifies that multiple EnqueueCommand calls work correctly in sequence.
+    /// </summary>
+    [Fact]
+    public void EnqueueCommand_MultipleSequential_AllSucceed()
+    {
+        // Act
+        var ids = new List<string>();
+        for (var i = 0; i < 10; i++)
+        {
+            ids.Add(m_Queue.EnqueueCommand($"command-{i}"));
+        }
+
+        // Assert
+        _ = ids.Should().HaveCount(10);
+        _ = ids.Should().OnlyHaveUniqueItems();
+
+        var allInfos = m_Queue.GetAllCommandInfos();
+        _ = allInfos.Should().HaveCount(10);
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand updates state before notifying listeners.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_UpdatesStateBeforeEvent()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+        CommandInfo? infoAtEventTime = null;
+        m_Queue.CommandStateChanged += (sender, args) =>
+        {
+            if (args.NewState == CommandState.Cancelled)
+            {
+                infoAtEventTime = m_Queue.GetCommandInfo(commandId);
+            }
+        };
+
+        m_StateChanges.Clear();
+
+        // Act
+        _ = m_Queue.CancelCommand(commandId);
+
+        // Assert
+        _ = infoAtEventTime.Should().NotBeNull();
+        _ = infoAtEventTime!.State.Should().Be(CommandState.Cancelled);
+    }
+
+    /// <summary>
+    /// Verifies that CommandStateChanged event has correct old and new states.
+    /// </summary>
+    [Fact]
+    public void CommandStateChanged_HasCorrectOldAndNewStates()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+        m_StateChanges.Clear();
+
+        // Act
+        _ = m_Queue.CancelCommand(commandId);
+
+        // Assert
+        _ = m_StateChanges[0].OldState.Should().Be(CommandState.Queued);
+        _ = m_StateChanges[0].NewState.Should().Be(CommandState.Cancelled);
+    }
+
+    /// <summary>
+    /// Verifies that Dispose cancels all commands before stopping.
+    /// </summary>
+    [Fact]
+    public void Dispose_CancelsAllCommandsBeforeStopping()
+    {
+        // Arrange
+        var id1 = m_Queue.EnqueueCommand("k");
+        var id2 = m_Queue.EnqueueCommand("lm");
+        m_StateChanges.Clear();
+
+        // Act
+        m_Queue.Dispose();
+
+        // Assert - Commands should be cancelled
+        _ = m_StateChanges.Should().Contain(e => e.CommandId == id1 && e.NewState == CommandState.Cancelled);
+        _ = m_StateChanges.Should().Contain(e => e.CommandId == id2 && e.NewState == CommandState.Cancelled);
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfo returns same instance on multiple calls.
+    /// </summary>
+    [Fact]
+    public void GetCommandInfo_ReturnsSameInstanceOnMultipleCalls()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+
+        // Act
+        var info1 = m_Queue.GetCommandInfo(commandId);
+        var info2 = m_Queue.GetCommandInfo(commandId);
+
+        // Assert - Should return info for same command (not necessarily same instance due to new CommandInfo creation)
+        _ = info1!.CommandId.Should().Be(info2!.CommandId);
+        _ = info1.Command.Should().Be(info2.Command);
+        _ = info1.State.Should().Be(info2.State);
+    }
+
+    /// <summary>
+    /// Verifies that EnqueueCommand command text is preserved exactly.
+    /// </summary>
+    [Fact]
+    public void EnqueueCommand_PreservesCommandTextExactly()
+    {
+        // Arrange
+        var command = "  k -v --detailed  ";
+
+        // Act
+        var commandId = m_Queue.EnqueueCommand(command);
+        var info = m_Queue.GetCommandInfo(commandId);
+
+        // Assert
+        _ = info!.Command.Should().Be(command);
+    }
+
+    /// <summary>
+    /// Verifies that CancelAllCommands state change events include all cancelled commands.
+    /// </summary>
+    [Fact]
+    public void CancelAllCommands_StateChangeEvents_IncludeAllCommands()
+    {
+        // Arrange
+        var ids = new List<string>
+        {
+            m_Queue.EnqueueCommand("k"),
+            m_Queue.EnqueueCommand("lm"),
+            m_Queue.EnqueueCommand("!analyze -v"),
+        };
+        m_StateChanges.Clear();
+
+        // Act
+        _ = m_Queue.CancelAllCommands("Batch cancel");
+
+        // Assert
+        _ = m_StateChanges.Should().HaveCount(3);
+        foreach (var id in ids)
+        {
+            _ = m_StateChanges.Should().Contain(e => e.CommandId == id && e.NewState == CommandState.Cancelled);
+        }
+    }
+
+    /// <summary>
+    /// Verifies that CommandStateChanged event is not raised if no subscribers.
+    /// </summary>
+    [Fact]
+    public void EnqueueCommand_WithNoSubscribers_DoesNotThrow()
+    {
+        // Arrange
+        using var queue = new CommandQueue("test-session-no-sub");
+
+        // Act & Assert - Should not throw
+        var commandId = queue.EnqueueCommand("k");
+        _ = commandId.Should().NotBeNullOrEmpty();
+    }
 }

@@ -728,4 +728,390 @@ public class CdbSessionTests
         // Act & Assert
         _ = session.SymbolPath.Should().BeNull();
     }
+
+    /// <summary>
+    /// Verifies that constructor throws ArgumentNullException when commandPreprocessor is null.
+    /// </summary>
+    [Fact]
+    public void Constructor_NullCommandPreprocessor_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        var act = () => new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, null!);
+        _ = act.Should().Throw<ArgumentNullException>().WithParameterName("commandPreprocessor");
+    }
+
+    /// <summary>
+    /// Verifies that InitializeAsync throws ArgumentException when sessionId is null.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InitializeAsync_NullSessionId_ThrowsArgumentException()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
+
+        // Act & Assert
+        var act = async () => await session.InitializeAsync(null!, @"C:\test.dmp", null);
+        _ = await act.Should().ThrowAsync<ArgumentException>().WithParameterName("sessionId");
+    }
+
+    /// <summary>
+    /// Verifies that InitializeAsync throws ArgumentException when sessionId is empty.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InitializeAsync_EmptySessionId_ThrowsArgumentException()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
+
+        // Act & Assert
+        var act = async () => await session.InitializeAsync(string.Empty, @"C:\test.dmp", null);
+        _ = await act.Should().ThrowAsync<ArgumentException>().WithParameterName("sessionId");
+    }
+
+    /// <summary>
+    /// Verifies that InitializeAsync throws ArgumentException when sessionId is whitespace.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InitializeAsync_WhitespaceSessionId_ThrowsArgumentException()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
+
+        // Act & Assert
+        var act = async () => await session.InitializeAsync("   ", @"C:\test.dmp", null);
+        _ = await act.Should().ThrowAsync<ArgumentException>().WithParameterName("sessionId");
+    }
+
+    /// <summary>
+    /// Verifies that FindCdbExecutableAsync finds CDB in x64 Program Files (x86) location.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FindCdbExecutableAsync_X64ProgramFilesX86PathExists_ReturnsThatPath()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var x64Path = @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe";
+
+        // Setup file system to return true only for x64 path
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(x64Path)).Returns(true);
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.Is<string>(p => p != x64Path))).Returns(false);
+
+        // Act
+        var result = await session.FindCdbExecutableAsync();
+
+        // Assert
+        _ = result.Should().Be(x64Path);
+    }
+
+    /// <summary>
+    /// Verifies that FindCdbExecutableAsync finds CDB in x86 Program Files (x86) location.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FindCdbExecutableAsync_X86ProgramFilesX86PathExists_ReturnsThatPath()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var x86Path = @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe";
+
+        // Setup file system to return false for x64, true for x86
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe")).Returns(false);
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(x86Path)).Returns(true);
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.Is<string>(p =>
+            p != x86Path && p != @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe"))).Returns(false);
+
+        // Act
+        var result = await session.FindCdbExecutableAsync();
+
+        // Assert
+        _ = result.Should().Be(x86Path);
+    }
+
+    /// <summary>
+    /// Verifies that FindCdbExecutableAsync finds CDB in x64 Program Files location.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FindCdbExecutableAsync_X64ProgramFilesPathExists_ReturnsThatPath()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var x64ProgramFilesPath = @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe";
+
+        // Setup file system to return false for first two, true for third
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe")).Returns(false);
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe")).Returns(false);
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(x64ProgramFilesPath)).Returns(true);
+
+        // Act
+        var result = await session.FindCdbExecutableAsync();
+
+        // Assert
+        _ = result.Should().Be(x64ProgramFilesPath);
+    }
+
+    /// <summary>
+    /// Verifies that FindCdbExecutableAsync finds CDB in x86 Program Files location.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task FindCdbExecutableAsync_X86ProgramFilesPathExists_ReturnsThatPath()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        var x86ProgramFilesPath = @"C:\Program Files\Windows Kits\10\Debuggers\x86\cdb.exe";
+
+        // Setup file system to return false for first three, true for fourth
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe")).Returns(false);
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe")).Returns(false);
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(@"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe")).Returns(false);
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(x86ProgramFilesPath)).Returns(true);
+
+        // Act
+        var result = await session.FindCdbExecutableAsync();
+
+        // Assert
+        _ = result.Should().Be(x86ProgramFilesPath);
+    }
+
+    /// <summary>
+    /// Verifies that ProcessId returns null when process is null.
+    /// </summary>
+    [Fact]
+    public void ProcessId_NullProcess_ReturnsNull()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Act
+        var result = session.ProcessId;
+
+        // Assert
+        _ = result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that SessionId is empty initially.
+    /// </summary>
+    [Fact]
+    public void SessionId_Initially_IsEmpty()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Act & Assert
+        _ = session.SessionId.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that CreateCommandWithSentinels properly formats command with echo statements.
+    /// </summary>
+    [Fact]
+    public void CreateCommandWithSentinels_ComplexCommand_ReturnsCorrectFormat()
+    {
+        // Act
+        var result = CdbSessionTestAccessor.CreateCommandWithSentinels("!analyze -v");
+
+        // Assert
+        _ = result.Should().Contain(".echo");
+        _ = result.Should().Contain("!analyze -v");
+        _ = result.Should().Contain(CdbSentinels.StartMarker);
+        _ = result.Should().Contain(CdbSentinels.EndMarker);
+    }
+
+    /// <summary>
+    /// Verifies that ProcessOutputLine handles line containing only start marker.
+    /// </summary>
+    [Fact]
+    public void ProcessOutputLine_LineWithOnlyStartMarker_SetsFlag()
+    {
+        // Arrange
+        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var output = new StringBuilder();
+        var startMarkerFound = false;
+
+        // Act
+        var (shouldContinue, shouldBreak) = accessor.ProcessOutputLine(CdbSentinels.StartMarker, ref startMarkerFound, output);
+
+        // Assert
+        _ = startMarkerFound.Should().BeTrue();
+        _ = shouldContinue.Should().BeTrue();
+        _ = shouldBreak.Should().BeFalse();
+        _ = output.ToString().Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that ProcessOutputLine handles line containing only end marker.
+    /// </summary>
+    [Fact]
+    public void ProcessOutputLine_LineWithOnlyEndMarker_AfterStart_BreaksLoop()
+    {
+        // Arrange
+        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var output = new StringBuilder();
+        var startMarkerFound = true; // Already found start
+
+        // Act
+        var (shouldContinue, shouldBreak) = accessor.ProcessOutputLine(CdbSentinels.EndMarker, ref startMarkerFound, output);
+
+        // Assert
+        _ = shouldContinue.Should().BeFalse();
+        _ = shouldBreak.Should().BeTrue();
+        _ = output.ToString().Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that ProcessOutputLine handles mixed content before start marker.
+    /// </summary>
+    [Fact]
+    public void ProcessOutputLine_MixedContentBeforeStart_Ignores()
+    {
+        // Arrange
+        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+        var output = new StringBuilder();
+        var startMarkerFound = false;
+
+        // Act
+        var (shouldContinue, shouldBreak) = accessor.ProcessOutputLine("Some random output", ref startMarkerFound, output);
+
+        // Assert
+        _ = startMarkerFound.Should().BeFalse();
+        _ = shouldContinue.Should().BeTrue();
+        _ = shouldBreak.Should().BeFalse();
+        _ = output.ToString().Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that multiple calls to Dispose are safe.
+    /// </summary>
+    [Fact]
+    public void Dispose_MultipleCalls_AreSafe()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Act
+        session.Dispose();
+        session.Dispose();
+        session.Dispose();
+
+        // Assert - Should not throw
+    }
+
+    /// <summary>
+    /// Verifies that DisposeAsync is idempotent.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DisposeAsync_Idempotent_CanBeCalledMultipleTimes()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Act
+        await session.DisposeAsync();
+        await session.DisposeAsync();
+        await session.DisposeAsync();
+
+        // Assert - Should not throw
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteBatchCommandAsync with single command works.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteBatchCommandAsync_SingleCommand_ThrowsInvalidOperation()
+    {
+        // Arrange
+        var accessor = CreateInitializedAccessor();
+        var commands = new List<string> { "k" };
+
+        // Act & Assert - Not initialized with actual process
+        var act = async () => await accessor.ExecuteBatchCommandAsync(commands);
+        _ = await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    /// <summary>
+    /// Verifies that StartCdbProcessAsync throws when session not initialized.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartCdbProcessAsync_NotInitialized_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Act & Assert
+        var act = async () => await session.StartCdbProcessAsync();
+        _ = await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*not initialized*");
+    }
+
+    /// <summary>
+    /// Verifies that StartCdbProcessAsync throws when disposed.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartCdbProcessAsync_Disposed_ThrowsObjectDisposedException()
+    {
+        // Arrange
+        var session = new CdbSession(m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+        await session.DisposeAsync();
+
+        // Act & Assert
+        var act = async () => await session.StartCdbProcessAsync();
+        _ = await act.Should().ThrowAsync<ObjectDisposedException>();
+    }
+
+    /// <summary>
+    /// Verifies that ThrowIfDisposed throws when accessor is disposed.
+    /// </summary>
+    [Fact]
+    public void ThrowIfDisposed_WhenDisposed_ThrowsObjectDisposedException()
+    {
+        // Arrange
+        var accessor = CreateInitializedAccessor();
+        accessor.SetDisposedState();
+
+        // Act & Assert
+        var act = () => accessor.ThrowIfDisposed();
+        _ = act.Should().Throw<ObjectDisposedException>();
+    }
+
+    /// <summary>
+    /// Verifies that ThrowIfNotInitialized throws when not initialized.
+    /// </summary>
+    [Fact]
+    public void ThrowIfNotInitialized_WhenNotInitialized_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Act & Assert
+        var act = () => accessor.ThrowIfNotInitialized();
+        _ = act.Should().Throw<InvalidOperationException>().WithMessage("*not initialized*");
+    }
+
+    /// <summary>
+    /// Verifies that IsProcessExited returns false when no process.
+    /// </summary>
+    [Fact]
+    public void IsProcessExited_NoProcess_ReturnsFalse()
+    {
+        // Arrange
+        var accessor = new CdbSessionTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Act
+        var result = accessor.IsProcessExited();
+
+        // Assert
+        _ = result.Should().BeFalse();
+    }
 }
