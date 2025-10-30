@@ -53,7 +53,7 @@ public class DebugEngine : IDebugEngine
     /// <summary>
     /// Periodic timer that checks for idle sessions and closes them when they exceed the configured timeout.
     /// </summary>
-    private readonly System.Threading.Timer m_SessionCleanupTimer;
+    private readonly Timer m_SessionCleanupTimer;
 
     /// <summary>
     /// Indicates whether this instance has been disposed.

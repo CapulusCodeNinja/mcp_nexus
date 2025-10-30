@@ -46,21 +46,6 @@ public class ProductInstallationTests
     }
 
     /// <summary>
-    /// Verifies that Instance property returns a valid singleton.
-    /// </summary>
-    [Fact]
-    public void Instance_ReturnsSingleton()
-    {
-        // Act
-        var instance1 = ProductInstallation.Instance;
-        var instance2 = ProductInstallation.Instance;
-
-        // Assert
-        _ = instance1.Should().NotBeNull();
-        _ = instance1.Should().BeSameAs(instance2);
-    }
-
-    /// <summary>
     /// Verifies that InstallServiceAsync calls internal method with default service controller.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>

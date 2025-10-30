@@ -29,14 +29,9 @@ namespace Nexus.Setup
         private readonly IFileSystem m_FileSystem;
 
         /// <summary>
-        /// Gets the singleton instance of the product installation manager.
-        /// </summary>
-        public static IProductInstallation Instance { get; } = new ProductInstallation();
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
         /// </summary>
-        private ProductInstallation()
+        public ProductInstallation()
             : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
         {
         }

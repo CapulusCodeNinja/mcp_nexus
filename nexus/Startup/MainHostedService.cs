@@ -1,3 +1,5 @@
+using System.Runtime.Versioning;
+
 using Microsoft.Extensions.Hosting;
 
 using Nexus.CommandLine;
@@ -12,10 +14,13 @@ namespace Nexus.Startup;
 /// <summary>
 /// Main hosted service that orchestrates the entire application startup sequence.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public class MainHostedService : IHostedService
 {
     private readonly Logger m_Logger;
     private readonly CommandLineContext m_CommandLineContext;
+    private readonly IProtocolServer m_ProtocolServer;
+    private readonly IProductInstallation m_ProductInstallation;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MainHostedService"/> class.
@@ -23,9 +28,23 @@ public class MainHostedService : IHostedService
     /// <param name="commandLineContext">Command line context.</param>
     public MainHostedService(
         CommandLineContext commandLineContext)
+        : this(commandLineContext, new ProtocolServer(), new ProductInstallation())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MainHostedService"/> class.
+    /// </summary>
+    /// <param name="commandLineContext">Command line context.</param>
+    /// <param name="protocolServer">The command line server.</param>
+    /// <param name="productInstallation">The product setup finctionality.</param>
+    internal MainHostedService(
+        CommandLineContext commandLineContext, IProtocolServer protocolServer, IProductInstallation productInstallation)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
         m_CommandLineContext = commandLineContext;
+        m_ProtocolServer = protocolServer;
+        m_ProductInstallation = productInstallation;
     }
 
     /// <summary>
@@ -87,10 +106,10 @@ public class MainHostedService : IHostedService
             var app = HttpServerSetup.CreateConfiguredWebApplication(
                 m_CommandLineContext.IsServiceMode);
 
-            ProtocolServer.Instance.SetWebApplication(app);
+            m_ProtocolServer.SetWebApplication(app);
 
             // Start the protocol server (which starts the WebApplication)
-            await ProtocolServer.Instance.StartAsync(cancellationToken);
+            await m_ProtocolServer.StartAsync(cancellationToken);
 
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -122,10 +141,10 @@ public class MainHostedService : IHostedService
             var host = HttpServerSetup.CreateConfiguredHost(m_CommandLineContext.IsServiceMode);
 
             // Get the protocol server from DI and configure it
-            ProtocolServer.Instance.SetHost(host);
+            m_ProtocolServer.SetHost(host);
 
             // Start the protocol server (which starts the Host)
-            await ProtocolServer.Instance.StartAsync(cancellationToken);
+            await m_ProtocolServer.StartAsync(cancellationToken);
 
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -163,7 +182,7 @@ public class MainHostedService : IHostedService
         m_Logger.Info("Handling install command...");
 
         // Get the installation handler from DI
-        var success = await ProductInstallation.Instance.InstallServiceAsync();
+        var success = await m_ProductInstallation.InstallServiceAsync();
 
         if (!success)
         {
@@ -184,7 +203,7 @@ public class MainHostedService : IHostedService
         m_Logger.Info("Handling update command...");
 
         // Get the installation handler from DI
-        var success = await ProductInstallation.Instance.UpdateServiceAsync();
+        var success = await m_ProductInstallation.UpdateServiceAsync();
 
         if (!success)
         {
@@ -205,7 +224,7 @@ public class MainHostedService : IHostedService
         m_Logger.Info("Handling uninstall command...");
 
         // Get the installation handler from DI
-        var success = await ProductInstallation.Instance.UninstallServiceAsync();
+        var success = await m_ProductInstallation.UninstallServiceAsync();
 
         if (!success)
         {
@@ -228,10 +247,9 @@ public class MainHostedService : IHostedService
         try
         {
             // Stop the protocol server if it's running
-            var protocolServer = ProtocolServer.Instance;
-            if (protocolServer is { IsRunning: true })
+            if (m_ProtocolServer is { IsRunning: true })
             {
-                await protocolServer.StopAsync(cancellationToken);
+                await m_ProtocolServer.StopAsync(cancellationToken);
             }
         }
         catch (Exception ex)

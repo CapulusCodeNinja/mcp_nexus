@@ -752,4 +752,69 @@ public class BatchProcessorTests
         // Assert
         _ = action.Should().NotThrow();
     }
+
+    /// <summary>
+    /// Verifies pass-through behavior when not enough commands are provided (no batching conditions met).
+    /// </summary>
+    [Fact]
+    public void BatchCommands_NotEnoughCommands_PassesThrough()
+    {
+        // Arrange
+        var processor = new BatchProcessor();
+
+        // Single command (< MinBatchSize) ensures pass-through without touching config or filesystem
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-1", CommandText = "lm" },
+        };
+
+        // Act
+        var result = processor.BatchCommands("test-session", commands);
+
+        // Assert
+        _ = result.Should().HaveCount(1);
+    }
+
+    /// <summary>
+    /// Verifies batching produces fewer commands when multiple commands are provided (default config).
+    /// </summary>
+    [Fact]
+    public void BatchCommands_Defaults_WithMultipleCommands_ProducesBatchedOutput()
+    {
+        // Arrange
+        var processor = new BatchProcessor();
+
+        // Defaults: Enabled=true, Min=2, Max=5; 4 commands should batch to 1.
+        var commands = Enumerable.Range(1, 4)
+            .Select(i => new Command { CommandId = $"cmd-{i}", CommandText = $"cmd{i}" })
+            .ToList();
+
+        // Act
+        var result = processor.BatchCommands("session-max", commands);
+
+        // Assert: 4 inputs -> 1 batched output
+        _ = result.Should().HaveCount(1);
+    }
+
+    /// <summary>
+    /// Verifies that excluded command ('!analyze' prefix) prevents batching by rule.
+    /// </summary>
+    [Fact]
+    public void BatchCommands_ExcludedCommands_PreventBatching_ByRule()
+    {
+        // Arrange
+        var processor = new BatchProcessor();
+
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-1", CommandText = "!analyze -v" },
+            new() { CommandId = "cmd-2", CommandText = "dt" },
+        };
+
+        // Act
+        var result = processor.BatchCommands("session-excl", commands);
+
+        // Assert: both commands pass through
+        _ = result.Should().HaveCount(2);
+    }
 }

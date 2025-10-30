@@ -18,15 +18,10 @@ public class ProtocolServer : IProtocolServer
     private bool m_Disposed;
 
     /// <summary>
-    /// Gets the singleton instance of the protocol server.
-    /// </summary>
-    public static IProtocolServer Instance { get; } = new ProtocolServer();
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="ProtocolServer"/> class.
     /// </summary>
     /// <exception cref="ArgumentNullException">Thrown when serviceProvider is null.</exception>
-    private ProtocolServer()
+    public ProtocolServer()
     {
         IsRunning = false;
         m_Logger = LogManager.GetCurrentClassLogger();
