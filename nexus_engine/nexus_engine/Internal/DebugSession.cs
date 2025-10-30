@@ -1,3 +1,5 @@
+using Nexus.Config;
+using Nexus.Engine.Batch;
 using Nexus.Engine.Preprocessing;
 using Nexus.Engine.Share.Events;
 using Nexus.Engine.Share.Models;
@@ -14,10 +16,12 @@ namespace Nexus.Engine.Internal;
 internal class DebugSession : IDisposable
 {
     private readonly Logger m_Logger;
+    private readonly ISettings m_Settings;
     private readonly string m_DumpFilePath;
     private readonly string? m_SymbolPath;
     private readonly CdbSession m_CdbSession;
     private readonly CommandQueue m_CommandQueue;
+    private readonly IBatchProcessor m_BatchProcessor;
     private readonly ReaderWriterLockSlim m_StateLock = new();
     private SessionState m_State = SessionState.Initializing;
     private volatile bool m_Disposed = false;
@@ -75,29 +79,35 @@ internal class DebugSession : IDisposable
     /// <param name="sessionId">The unique session identifier.</param>
     /// <param name="dumpFilePath">The path to the dump file to analyze.</param>
     /// <param name="symbolPath">Optional symbol path for symbol resolution.</param>
+    /// <param name="settings">The product settings.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
+    /// <param name="batchProcessor">The batch processing engine.</param>
     /// <param name="commandPreprocessor">Optional command preprocessor for WSL path conversion and directory creation.</param>
     /// <exception cref="ArgumentNullException">Thrown when sessionId or dumpFilePath is null.</exception>
     public DebugSession(
         string sessionId,
         string dumpFilePath,
         string? symbolPath,
+        ISettings settings,
         IFileSystem fileSystem,
         IProcessManager processManager,
+        IBatchProcessor batchProcessor,
         CommandPreprocessor commandPreprocessor)
     {
+        m_Settings = settings;
         SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
         m_DumpFilePath = dumpFilePath ?? throw new ArgumentNullException(nameof(dumpFilePath));
         m_SymbolPath = symbolPath;
+        m_BatchProcessor = batchProcessor;
 
         m_Logger = LogManager.GetCurrentClassLogger();
 
         // Create CDB session
-        m_CdbSession = new CdbSession(fileSystem, processManager, commandPreprocessor);
+        m_CdbSession = new CdbSession(m_Settings, fileSystem, processManager, commandPreprocessor);
 
         // Create command queue
-        m_CommandQueue = new CommandQueue(SessionId);
+        m_CommandQueue = new CommandQueue(SessionId, m_Settings, m_BatchProcessor);
 
         // Subscribe to command queue events
         m_CommandQueue.CommandStateChanged += OnCommandStateChanged;

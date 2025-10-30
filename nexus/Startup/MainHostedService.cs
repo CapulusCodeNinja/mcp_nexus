@@ -3,6 +3,7 @@ using System.Runtime.Versioning;
 using Microsoft.Extensions.Hosting;
 
 using Nexus.CommandLine;
+using Nexus.Config;
 using Nexus.Protocol;
 using Nexus.Protocol.Configuration;
 using Nexus.Setup;
@@ -18,6 +19,7 @@ namespace Nexus.Startup;
 public class MainHostedService : IHostedService
 {
     private readonly Logger m_Logger;
+    private readonly ISettings m_Settings;
     private readonly CommandLineContext m_CommandLineContext;
     private readonly IProtocolServer m_ProtocolServer;
     private readonly IProductInstallation m_ProductInstallation;
@@ -26,9 +28,10 @@ public class MainHostedService : IHostedService
     /// Initializes a new instance of the <see cref="MainHostedService"/> class.
     /// </summary>
     /// <param name="commandLineContext">Command line context.</param>
+    /// <param name="settings">The product settings.</param>
     public MainHostedService(
-        CommandLineContext commandLineContext)
-        : this(commandLineContext, new ProtocolServer(), new ProductInstallation())
+        CommandLineContext commandLineContext, ISettings settings)
+        : this(commandLineContext, new ProtocolServer(), new ProductInstallation(settings), settings)
     {
     }
 
@@ -38,13 +41,15 @@ public class MainHostedService : IHostedService
     /// <param name="commandLineContext">Command line context.</param>
     /// <param name="protocolServer">The command line server.</param>
     /// <param name="productInstallation">The product setup finctionality.</param>
+    /// <param name="settings">The product settings.</param>
     internal MainHostedService(
-        CommandLineContext commandLineContext, IProtocolServer protocolServer, IProductInstallation productInstallation)
+        CommandLineContext commandLineContext, IProtocolServer protocolServer, IProductInstallation productInstallation, ISettings settings)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
         m_CommandLineContext = commandLineContext;
         m_ProtocolServer = protocolServer;
         m_ProductInstallation = productInstallation;
+        m_Settings = settings;
     }
 
     /// <summary>
@@ -56,7 +61,7 @@ public class MainHostedService : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         // 1. Display startup banner FIRST (guaranteed first log output)
-        var startupBanner = new StartupBanner(m_CommandLineContext.IsServiceMode, m_CommandLineContext);
+        var startupBanner = new StartupBanner(m_CommandLineContext.IsServiceMode, m_CommandLineContext, m_Settings);
         startupBanner.DisplayBanner();
 
         // 2. Handle the appropriate command based on command line context
@@ -104,6 +109,7 @@ public class MainHostedService : IHostedService
         {
             // Create and configure WebApplication using protocol library (all logic encapsulated)
             var app = HttpServerSetup.CreateConfiguredWebApplication(
+                m_Settings,
                 m_CommandLineContext.IsServiceMode);
 
             m_ProtocolServer.SetWebApplication(app);
@@ -138,7 +144,9 @@ public class MainHostedService : IHostedService
         try
         {
             // Create and configure Host using protocol library (all logic encapsulated)
-            var host = HttpServerSetup.CreateConfiguredHost(m_CommandLineContext.IsServiceMode);
+            var host = HttpServerSetup.CreateConfiguredHost(
+                m_Settings,
+                m_CommandLineContext.IsServiceMode);
 
             // Get the protocol server from DI and configure it
             m_ProtocolServer.SetHost(host);

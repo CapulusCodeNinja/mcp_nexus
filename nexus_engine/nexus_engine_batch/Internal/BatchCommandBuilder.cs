@@ -11,13 +11,16 @@ namespace Nexus.Engine.Batch.Internal;
 internal class BatchCommandBuilder
 {
     private readonly Logger m_Logger;
+    private readonly ISettings m_Settings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchCommandBuilder"/> class.
     /// </summary>
-    public BatchCommandBuilder()
+    /// <param name="settings">The product settings.</param>
+    public BatchCommandBuilder(ISettings settings)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
+        m_Settings = settings;
     }
 
     /// <summary>
@@ -68,7 +71,7 @@ internal class BatchCommandBuilder
         {
             currentBatch.Add(command);
 
-            if (currentBatch.Count >= Settings.Instance.Get().McpNexus.Batching.MaxBatchSize)
+            if (currentBatch.Count >= m_Settings.Get().McpNexus.Batching.MaxBatchSize)
             {
                 batches.Add(currentBatch);
                 currentBatch = new List<Command>();

@@ -10,13 +10,16 @@ namespace Nexus.Engine.Batch.Internal;
 internal class BatchCommandFilter
 {
     private readonly Logger m_Logger;
+    private readonly ISettings m_Settings;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchCommandFilter"/> class.
     /// </summary>
-    public BatchCommandFilter()
+    /// <param name="settings">The product settings.</param>
+    public BatchCommandFilter(ISettings settings)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
+        m_Settings = settings;
     }
 
     /// <summary>
@@ -32,15 +35,15 @@ internal class BatchCommandFilter
             return false;
         }
 
-        if (!Settings.Instance.Get().McpNexus.Batching.Enabled)
+        if (!m_Settings.Get().McpNexus.Batching.Enabled)
         {
             m_Logger.Debug("Batching is disabled");
             return false;
         }
 
-        if (commands.Count < Settings.Instance.Get().McpNexus.Batching.MinBatchSize)
+        if (commands.Count < m_Settings.Get().McpNexus.Batching.MinBatchSize)
         {
-            m_Logger.Trace("Not enough commands to batch (count: {Count}, min: {Min})", commands.Count, Settings.Instance.Get().McpNexus.Batching.MinBatchSize);
+            m_Logger.Trace("Not enough commands to batch (count: {Count}, min: {Min})", commands.Count, m_Settings.Get().McpNexus.Batching.MinBatchSize);
             return false;
         }
 
@@ -71,7 +74,7 @@ internal class BatchCommandFilter
 
         var trimmedCommand = commandText.Trim();
 
-        foreach (var excludedCommand in Settings.Instance.Get().McpNexus.Batching.ExcludedCommands)
+        foreach (var excludedCommand in m_Settings.Get().McpNexus.Batching.ExcludedCommands)
         {
             // Prefix matching: if command starts with excluded prefix, it's excluded
             if (trimmedCommand.StartsWith(excludedCommand, StringComparison.OrdinalIgnoreCase))

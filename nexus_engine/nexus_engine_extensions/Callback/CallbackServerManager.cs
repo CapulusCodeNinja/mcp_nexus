@@ -16,6 +16,7 @@ namespace Nexus.Engine.Extensions.Callback;
 internal class CallbackServerManager : ICallbackServerManager
 {
     private readonly Logger m_Logger;
+    private readonly ISettings m_Settings;
     private readonly IDebugEngine m_Engine;
     private readonly TokenValidator m_TokenValidator;
     private readonly string m_Host;
@@ -61,15 +62,17 @@ internal class CallbackServerManager : ICallbackServerManager
     /// </summary>
     /// <param name="engine">The debug engine for handling extension callbacks.</param>
     /// <param name="tokenValidator">The token validator for validating extension script callbacks.</param>
-    public CallbackServerManager(IDebugEngine engine, TokenValidator tokenValidator)
+    /// <param name="settings">The product settings.</param>
+    public CallbackServerManager(IDebugEngine engine, TokenValidator tokenValidator, ISettings settings)
     {
+        m_Settings = settings;
+
         m_Logger = LogManager.GetCurrentClassLogger();
         m_Engine = engine ?? throw new ArgumentNullException(nameof(engine));
         m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
 
         // Read configuration
-        var config = Settings.Instance.Get();
-        m_ConfiguredPort = config.McpNexus.Extensions.CallbackPort;
+        m_ConfiguredPort = m_Settings.Get().McpNexus.Extensions.CallbackPort;
         m_Host = "127.0.0.1"; // Localhost only for security
 
         Port = 0;

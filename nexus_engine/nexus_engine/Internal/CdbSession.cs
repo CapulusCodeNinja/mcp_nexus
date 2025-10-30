@@ -16,6 +16,7 @@ namespace Nexus.Engine.Internal;
 internal class CdbSession : ICdbSession
 {
     private readonly Logger m_Logger;
+    private readonly ISettings m_Settings;
 
     private readonly IFileSystem m_FileSystem;
     private readonly IProcessManager m_ProcessManager;
@@ -69,15 +70,18 @@ internal class CdbSession : ICdbSession
     /// <summary>
     /// Initializes a new instance of the <see cref="CdbSession"/> class.
     /// </summary>
+    /// <param name="settings">The product settings.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
     /// <param name="commandPreprocessor">Command preprocessor for WSL path conversion and directory creation.</param>
     /// <exception cref="ArgumentNullException">Thrown when fileSystem, processManager, or commandPreprocessor is null.</exception>
     public CdbSession(
+        ISettings settings,
         IFileSystem fileSystem,
         IProcessManager processManager,
         CommandPreprocessor commandPreprocessor)
     {
+        m_Settings = settings;
         m_Logger = LogManager.GetCurrentClassLogger();
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
@@ -289,7 +293,7 @@ internal class CdbSession : ICdbSession
         {
             try
             {
-                if (!m_CdbProcess.WaitForExit((int)Settings.Instance.Get().McpNexus.SessionManagement.GetCleanupInterval().TotalMilliseconds))
+                if (!m_CdbProcess.WaitForExit((int)m_Settings.Get().McpNexus.SessionManagement.GetCleanupInterval().TotalMilliseconds))
                 {
                     m_Logger.Warn("CDB process did not exit within timeout, killing process");
                     KillProcess();
@@ -368,10 +372,10 @@ internal class CdbSession : ICdbSession
     public Task<string> FindCdbExecutableAsync()
     {
         // If configured path exists, use it
-        if (!string.IsNullOrEmpty(Settings.Instance.Get().McpNexus.Debugging.CdbPath) &&
-            m_FileSystem.FileExists(Settings.Instance.Get().McpNexus.Debugging.CdbPath ?? string.Empty))
+        if (!string.IsNullOrEmpty(m_Settings.Get().McpNexus.Debugging.CdbPath) &&
+            m_FileSystem.FileExists(m_Settings.Get().McpNexus.Debugging.CdbPath ?? string.Empty))
         {
-            return Task.FromResult(Settings.Instance.Get().McpNexus.Debugging.CdbPath)!;
+            return Task.FromResult(m_Settings.Get().McpNexus.Debugging.CdbPath)!;
         }
 
         // Try common CDB locations
@@ -427,7 +431,7 @@ internal class CdbSession : ICdbSession
     /// <exception cref="InvalidOperationException">
     /// Thrown when the NLog file target is not found, the log directory is not set, or the session ID is not provided.
     /// </exception>
-    private static string GetCdbSessionBasedLogPath(string sessionId)
+    private string GetCdbSessionBasedLogPath(string sessionId)
     {
         var fileTarget = LogManager.Configuration?.FindTargetByName("mainFile") as NLog.Targets.FileTarget ?? throw new InvalidOperationException("File target not found in NLog configuration");
         var logEventInfo = new LogEventInfo(NLog.LogLevel.Info, string.Empty, string.Empty);
@@ -447,7 +451,7 @@ internal class CdbSession : ICdbSession
         }
 
         string sessionsDirectory;
-        if (Settings.Instance.Get().McpNexus.Transport.ServiceMode)
+        if (m_Settings.Get().McpNexus.Transport.ServiceMode)
         {
             // Service mode: C:\ProgramData\MCP-Nexus\Sessions\
             sessionsDirectory = Path.Combine(Path.GetDirectoryName(directory)!, "Sessions");
@@ -541,7 +545,7 @@ internal class CdbSession : ICdbSession
     /// <exception cref="InvalidOperationException">Thrown when CDB process exits during initialization.</exception>
     protected async Task WaitForCdbInitializationAsync(CancellationToken cancellationToken)
     {
-        var timeout = TimeSpan.FromMilliseconds(Settings.Instance.Get().McpNexus.Debugging.StartupDelayMs);
+        var timeout = TimeSpan.FromMilliseconds(m_Settings.Get().McpNexus.Debugging.StartupDelayMs);
         var stopwatch = Stopwatch.StartNew();
 
         while (stopwatch.Elapsed < timeout && !cancellationToken.IsCancellationRequested)
@@ -622,7 +626,7 @@ internal class CdbSession : ICdbSession
 
         var output = new StringBuilder();
         var startMarkerFound = false;
-        var timeout = Settings.Instance.Get().McpNexus.AutomatedRecovery.GetDefaultCommandTimeout();
+        var timeout = m_Settings.Get().McpNexus.AutomatedRecovery.GetDefaultCommandTimeout();
 
         using var timeoutCts = new CancellationTokenSource(timeout);
         using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);

@@ -12,6 +12,7 @@ namespace Nexus.Engine.Batch;
 /// </summary>
 public class BatchProcessor : IBatchProcessor
 {
+    private readonly ISettings m_Settings;
     private readonly BatchCommandFilter m_Filter;
     private readonly BatchCommandBuilder m_Builder;
     private readonly BatchResultParser m_Parser;
@@ -24,20 +25,17 @@ public class BatchProcessor : IBatchProcessor
     private readonly ConcurrentDictionary<string, SessionBatchCache> m_SessionCaches = new();
 
     /// <summary>
-    /// Gets the singleton instance of the batch processor.
-    /// </summary>
-    public static IBatchProcessor Instance { get; } = new BatchProcessor();
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="BatchProcessor"/> class.
     /// Creates internal batch processing components (filter, builder, parser).
     /// </summary>
-    internal BatchProcessor()
+    /// <param name="settings">The product settings.</param>
+    public BatchProcessor(ISettings settings)
     {
+        m_Settings = settings;
         m_Logger = LogManager.GetCurrentClassLogger();
 
-        m_Filter = new BatchCommandFilter();
-        m_Builder = new BatchCommandBuilder();
+        m_Filter = new BatchCommandFilter(m_Settings);
+        m_Builder = new BatchCommandBuilder(m_Settings);
         m_Parser = new BatchResultParser(this);
     }
 
@@ -71,7 +69,7 @@ public class BatchProcessor : IBatchProcessor
         {
             // Check if this specific batch should be batched
             // (may have commands that should be excluded)
-            if (batch.Count >= Settings.Instance.Get().McpNexus.Batching.MinBatchSize &&
+            if (batch.Count >= m_Settings.Get().McpNexus.Batching.MinBatchSize &&
                 batch.All(cmd => !m_Filter.IsCommandExcluded(cmd.CommandText)))
             {
                 var batchedCommand = m_Builder.BuildBatch(sessionId, batch);

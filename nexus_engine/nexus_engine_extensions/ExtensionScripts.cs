@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
+using Nexus.Config;
 using Nexus.Engine.Extensions.Callback;
 using Nexus.Engine.Extensions.Core;
 using Nexus.Engine.Extensions.Models;
@@ -73,12 +74,15 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// </summary>
     private Task? m_CallbackServerInitTask;
 
+    private readonly ISettings m_Settings;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionScripts"/> class with default dependencies.
     /// </summary>
     /// <param name="engine">The debug engine instance for callback operations.</param>
-    public ExtensionScripts(IDebugEngine engine)
-        : this(engine, new TokenValidator())
+    /// <param name="settings">The product settings.</param>
+    public ExtensionScripts(IDebugEngine engine, ISettings settings)
+        : this(engine, new TokenValidator(), settings)
     {
     }
 
@@ -87,8 +91,9 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// </summary>
     /// <param name="engine">The debug engine instance for callback operations.</param>
     /// <param name="tokenValidator">The token validator for validating extension script callbacks.</param>
-    internal ExtensionScripts(IDebugEngine engine, TokenValidator tokenValidator)
-        : this(engine, tokenValidator, new CallbackServerManager(engine, tokenValidator), new FileSystem(), new ProcessManager())
+    /// <param name="settings">The product settings.</param>
+    internal ExtensionScripts(IDebugEngine engine, TokenValidator tokenValidator, ISettings settings)
+        : this(engine, tokenValidator, new CallbackServerManager(engine, tokenValidator, settings), new FileSystem(), new ProcessManager(), settings)
     {
     }
 
@@ -100,19 +105,22 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// <param name="callbackServerManager">The callback server manager.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
+    /// <param name="settings">The product settings.</param>
     internal ExtensionScripts(
         IDebugEngine engine,
         TokenValidator tokenValidator,
         ICallbackServerManager callbackServerManager,
         IFileSystem fileSystem,
-        IProcessManager processManager)
+        IProcessManager processManager,
+        ISettings settings)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
+        m_Settings = settings;
 
         m_Engine = engine ?? throw new ArgumentNullException(nameof(engine));
         m_CallbackServerManager = callbackServerManager ?? throw new ArgumentNullException(nameof(callbackServerManager));
-        m_Manager = new Manager(fileSystem);
-        m_Executor = new Executor(m_Manager, tokenValidator, processManager);
+        m_Manager = new Manager(fileSystem, m_Settings);
+        m_Executor = new Executor(m_Manager, tokenValidator, processManager, m_Settings);
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
         m_CommandCache = new ConcurrentDictionary<string, CommandInfo>();
         m_SessionCommands = new ConcurrentDictionary<string, ConcurrentBag<string>>();

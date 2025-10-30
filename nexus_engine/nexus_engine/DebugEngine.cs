@@ -60,16 +60,16 @@ public class DebugEngine : IDebugEngine
     /// </summary>
     private volatile bool m_Disposed = false;
 
-    /// <summary>
-    /// Gets the singleton instance of the debug engine.
-    /// </summary>
-    public static IDebugEngine Instance { get; } = new DebugEngine();
+    private readonly ISettings m_Settings;
+
+    private readonly IBatchProcessor m_BatchProcessor;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DebugEngine"/> class with default dependencies.
     /// </summary>
-    internal DebugEngine()
-        : this(new FileSystem(), new ProcessManager())
+    /// <param name="settings">The product settings.</param>
+    internal DebugEngine(ISettings settings)
+        : this(new FileSystem(), new ProcessManager(), new BatchProcessor(settings), settings)
     {
     }
 
@@ -78,17 +78,21 @@ public class DebugEngine : IDebugEngine
     /// </summary>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
-    internal DebugEngine(IFileSystem fileSystem, IProcessManager processManager)
+    /// <param name="batchProcessor">The batch processing engine.</param>
+    /// <param name="settings">The product settings.</param>
+    internal DebugEngine(IFileSystem fileSystem, IProcessManager processManager, IBatchProcessor batchProcessor, ISettings settings)
     {
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
+        m_Settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        m_BatchProcessor = batchProcessor;
 
-        m_ExtensionScripts = new ExtensionScripts(this);
+        m_ExtensionScripts = new ExtensionScripts(this, m_Settings);
 
         m_Logger = LogManager.GetCurrentClassLogger();
-        m_Logger.Info("DebugEngine initialized with max {MaxSessions} concurrent sessions", Settings.Instance.Get().McpNexus.SessionManagement.MaxConcurrentSessions);
+        m_Logger.Info("DebugEngine initialized with max {MaxSessions} concurrent sessions", m_Settings.Get().McpNexus.SessionManagement.MaxConcurrentSessions);
 
-        var cleanupInterval = Settings.Instance.Get().McpNexus.SessionManagement.GetCleanupInterval();
+        var cleanupInterval = m_Settings.Get().McpNexus.SessionManagement.GetCleanupInterval();
         m_SessionCleanupTimer = new System.Threading.Timer(_ => CleanupIdleSessions(), null, cleanupInterval, cleanupInterval);
     }
 
@@ -122,9 +126,9 @@ public class DebugEngine : IDebugEngine
             throw new FileNotFoundException($"Dump file not found: {dumpFilePath}", dumpFilePath);
         }
 
-        if (m_Sessions.Count >= Settings.Instance.Get().McpNexus.SessionManagement.MaxConcurrentSessions)
+        if (m_Sessions.Count >= m_Settings.Get().McpNexus.SessionManagement.MaxConcurrentSessions)
         {
-            throw new InvalidOperationException($"Maximum number of concurrent sessions ({Settings.Instance.Get().McpNexus.SessionManagement.MaxConcurrentSessions}) reached");
+            throw new InvalidOperationException($"Maximum number of concurrent sessions ({m_Settings.Get().McpNexus.SessionManagement.MaxConcurrentSessions}) reached");
         }
 
         var sessionId = SessionIdGenerator.Instance.GenerateSessionId();
@@ -133,8 +137,8 @@ public class DebugEngine : IDebugEngine
 
         try
         {
-            var preprocessor = new CommandPreprocessor(m_FileSystem);
-            var session = new Internal.DebugSession(sessionId, dumpFilePath, symbolPath, m_FileSystem, m_ProcessManager, preprocessor);
+            var preprocessor = new CommandPreprocessor(m_FileSystem, m_Settings);
+            var session = new DebugSession(sessionId, dumpFilePath, symbolPath, m_Settings, m_FileSystem, m_ProcessManager, m_BatchProcessor, preprocessor);
 
             // Subscribe to session events
             session.CommandStateChanged += OnSessionCommandStateChanged;
@@ -225,7 +229,7 @@ public class DebugEngine : IDebugEngine
                 var commandIdToBatchId = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
                 foreach (var cmd in allCommands)
                 {
-                    var bId = BatchProcessor.Instance.GetBatchCommandId(sessionId, cmd.CommandId);
+                    var bId = m_BatchProcessor.GetBatchCommandId(sessionId, cmd.CommandId);
                     commandIdToBatchId[cmd.CommandId] = bId;
                 }
 
@@ -625,7 +629,7 @@ public class DebugEngine : IDebugEngine
         }
 
         var now = DateTime.Now;
-        var sessionTimeout = TimeSpan.FromMinutes(Settings.Instance.Get().McpNexus.SessionManagement.SessionTimeoutMinutes);
+        var sessionTimeout = TimeSpan.FromMinutes(m_Settings.Get().McpNexus.SessionManagement.SessionTimeoutMinutes);
 
         foreach (var kvp in m_Sessions)
         {

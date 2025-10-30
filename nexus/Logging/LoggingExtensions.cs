@@ -13,14 +13,16 @@ public static class LoggingExtensions
     /// Adds Nexus logging configuration to the logging builder.
     /// </summary>
     /// <param name="logging">The logging builder.</param>
+    /// <param name="settings">The product settings.</param>
     /// <param name="isServiceMode">Whether the application is running in service mode.</param>
     /// <returns>The logging builder for chaining.</returns>
     public static ILoggingBuilder AddNexusLogging(
         this ILoggingBuilder logging,
+        ISettings settings,
         bool isServiceMode)
     {
         // Configure logging
-        Settings.Instance.ConfigureLogging(logging, isServiceMode);
+        settings.ConfigureLogging(logging, isServiceMode);
 
         return logging;
     }

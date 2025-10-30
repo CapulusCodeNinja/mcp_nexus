@@ -14,6 +14,7 @@ namespace Nexus.Startup;
 internal class StartupBanner
 {
     private readonly Logger m_Logger;
+    private readonly ISettings m_Settings;
     private readonly bool m_IsServiceMode;
     private readonly CommandLineContext m_CommandLineContext;
 
@@ -22,11 +23,13 @@ internal class StartupBanner
     /// </summary>
     /// <param name="isServiceMode">Indicates whether the application is running as a Windows Service.</param>
     /// <param name="commandLineContext">The command line context.</param>
-    public StartupBanner(bool isServiceMode, CommandLineContext commandLineContext)
+    /// <param name="settings">The product settings.</param>
+    public StartupBanner(bool isServiceMode, CommandLineContext commandLineContext, ISettings settings)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
         m_IsServiceMode = isServiceMode;
         m_CommandLineContext = commandLineContext;
+        m_Settings = settings;
     }
 
     /// <summary>
@@ -144,8 +147,8 @@ internal class StartupBanner
     /// </summary>
     private void DisplayServerConfiguration()
     {
-        var host = Settings.Instance.Get().McpNexus.Server.Host ?? "0.0.0.0";
-        var port = Settings.Instance.Get().McpNexus.Server.Port;
+        var host = m_Settings.Get().McpNexus.Server.Host ?? "0.0.0.0";
+        var port = m_Settings.Get().McpNexus.Server.Port;
 
         m_Logger.Info("┌─ Server Configuration ─────────────────────────────────────────────");
         m_Logger.Info("│ Host: {Host}", host);
@@ -158,7 +161,7 @@ internal class StartupBanner
     /// </summary>
     private void DisplayTransportConfiguration()
     {
-        var transportMode = Settings.Instance.Get().McpNexus.Transport.Mode ?? "http";
+        var transportMode = m_Settings.Get().McpNexus.Transport.Mode ?? "http";
 
         m_Logger.Info("┌─ Transport Configuration ──────────────────────────────────────────");
         m_Logger.Info("│ Mode:         {TransportMode}", transportMode);
@@ -171,11 +174,11 @@ internal class StartupBanner
     /// </summary>
     private void DisplayDebuggingConfiguration()
     {
-        var cdbPath = Settings.Instance.Get().McpNexus.Debugging.CdbPath ?? string.Empty;
-        var commandTimeout = Settings.Instance.Get().McpNexus.Debugging.CommandTimeoutMs;
-        var symbolRetries = Settings.Instance.Get().McpNexus.Debugging.SymbolServerMaxRetries;
-        var symbolPath = Settings.Instance.Get().McpNexus.Debugging.SymbolSearchPath ?? string.Empty;
-        var startupDelay = Settings.Instance.Get().McpNexus.Debugging.StartupDelayMs;
+        var cdbPath = m_Settings.Get().McpNexus.Debugging.CdbPath ?? string.Empty;
+        var commandTimeout = m_Settings.Get().McpNexus.Debugging.CommandTimeoutMs;
+        var symbolRetries = m_Settings.Get().McpNexus.Debugging.SymbolServerMaxRetries;
+        var symbolPath = m_Settings.Get().McpNexus.Debugging.SymbolSearchPath ?? string.Empty;
+        var startupDelay = m_Settings.Get().McpNexus.Debugging.StartupDelayMs;
 
         m_Logger.Info("┌─ Debugging Configuration ──────────────────────────────────────────");
         m_Logger.Info("│ CDB Path:                 {CdbPath}", string.IsNullOrEmpty(cdbPath) ? "Not specified" : cdbPath);
@@ -192,8 +195,8 @@ internal class StartupBanner
     /// </summary>
     private void DisplayServiceConfiguration()
     {
-        var installPath = Settings.Instance.Get().McpNexus.Service.InstallPath ?? string.Empty;
-        var backupPath = Settings.Instance.Get().McpNexus.Service.BackupPath ?? string.Empty;
+        var installPath = m_Settings.Get().McpNexus.Service.InstallPath ?? string.Empty;
+        var backupPath = m_Settings.Get().McpNexus.Service.BackupPath ?? string.Empty;
 
         if (!string.IsNullOrEmpty(installPath))
         {
@@ -209,7 +212,7 @@ internal class StartupBanner
     /// </summary>
     private void DisplayLoggingConfiguration()
     {
-        var logLevel = Settings.Instance.Get().Logging.LogLevel ?? "Information";
+        var logLevel = m_Settings.Get().Logging.LogLevel ?? "Information";
 
         m_Logger.Info("┌─ Logging Configuration ────────────────────────────────────────────");
         m_Logger.Info("│ Log Level:         {LogLevel}", logLevel);

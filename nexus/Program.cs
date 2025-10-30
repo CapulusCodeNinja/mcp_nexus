@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Nexus.CommandLine;
+using Nexus.Config;
 using Nexus.Logging;
 using Nexus.Startup;
 
@@ -29,8 +30,10 @@ internal static class Program
             // Parse command line and run
             var cmd = new CommandLineContext(args);
 
+            var settings = new Settings();
+
             // Use hosted service for ALL command types
-            var host = CreateHostBuilder(cmd).Build();
+            var host = CreateHostBuilder(cmd, settings).Build();
             await host.RunAsync();
 
             return 0;
@@ -50,16 +53,15 @@ internal static class Program
     /// Creates and configures a host builder for the application.
     /// </summary>
     /// <param name="cmd">Command line context.</param>
+    /// <param name="settings">The product settings.</param>
     /// <returns>Configured host builder.</returns>
     [SupportedOSPlatform("windows")]
-    internal static IHostBuilder CreateHostBuilder(CommandLineContext cmd)
+    internal static IHostBuilder CreateHostBuilder(CommandLineContext cmd, ISettings settings)
     {
         var builder = Host.CreateDefaultBuilder(cmd.Args)
             .ConfigureLogging((context, logging) => logging.AddNexusLogging(
-                    cmd.IsServiceMode ||
-                    cmd.IsInstallMode ||
-                    cmd.IsUpdateMode ||
-                    cmd.IsUninstallMode))
+                    settings,
+                    cmd.IsServiceMode || cmd.IsInstallMode || cmd.IsUpdateMode || cmd.IsUninstallMode))
             .ConfigureServices((_, services) =>
             {
                 // Register mode

@@ -18,6 +18,9 @@ internal class CommandQueue : IDisposable
 {
     private readonly Logger m_Logger;
     private readonly string m_SessionId;
+    private readonly ISettings m_Settings;
+
+    private readonly IBatchProcessor m_BatchProcessor;
     private readonly Channel<QueuedCommand> m_CommandChannel;
     private readonly ConcurrentDictionary<string, QueuedCommand> m_ActiveCommands = new();
     private readonly ConcurrentDictionary<string, CommandInfo> m_ResultCache = new();
@@ -36,8 +39,10 @@ internal class CommandQueue : IDisposable
     /// Initializes a new instance of the <see cref="CommandQueue"/> class.
     /// </summary>
     /// <param name="sessionId">The session identifier for this command queue.</param>
+    /// <param name="settings">The product settings.</param>
+    /// <param name="batchProcessor">The batch processing engine.</param>
     /// <exception cref="ArgumentNullException">Thrown when sessionId is null.</exception>
-    public CommandQueue(string sessionId)
+    public CommandQueue(string sessionId, ISettings settings, IBatchProcessor batchProcessor)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
 
@@ -52,6 +57,8 @@ internal class CommandQueue : IDisposable
         };
 
         m_CommandChannel = Channel.CreateUnbounded<QueuedCommand>(options);
+        m_Settings = settings;
+        m_BatchProcessor = batchProcessor;
     }
 
     /// <summary>
@@ -317,7 +324,7 @@ internal class CommandQueue : IDisposable
             _ = CommandIdGenerator.Instance.ResetSession(m_SessionId);
 
             // Clear all batch mappings for this session
-            BatchProcessor.Instance.ClearSessionBatchMappings(m_SessionId);
+            m_BatchProcessor.ClearSessionBatchMappings(m_SessionId);
 
             // Dispose resources
             m_CancellationTokenSource.Dispose();
@@ -393,7 +400,7 @@ internal class CommandQueue : IDisposable
         };
 
         // Get configured wait time
-        var waitMs = Settings.Instance.Get().McpNexus.Batching.CommandCollectionWaitMs;
+        var waitMs = m_Settings.Get().McpNexus.Batching.CommandCollectionWaitMs;
 
         // If no wait configured, collect immediately available commands only
         if (waitMs == 0)
@@ -474,7 +481,7 @@ internal class CommandQueue : IDisposable
         }).ToList();
 
         // Apply batching (library decides whether to batch or pass through)
-        var commandsToExecute = BatchProcessor.Instance.BatchCommands(m_SessionId, batchCommands);
+        var commandsToExecute = m_BatchProcessor.BatchCommands(m_SessionId, batchCommands);
 
         m_Logger.Debug("Processing {OriginalCount} commands as {ExecutionCount} execution units", queuedCommandsById.Count, commandsToExecute.Count);
 
@@ -519,7 +526,7 @@ internal class CommandQueue : IDisposable
     /// <param name="batchStartTime">The start time for this batch.</param>
     private void MarkCommandsAsExecuting(Command cmd, Dictionary<string, QueuedCommand> queuedCommandsById, Dictionary<string, DateTime> commandStartTimes, DateTime batchStartTime)
     {
-        var originalCommandIds = BatchProcessor.Instance.GetOriginalCommandIds(m_SessionId, cmd.CommandId);
+        var originalCommandIds = m_BatchProcessor.GetOriginalCommandIds(m_SessionId, cmd.CommandId);
         foreach (var commandId in originalCommandIds)
         {
             if (queuedCommandsById.TryGetValue(commandId, out var queuedCommand))
@@ -544,7 +551,7 @@ internal class CommandQueue : IDisposable
             // Build a linked cancellation token that considers per-command cancellations in the batch
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             var registrations = new List<IDisposable>();
-            var originalCommandIds = BatchProcessor.Instance.GetOriginalCommandIds(m_SessionId, cmd.CommandId);
+            var originalCommandIds = m_BatchProcessor.GetOriginalCommandIds(m_SessionId, cmd.CommandId);
             foreach (var commandId in originalCommandIds)
             {
                 if (queuedCommandsById.TryGetValue(commandId, out var qc))
@@ -647,7 +654,7 @@ internal class CommandQueue : IDisposable
     private void ProcessCommandResults(List<CommandResult> executionResults, Dictionary<string, QueuedCommand> queuedCommandsById, Dictionary<string, DateTime> commandStartTimes)
     {
         // Unbatch results (library decides whether to unbatch or pass through)
-        var individualResults = BatchProcessor.Instance.UnbatchResults(executionResults);
+        var individualResults = m_BatchProcessor.UnbatchResults(executionResults);
 
         LogUnbatchingResults(executionResults.Count, individualResults.Count);
 
@@ -705,7 +712,7 @@ internal class CommandQueue : IDisposable
         UpdateCommandState(queuedCommand, finalState);
 
         // Get batch command ID efficiently using the batch processor's cache
-        var batchCommandId = BatchProcessor.Instance.GetBatchCommandId(m_SessionId, result.CommandId);
+        var batchCommandId = m_BatchProcessor.GetBatchCommandId(m_SessionId, result.CommandId);
 
         // Emit detailed statistics
         Statistics.EmitCommandStats(

@@ -19,16 +19,11 @@ namespace Nexus.Config
         /// <summary>
         /// Initializes a new instance of the <see cref="Settings"/> class.
         /// </summary>
-        private Settings()
+        public Settings()
         {
             m_ConfigurationLoader = new ConfigurationLoader();
-            m_LoggingConfiguration = new LoggingConfiguration();
+            m_LoggingConfiguration = new LoggingConfiguration(this);
         }
-
-        /// <summary>
-        /// Gets the singleton instance of the settings.
-        /// </summary>
-        public static ISettings Instance { get; } = new Settings();
 
         /// <summary>
         /// Configures logging using NLog and provided configuration.

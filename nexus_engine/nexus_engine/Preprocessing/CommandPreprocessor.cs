@@ -28,13 +28,17 @@ internal partial class CommandPreprocessor
     /// </summary>
     private readonly ConcurrentDictionary<string, string> m_CommandCache = new();
 
+    private readonly ISettings m_Settings;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandPreprocessor"/> class.
     /// </summary>
     /// <param name="fileSystem">The file system abstraction for directory operations.</param>
-    public CommandPreprocessor(IFileSystem fileSystem)
+    /// <param name="settings">The product settings.</param>
+    public CommandPreprocessor(IFileSystem fileSystem, ISettings settings)
     {
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+        m_Settings = settings;
     }
 
     /// <summary>
@@ -50,7 +54,7 @@ internal partial class CommandPreprocessor
             return command;
         }
 
-        var preprocessingEnabled = Settings.Instance.Get().McpNexus.Debugging.EnableCommandPreprocessing;
+        var preprocessingEnabled = m_Settings.Get().McpNexus.Debugging.EnableCommandPreprocessing;
         if (!preprocessingEnabled)
         {
             return command;

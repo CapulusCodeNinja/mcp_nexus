@@ -14,6 +14,7 @@ namespace Nexus.Engine.Extensions.Core;
 internal class Manager : IDisposable
 {
     private readonly Logger m_Logger;
+    private readonly ISettings m_Settings;
     private readonly IFileSystem m_FileSystem;
     private readonly string m_ExtensionsPath;
     private readonly Dictionary<string, ExtensionMetadata> m_Extensions = new();
@@ -26,10 +27,11 @@ internal class Manager : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="Manager"/> class with default dependencies.
     /// </summary>
+    /// <param name="settings">The product settings.</param>
     /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
     /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
-    public Manager()
-        : this(new FileSystem())
+    public Manager(ISettings settings)
+        : this(new FileSystem(), settings)
     {
     }
 
@@ -37,14 +39,17 @@ internal class Manager : IDisposable
     /// Initializes a new instance of the <see cref="Manager"/> class with specified dependencies.
     /// </summary>
     /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="settings">The product settings.</param>
     /// <exception cref="ArgumentNullException">Thrown when fileSystem is null.</exception>
     /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
-    internal Manager(IFileSystem fileSystem)
+    internal Manager(IFileSystem fileSystem, ISettings settings)
     {
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_Logger = LogManager.GetCurrentClassLogger();
 
-        m_ExtensionsPath = Settings.Instance.Get().McpNexus.Extensions.ExtensionsPath;
+        m_Settings = settings;
+
+        m_ExtensionsPath = m_Settings.Get().McpNexus.Extensions.ExtensionsPath;
         if (!Path.IsPathRooted(m_ExtensionsPath))
         {
             m_ExtensionsPath = Path.Combine(AppContext.BaseDirectory, m_ExtensionsPath);

@@ -8,8 +8,11 @@ namespace Nexus.Config.Internal;
 /// <summary>
 /// Handles logging configuration for different environments.
 /// </summary>
-internal class LoggingConfiguration
+/// <param name="settings">The product settings.</param>
+internal class LoggingConfiguration(ISettings settings)
 {
+    private readonly ISettings m_Settings = settings;
+
     /// <summary>
     /// Configures logging for the application.
     /// Sets up NLog and Microsoft.Extensions.Logging based on configuration and service mode.
@@ -29,7 +32,7 @@ internal class LoggingConfiguration
     /// <returns>The configured log level.</returns>
     protected virtual Microsoft.Extensions.Logging.LogLevel GetLogLevelFromConfiguration()
     {
-        var logLevelString = Settings.Instance.Get().Logging.LogLevel;
+        var logLevelString = m_Settings.Get().Logging.LogLevel;
         return ParseLogLevel(logLevelString);
     }
 

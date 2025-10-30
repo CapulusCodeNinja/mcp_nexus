@@ -156,14 +156,16 @@ public static class HttpServerSetup
     /// <summary>
     /// Creates and configures a WebApplication for HTTP mode with all required settings.
     /// </summary>
+    /// <param name="settings">The product settings.</param>
     /// <param name="isServiceMode">Whether running in service mode.</param>
     /// <returns>A fully configured WebApplication ready to start.</returns>
     public static WebApplication CreateConfiguredWebApplication(
+        ISettings settings,
         bool isServiceMode)
     {
         // Read host and port from configuration
-        var host = Settings.Instance.Get().McpNexus.Server.Host ?? "localhost";
-        var port = Settings.Instance.Get().McpNexus.Server.Port;
+        var host = settings.Get().McpNexus.Server.Host ?? "localhost";
+        var port = settings.Get().McpNexus.Server.Port;
 
         var url = $"http://{host}:{port}";
 
@@ -174,7 +176,7 @@ public static class HttpServerSetup
         _ = webBuilder.WebHost.UseUrls(url);
 
         // Configure logging
-        Settings.Instance.ConfigureLogging(webBuilder.Logging, isServiceMode);
+        settings.ConfigureLogging(webBuilder.Logging, isServiceMode);
 
         // Configure services
         ConfigureHttpServices(webBuilder.Services);
@@ -191,15 +193,18 @@ public static class HttpServerSetup
     /// <summary>
     /// Creates and configures a Host for stdio mode with all required settings.
     /// </summary>
+    /// <param name="settings">The product settings.</param>
     /// <param name="isServiceMode">Whether running in service mode.</param>
     /// <returns>A fully configured Host ready to start.</returns>
-    public static IHost CreateConfiguredHost(bool isServiceMode)
+    public static IHost CreateConfiguredHost(
+        ISettings settings,
+        bool isServiceMode)
     {
         // Create Host builder for stdio mode
         var hostBuilder = Host.CreateApplicationBuilder();
 
         // Configure logging
-        Settings.Instance.ConfigureLogging(hostBuilder.Logging, isServiceMode);
+        settings.ConfigureLogging(hostBuilder.Logging, isServiceMode);
 
         // Configure stdio services
         ConfigureStdioServices(hostBuilder.Services);

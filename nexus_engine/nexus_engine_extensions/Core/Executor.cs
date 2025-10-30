@@ -19,6 +19,7 @@ namespace Nexus.Engine.Extensions.Core;
 internal class Executor
 {
     private readonly Logger m_Logger;
+    private readonly ISettings m_Settings;
     private readonly Manager m_Manager;
     private string m_CallbackUrl;
     private readonly IProcessManager m_ProcessManager;
@@ -32,11 +33,13 @@ internal class Executor
     /// </summary>
     /// <param name="manager">The extension manager.</param>
     /// <param name="tokenValidator">The token validator.</param>
-    public Executor(Manager manager, TokenValidator tokenValidator)
+    /// <param name="settings">The product settings.</param>
+    public Executor(Manager manager, TokenValidator tokenValidator, ISettings settings)
         : this(
         manager,
         tokenValidator,
-        new ProcessManager())
+        new ProcessManager(),
+        settings)
     {
     }
 
@@ -46,22 +49,24 @@ internal class Executor
     /// <param name="manager">The extension manager.</param>
     /// <param name="tokenValidator">The token validator.</param>
     /// <param name="processManager">The process manager.</param>
+    /// <param name="settings">The product settings.</param>
     internal Executor(
         Manager manager,
         TokenValidator tokenValidator,
-        IProcessManager processManager)
+        IProcessManager processManager,
+        ISettings settings)
     {
+        m_Settings = settings;
         m_Logger = LogManager.GetCurrentClassLogger();
         m_Manager = manager ?? throw new ArgumentNullException(nameof(manager));
         m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
 
         // Get callback URL from configuration
-        var config = Settings.Instance.Get();
-        var callbackPort = config.McpNexus.Extensions.CallbackPort;
+        var callbackPort = m_Settings.Get().McpNexus.Extensions.CallbackPort;
         if (callbackPort == 0)
         {
-            callbackPort = config.McpNexus.Server.Port;
+            callbackPort = m_Settings.Get().McpNexus.Server.Port;
         }
 
         m_CallbackUrl = $"http://127.0.0.1:{callbackPort}/extension-callback";
