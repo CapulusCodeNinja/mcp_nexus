@@ -23,7 +23,8 @@ internal static class GetDumpAnalyzeCommandsStatusTool
     [McpServerTool]
     [Description("Gets status of all commands in a session. Use for efficient bulk monitoring.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static Task<object> Nexus_get_dump_analyze_commands_status(
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
+    public static Task<object> nexus_get_dump_analyze_commands_status(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
     {
         var logger = LogManager.GetCurrentClassLogger();

@@ -24,7 +24,8 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
     [McpServerTool]
     [Description("Enqueues a debugging command for asynchronous execution. Returns commandId for tracking.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static Task<object> Nexus_enqueue_async_dump_analyze_command(
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
+    public static Task<object> nexus_enqueue_async_dump_analyze_command(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("WinDbg/CDB command to execute (e.g., 'k', '!analyze -v', 'lm')")] string command)
     {

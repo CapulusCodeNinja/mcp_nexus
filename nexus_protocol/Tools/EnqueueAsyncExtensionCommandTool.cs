@@ -25,7 +25,8 @@ internal static class EnqueueAsyncExtensionCommandTool
     [McpServerTool]
     [Description("Enqueues an extension script for asynchronous execution. Returns commandId for tracking.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static async Task<object> Nexus_enqueue_async_extension_command(
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
+    public static async Task<object> nexus_enqueue_async_extension_command(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Name of the extension script to execute")] string extensionName,
         [Description("Optional parameters to pass to the extension script")] object? parameters = null)

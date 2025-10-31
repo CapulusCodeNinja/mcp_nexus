@@ -23,7 +23,8 @@ internal static class CloseDumpAnalyzeSessionTool
     [McpServerTool]
     [Description("Closes a debugging session and releases resources.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static async Task<object> Nexus_close_dump_analyze_session(
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
+    public static async Task<object> nexus_close_dump_analyze_session(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
     {
         var logger = LogManager.GetCurrentClassLogger();

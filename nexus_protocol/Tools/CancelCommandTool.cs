@@ -24,7 +24,8 @@ internal static class CancelCommandTool
     [McpServerTool]
     [Description("Cancels a queued or executing command.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static Task<object> Nexus_cancel_dump_analyze_command(
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
+    public static Task<object> nexus_cancel_dump_analyze_command(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Command ID to cancel")] string commandId)
     {

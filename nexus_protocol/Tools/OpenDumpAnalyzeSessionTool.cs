@@ -25,7 +25,8 @@ internal static class OpenDumpAnalyzeSessionTool
     [McpServerTool]
     [Description("Opens a new debugging session for crash dump analysis. Returns sessionId for subsequent operations.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    public static async Task<object> Nexus_open_dump_analyze_session(
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
+    public static async Task<object> nexus_open_dump_analyze_session(
         [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
         [Description("Optional path to symbol files directory")] string? symbolsPath = null)
     {
