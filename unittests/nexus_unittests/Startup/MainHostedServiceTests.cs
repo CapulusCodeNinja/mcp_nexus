@@ -7,6 +7,7 @@ using Nexus.Config;
 using Nexus.Config.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
+using Nexus.External.Apis.ServiceManagement;
 using Nexus.Startup;
 
 using Xunit;
@@ -21,6 +22,7 @@ public class MainHostedServiceTests
     private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IFileSystem> m_FileSystem;
     private readonly Mock<IProcessManager> m_ProcessManager;
+    private readonly Mock<IServiceController> m_ServiceController;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MainHostedServiceTests"/> class.
@@ -30,6 +32,7 @@ public class MainHostedServiceTests
         m_Settings = new Mock<ISettings>();
         m_FileSystem = new Mock<IFileSystem>();
         m_ProcessManager = new Mock<IProcessManager>();
+        m_ServiceController = new Mock<IServiceController>();
 
         var sharedConfig = new SharedConfiguration
         {
@@ -54,7 +57,7 @@ public class MainHostedServiceTests
         var context = new CommandLineContext(Array.Empty<string>());
 
         // Act
-        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
 
         // Assert
         _ = service.Should().NotBeNull();
@@ -69,7 +72,7 @@ public class MainHostedServiceTests
     {
         // Arrange
         var context = new CommandLineContext(Array.Empty<string>());
-        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
 
         // Act
         await service.StopAsync(CancellationToken.None);
@@ -86,7 +89,7 @@ public class MainHostedServiceTests
     {
         // Arrange
         var context = new CommandLineContext(Array.Empty<string>());
-        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
         var cts = new CancellationTokenSource();
         cts.Cancel();
 

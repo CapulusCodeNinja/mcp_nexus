@@ -20,16 +20,8 @@ namespace Nexus.Setup.Management
         /// <summary>
         /// Initializes a new instance of the <see cref="BackupManager"/> class.
         /// </summary>
-        public BackupManager()
-            : this(new FileSystem())
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="BackupManager"/> class.
-        /// </summary>
         /// <param name="fileSystem">File system abstraction.</param>
-        internal BackupManager(IFileSystem fileSystem)
+        public BackupManager(IFileSystem fileSystem)
         {
             m_Logger = LogManager.GetCurrentClassLogger();
 

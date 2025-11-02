@@ -1,6 +1,9 @@
 using FluentAssertions;
 
+using Moq;
+
 using Nexus.Engine.Preprocessing;
+using Nexus.External.Apis.ProcessManagement;
 
 using Xunit;
 
@@ -11,6 +14,16 @@ namespace Nexus.Engine.Tests.Preprocessing;
 /// </summary>
 public class PathHandlerTests
 {
+    private readonly Mock<IProcessManager> m_MockProcessManager;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PathHandlerTests"/> class.
+    /// </summary>
+    public PathHandlerTests()
+    {
+        m_MockProcessManager = new Mock<IProcessManager>();
+    }
+
     /// <summary>
     /// Verifies that IsWindowsPath returns true for drive letter paths.
     /// </summary>
@@ -23,7 +36,7 @@ public class PathHandlerTests
     public void IsWindowsPath_WithDriveLetterPath_ReturnsTrue(string path)
     {
         // Arrange
-        var handler = new PathHandler();
+        var handler = new PathHandler(m_MockProcessManager.Object);
 
         // Act
         var result = handler.IsWindowsPath(path);
@@ -43,7 +56,7 @@ public class PathHandlerTests
     public void IsWindowsPath_WithUncPath_ReturnsTrue(string path)
     {
         // Arrange
-        var handler = new PathHandler();
+        var handler = new PathHandler(m_MockProcessManager.Object);
 
         // Act
         var result = handler.IsWindowsPath(path);
@@ -63,7 +76,7 @@ public class PathHandlerTests
     public void IsWindowsPath_WithWslPath_ReturnsFalse(string path)
     {
         // Arrange
-        var handler = new PathHandler();
+        var handler = new PathHandler(m_MockProcessManager.Object);
 
         // Act
         var result = handler.IsWindowsPath(path);
@@ -83,7 +96,7 @@ public class PathHandlerTests
     public void IsWindowsPath_WithNullOrWhitespace_ReturnsFalse(string? path)
     {
         // Arrange
-        var handler = new PathHandler();
+        var handler = new PathHandler(m_MockProcessManager.Object);
 
         // Act
         var result = handler.IsWindowsPath(path!);
@@ -103,7 +116,7 @@ public class PathHandlerTests
     public void ConvertToWindowsPath_WithNullOrWhitespace_ReturnsInput(string? path)
     {
         // Arrange
-        var handler = new PathHandler();
+        var handler = new PathHandler(m_MockProcessManager.Object);
 
         // Act
         var result = handler.ConvertToWindowsPath(path!);
@@ -122,7 +135,7 @@ public class PathHandlerTests
     public void ConvertToWindowsPath_WithWindowsPath_ReturnsInput(string path)
     {
         // Arrange
-        var handler = new PathHandler();
+        var handler = new PathHandler(m_MockProcessManager.Object);
 
         // Act
         var result = handler.ConvertToWindowsPath(path);
@@ -141,7 +154,7 @@ public class PathHandlerTests
     public void ConvertToWindowsPath_WithUncPath_ReturnsInput(string path)
     {
         // Arrange
-        var handler = new PathHandler();
+        var handler = new PathHandler(m_MockProcessManager.Object);
 
         // Act
         var result = handler.ConvertToWindowsPath(path);
@@ -160,7 +173,7 @@ public class PathHandlerTests
     public void ConvertToWindowsPath_WithRelativePath_ReturnsInput(string path)
     {
         // Arrange
-        var handler = new PathHandler();
+        var handler = new PathHandler(m_MockProcessManager.Object);
 
         // Act
         var result = handler.ConvertToWindowsPath(path);
@@ -176,7 +189,7 @@ public class PathHandlerTests
     public void ConvertToWindowsPath_WithSamePath_UsesCaching()
     {
         // Arrange
-        var handler = new PathHandler();
+        var handler = new PathHandler(m_MockProcessManager.Object);
         var path = "/mnt/c/test";
 
         // Act - call twice

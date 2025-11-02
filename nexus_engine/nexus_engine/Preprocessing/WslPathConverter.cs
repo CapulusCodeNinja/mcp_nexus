@@ -16,16 +16,8 @@ internal partial class WslPathConverter
     /// <summary>
     /// Initializes a new instance of the <see cref="WslPathConverter"/> class.
     /// </summary>
-    public WslPathConverter()
-        : this(new ProcessManager())
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WslPathConverter"/> class.
-    /// </summary>
     /// <param name="processManager">The process manager for executing wsl.exe.</param>
-    internal WslPathConverter(IProcessManager processManager)
+    public WslPathConverter(IProcessManager processManager)
     {
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
     }

@@ -13,8 +13,9 @@ internal class LoggingConfigurationTestAccessor : LoggingConfiguration
     /// <summary>
     /// Initializes a new instance of the <see cref="LoggingConfigurationTestAccessor"/> class.
     /// </summary>
-    public LoggingConfigurationTestAccessor()
-        : base(new Settings())
+    /// <param name="settings">The product settings.</param>
+    public LoggingConfigurationTestAccessor(ISettings settings)
+        : base(settings)
     {
     }
 

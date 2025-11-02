@@ -139,7 +139,7 @@ public class DebugEngine : IDebugEngine
 
         try
         {
-            var preprocessor = new CommandPreprocessor(m_FileSystem, m_Settings);
+            var preprocessor = new CommandPreprocessor(m_FileSystem, m_ProcessManager, m_Settings);
             var session = new DebugSession(sessionId, dumpFilePath, symbolPath, m_Settings, m_FileSystem, m_ProcessManager, m_BatchProcessor, preprocessor);
 
             // Subscribe to session events

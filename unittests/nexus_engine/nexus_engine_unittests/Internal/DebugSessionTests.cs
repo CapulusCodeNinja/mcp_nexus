@@ -66,7 +66,7 @@ public class DebugSessionTests : IDisposable
     /// <returns>A command preprocessor instance configured for tests.</returns>
     private CommandPreprocessor CreatePreprocessor()
     {
-        return new CommandPreprocessor(m_MockFileSystem.Object, m_Settings.Object);
+        return new CommandPreprocessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
     }
 
     /// <summary>

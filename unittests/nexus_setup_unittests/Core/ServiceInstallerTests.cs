@@ -40,7 +40,7 @@ public class ServiceInstallerTests
     public void Constructor_Parameterless_Succeeds()
     {
         // Act
-        var installer = new ServiceInstaller();
+        var installer = new ServiceInstaller(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Assert
         _ = installer.Should().NotBeNull();

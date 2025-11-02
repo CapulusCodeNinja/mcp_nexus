@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
+using Nexus.External.Apis.ProcessManagement;
+
 namespace Nexus.Engine.Preprocessing;
 
 /// <summary>
@@ -19,9 +21,10 @@ internal partial class PathHandler
     /// <summary>
     /// Initializes a new instance of the <see cref="PathHandler"/> class.
     /// </summary>
-    public PathHandler()
+    /// <param name="processManager">The process manager.</param>
+    public PathHandler(IProcessManager processManager)
     {
-        m_WslConverter = new WslPathConverter();
+        m_WslConverter = new WslPathConverter(processManager);
     }
 
     /// <summary>

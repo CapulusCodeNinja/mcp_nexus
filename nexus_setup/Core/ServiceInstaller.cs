@@ -25,18 +25,10 @@ internal class ServiceInstaller : IServiceInstaller
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceInstaller"/> class.
     /// </summary>
-    public ServiceInstaller()
-        : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ServiceInstaller"/> class.
-    /// </summary>
     /// <param name="fileSystem">File system abstraction.</param>
     /// <param name="processManager">Process manager abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>
-    internal ServiceInstaller(
+    public ServiceInstaller(
         IFileSystem fileSystem,
         IProcessManager processManager,
         IServiceController serviceController)

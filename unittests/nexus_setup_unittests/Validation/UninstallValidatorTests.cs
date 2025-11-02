@@ -49,7 +49,7 @@ public class UninstallValidatorTests
     public void Constructor_Parameterless_Succeeds()
     {
         // Act
-        var validator = new UninstallValidator();
+        var validator = new UninstallValidator(m_FileSystemMock.Object, m_ServiceControllerMock.Object);
 
         // Assert
         _ = validator.Should().NotBeNull();

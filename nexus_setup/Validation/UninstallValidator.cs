@@ -22,17 +22,9 @@ namespace Nexus.Setup.Validation
         /// <summary>
         /// Initializes a new instance of the <see cref="UninstallValidator"/> class.
         /// </summary>
-        public UninstallValidator()
-            : this(new FileSystem(), new ServiceControllerWrapper())
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UninstallValidator"/> class.
-        /// </summary>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        internal UninstallValidator(IFileSystem fileSystem, IServiceController serviceController)
+        public UninstallValidator(IFileSystem fileSystem, IServiceController serviceController)
             : base(fileSystem, serviceController)
         {
             m_Logger = LogManager.GetCurrentClassLogger();

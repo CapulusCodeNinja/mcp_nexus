@@ -6,6 +6,7 @@ using Nexus.CommandLine;
 using Nexus.Config;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
+using Nexus.External.Apis.ServiceManagement;
 using Nexus.Protocol;
 using Nexus.Setup;
 
@@ -33,10 +34,11 @@ internal class MainHostedService : IHostedService
     /// <param name="commandLineContext">Command line context.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
+    /// <param name="serviceController">Service controller abstraction.</param>
     /// <param name="settings">The product settings.</param>
     public MainHostedService(
-        CommandLineContext commandLineContext, IFileSystem fileSystem, IProcessManager processManager, ISettings settings)
-        : this(commandLineContext, new ProtocolServer(fileSystem, processManager, settings), new ProductInstallation(settings), fileSystem, processManager, settings)
+        CommandLineContext commandLineContext, IFileSystem fileSystem, IProcessManager processManager, IServiceController serviceController, ISettings settings)
+        : this(commandLineContext, new ProtocolServer(fileSystem, processManager, settings), new ProductInstallation(fileSystem, processManager, serviceController, settings), fileSystem, processManager, settings)
     {
     }
 

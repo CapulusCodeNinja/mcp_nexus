@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 
 using Nexus.Config;
 using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ProcessManagement;
 
 namespace Nexus.Engine.Preprocessing;
 
@@ -16,7 +17,7 @@ internal partial class CommandPreprocessor
     /// <summary>
     /// Path handler for WSL to Windows path conversion.
     /// </summary>
-    private readonly PathHandler m_PathHandler = new();
+    private readonly PathHandler m_PathHandler;
 
     /// <summary>
     /// File system abstraction for directory operations.
@@ -34,11 +35,13 @@ internal partial class CommandPreprocessor
     /// Initializes a new instance of the <see cref="CommandPreprocessor"/> class.
     /// </summary>
     /// <param name="fileSystem">The file system abstraction for directory operations.</param>
+    /// <param name="processManager">The process manager.</param>
     /// <param name="settings">The product settings.</param>
-    public CommandPreprocessor(IFileSystem fileSystem, ISettings settings)
+    public CommandPreprocessor(IFileSystem fileSystem, IProcessManager processManager, ISettings settings)
     {
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_Settings = settings;
+        m_PathHandler = new PathHandler(processManager);
     }
 
     /// <summary>

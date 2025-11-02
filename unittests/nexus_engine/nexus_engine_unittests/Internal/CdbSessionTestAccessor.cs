@@ -20,7 +20,7 @@ internal class CdbSessionTestAccessor : CdbSession
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
     public CdbSessionTestAccessor(ISettings settings, IFileSystem fileSystem, IProcessManager processManager)
-        : base(settings, fileSystem, processManager, new CommandPreprocessor(fileSystem, settings))
+        : base(settings, fileSystem, processManager, new CommandPreprocessor(fileSystem, processManager, settings))
     {
     }
 

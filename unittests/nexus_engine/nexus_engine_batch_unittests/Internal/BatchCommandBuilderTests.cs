@@ -1,5 +1,7 @@
 using FluentAssertions;
 
+using Moq;
+
 using Nexus.Config;
 using Nexus.Engine.Batch.Internal;
 
@@ -13,7 +15,7 @@ namespace Nexus.Engine.Batch.Tests.Internal;
 /// </summary>
 public class BatchCommandBuilderTests
 {
-    private readonly ISettings m_Settings;
+    private readonly Mock<ISettings> m_Settings;
     private readonly BatchCommandBuilder m_Builder;
 
     /// <summary>
@@ -21,8 +23,8 @@ public class BatchCommandBuilderTests
     /// </summary>
     public BatchCommandBuilderTests()
     {
-        m_Settings = new Settings();
-        m_Builder = new BatchCommandBuilder(m_Settings);
+        m_Settings = new Mock<ISettings>();
+        m_Builder = new BatchCommandBuilder(m_Settings.Object);
     }
 
     /// <summary>

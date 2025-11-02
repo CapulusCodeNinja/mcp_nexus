@@ -27,18 +27,10 @@ internal class ServiceUpdater
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceUpdater"/> class.
     /// </summary>
-    public ServiceUpdater()
-        : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper())
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ServiceUpdater"/> class.
-    /// </summary>
     /// <param name="fileSystem">File system abstraction.</param>
     /// <param name="processManager">Process manager abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>
-    internal ServiceUpdater(IFileSystem fileSystem, IProcessManager processManager, IServiceController serviceController)
+    public ServiceUpdater(IFileSystem fileSystem, IProcessManager processManager, IServiceController serviceController)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
 

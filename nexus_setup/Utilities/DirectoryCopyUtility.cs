@@ -18,16 +18,8 @@ namespace Nexus.Setup.Utilities
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryCopyUtility"/> class.
         /// </summary>
-        public DirectoryCopyUtility()
-            : this(new FileSystem())
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DirectoryCopyUtility"/> class.
-        /// </summary>
         /// <param name="fileSystem">File system abstraction.</param>
-        internal DirectoryCopyUtility(IFileSystem fileSystem)
+        public DirectoryCopyUtility(IFileSystem fileSystem)
         {
             m_Logger = LogManager.GetCurrentClassLogger();
             m_FileSystem = fileSystem;

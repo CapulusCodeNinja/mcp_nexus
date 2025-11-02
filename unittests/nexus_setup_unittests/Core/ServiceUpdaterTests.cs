@@ -37,7 +37,7 @@ public class ServiceUpdaterTests
     public void Constructor_Parameterless_Succeeds()
     {
         // Act
-        var updater = new ServiceUpdater();
+        var updater = new ServiceUpdater(m_FileSystemMock.Object, m_ProcessManagerMock.Object, m_ServiceControllerMock.Object);
 
         // Assert
         _ = updater.Should().NotBeNull();

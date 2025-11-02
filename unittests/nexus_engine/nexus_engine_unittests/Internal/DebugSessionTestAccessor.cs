@@ -32,7 +32,7 @@ internal class DebugSessionTestAccessor : DebugSession
         IFileSystem fileSystem,
         IProcessManager processManager,
         IBatchProcessor batchProcessor)
-        : base(sessionId, dumpFilePath, symbolPath, settings, fileSystem, processManager, batchProcessor, new CommandPreprocessor(fileSystem, settings))
+        : base(sessionId, dumpFilePath, symbolPath, settings, fileSystem, processManager, batchProcessor, new CommandPreprocessor(fileSystem, processManager, settings))
     {
     }
 

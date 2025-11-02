@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.Text;
 
 using FluentAssertions;
@@ -19,6 +20,7 @@ namespace Nexus.Engine.Tests.Internal;
 /// <summary>
 /// Unit tests for the <see cref="CdbSession"/> class.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public class CdbSessionTests
 {
     private readonly Mock<ISettings> m_Settings;
@@ -54,7 +56,7 @@ public class CdbSessionTests
     /// <returns>A command preprocessor instance configured for tests.</returns>
     private Nexus.Engine.Preprocessing.CommandPreprocessor CreatePreprocessor()
     {
-        return new CommandPreprocessor(m_MockFileSystem.Object, m_Settings.Object);
+        return new CommandPreprocessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
     }
 
     /// <summary>

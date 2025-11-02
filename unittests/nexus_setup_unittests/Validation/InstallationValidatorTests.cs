@@ -49,7 +49,7 @@ public class InstallationValidatorTests
     public void Constructor_Parameterless_Succeeds()
     {
         // Act
-        var validator = new InstallationValidator();
+        var validator = new InstallationValidator(m_FileSystemMock.Object, m_ServiceControllerMock.Object);
 
         // Assert
         _ = validator.Should().NotBeNull();

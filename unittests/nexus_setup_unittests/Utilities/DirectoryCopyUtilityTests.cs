@@ -31,7 +31,7 @@ public class DirectoryCopyUtilityTests
     public void Constructor_Parameterless_Succeeds()
     {
         // Act
-        var utility = new DirectoryCopyUtility();
+        var utility = new DirectoryCopyUtility(m_FileSystemMock.Object);
 
         // Assert
         _ = utility.Should().NotBeNull();

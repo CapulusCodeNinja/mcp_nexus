@@ -25,24 +25,13 @@ internal class Manager : IDisposable
     private bool m_Disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Manager"/> class with default dependencies.
-    /// </summary>
-    /// <param name="settings">The product settings.</param>
-    /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
-    public Manager(ISettings settings)
-        : this(new FileSystem(), settings)
-    {
-    }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="Manager"/> class with specified dependencies.
     /// </summary>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="settings">The product settings.</param>
     /// <exception cref="ArgumentNullException">Thrown when fileSystem is null.</exception>
     /// <exception cref="ArgumentException">Thrown when extensionsPath is null or empty.</exception>
-    internal Manager(IFileSystem fileSystem, ISettings settings)
+    public Manager(IFileSystem fileSystem, ISettings settings)
     {
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_Logger = LogManager.GetCurrentClassLogger();

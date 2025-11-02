@@ -29,28 +29,13 @@ internal class Executor
     private static readonly Regex AnsiRegex = new("\x1B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Executor"/> class with default dependencies.
-    /// </summary>
-    /// <param name="manager">The extension manager.</param>
-    /// <param name="tokenValidator">The token validator.</param>
-    /// <param name="settings">The product settings.</param>
-    public Executor(Manager manager, TokenValidator tokenValidator, ISettings settings)
-        : this(
-        manager,
-        tokenValidator,
-        new ProcessManager(),
-        settings)
-    {
-    }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="Executor"/> class with injected dependencies.
     /// </summary>
     /// <param name="manager">The extension manager.</param>
     /// <param name="tokenValidator">The token validator.</param>
     /// <param name="processManager">The process manager.</param>
     /// <param name="settings">The product settings.</param>
-    internal Executor(
+    public Executor(
         Manager manager,
         TokenValidator tokenValidator,
         IProcessManager processManager,

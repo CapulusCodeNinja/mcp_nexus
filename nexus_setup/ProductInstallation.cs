@@ -32,20 +32,11 @@ namespace Nexus.Setup
         /// <summary>
         /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
         /// </summary>
-        /// <param name="settings">The product settings.</param>
-        public ProductInstallation(ISettings settings)
-            : this(new FileSystem(), new ProcessManager(), new ServiceControllerWrapper(), settings)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ProductInstallation"/> class.
-        /// </summary>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="processManager">Process manager abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
         /// <param name="settings">The product settings.</param>
-        internal ProductInstallation(
+        public ProductInstallation(
             IFileSystem fileSystem,
             IProcessManager processManager,
             IServiceController serviceController,
