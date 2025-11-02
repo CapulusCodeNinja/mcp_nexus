@@ -212,9 +212,11 @@ public class EngineServiceTests
     {
         // Arrange - Initialize once before threads start
         EngineService.Initialize(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+
         const int threadCount = 10;
         var engines = new List<IDebugEngine>();
         var exceptions = new List<Exception>();
+        var barrier = new System.Threading.Barrier(threadCount + 1); // +1 for main thread
 
         // Act
         var threads = new List<Thread>();
@@ -224,6 +226,9 @@ public class EngineServiceTests
             {
                 try
                 {
+                    // Wait for all threads to be ready
+                    barrier.SignalAndWait();
+
                     var engine = EngineService.Get();
                     lock (engines)
                     {
@@ -241,6 +246,9 @@ public class EngineServiceTests
             threads.Add(thread);
             thread.Start();
         }
+
+        // Wait for all threads to be ready, then signal them to proceed
+        barrier.SignalAndWait();
 
         foreach (var thread in threads)
         {
