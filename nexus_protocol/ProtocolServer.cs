@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 
 using Nexus.Config;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ProcessManagement;
 using Nexus.Protocol.Configuration;
 using Nexus.Protocol.Services;
 
@@ -26,14 +28,16 @@ public class ProtocolServer : IProtocolServer
     /// <summary>
     /// Initializes a new instance of the <see cref="ProtocolServer"/> class.
     /// </summary>
+    /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="processManager">The process manager abstraction.</param>
     /// <param name="settings">The product settings.</param>
     /// <exception cref="ArgumentNullException">Thrown when serviceProvider is null.</exception>
-    public ProtocolServer(ISettings settings)
+    public ProtocolServer(IFileSystem fileSystem, IProcessManager processManager, ISettings settings)
     {
         IsRunning = false;
         m_Logger = LogManager.GetCurrentClassLogger();
         m_Settings = settings;
-        EngineService.Initialize(m_Settings);
+        EngineService.Initialize(fileSystem, processManager, m_Settings);
     }
 
     /// <summary>

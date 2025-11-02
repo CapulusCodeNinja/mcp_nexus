@@ -5,6 +5,8 @@ using Microsoft.Extensions.Hosting;
 
 using Nexus.CommandLine;
 using Nexus.Config;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ProcessManagement;
 using Nexus.Logging;
 using Nexus.Startup;
 
@@ -31,9 +33,11 @@ internal static class Program
             var cmd = new CommandLineContext(args);
 
             var settings = new Settings();
+            var filesystem = new FileSystem();
+            var processManager = new ProcessManager();
 
             // Use hosted service for ALL command types
-            var host = CreateHostBuilder(cmd, settings).Build();
+            var host = CreateHostBuilder(cmd, filesystem, processManager, settings).Build();
             await host.RunAsync();
 
             return 0;
@@ -53,10 +57,12 @@ internal static class Program
     /// Creates and configures a host builder for the application.
     /// </summary>
     /// <param name="cmd">Command line context.</param>
+    /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="processManager">The process manager abstraction.</param>
     /// <param name="settings">The product settings.</param>
     /// <returns>Configured host builder.</returns>
     [SupportedOSPlatform("windows")]
-    internal static IHostBuilder CreateHostBuilder(CommandLineContext cmd, ISettings settings)
+    internal static IHostBuilder CreateHostBuilder(CommandLineContext cmd, IFileSystem fileSystem, IProcessManager processManager, ISettings settings)
     {
         var builder = Host.CreateDefaultBuilder(cmd.Args)
             .ConfigureLogging((context, logging) => logging.AddNexusLogging(
@@ -68,8 +74,9 @@ internal static class Program
                 var ununsed = services.AddSingleton(cmd);
 
                 // Register ONLY the main hosted service (no others)
-                var ununsedHost = services.AddHostedService<MainHostedService>();
-            });
+                var ununsedHost = services.AddHostedService(sp =>
+                    new MainHostedService(cmd, fileSystem, processManager, settings));
+                });
 
         // Configure Windows Service support if in service mode
         if (cmd.IsServiceMode)

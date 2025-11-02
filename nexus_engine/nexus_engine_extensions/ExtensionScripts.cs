@@ -80,9 +80,15 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// Initializes a new instance of the <see cref="ExtensionScripts"/> class with default dependencies.
     /// </summary>
     /// <param name="engine">The debug engine instance for callback operations.</param>
+    /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="processManager">The process manager abstraction.</param>
     /// <param name="settings">The product settings.</param>
-    public ExtensionScripts(IDebugEngine engine, ISettings settings)
-        : this(engine, new TokenValidator(), settings)
+    public ExtensionScripts(
+        IDebugEngine engine,
+        IFileSystem fileSystem,
+        IProcessManager processManager,
+        ISettings settings)
+        : this(engine, new TokenValidator(), fileSystem, processManager, settings)
     {
     }
 
@@ -91,9 +97,16 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
     /// </summary>
     /// <param name="engine">The debug engine instance for callback operations.</param>
     /// <param name="tokenValidator">The token validator for validating extension script callbacks.</param>
+    /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="processManager">The process manager abstraction.</param>
     /// <param name="settings">The product settings.</param>
-    internal ExtensionScripts(IDebugEngine engine, TokenValidator tokenValidator, ISettings settings)
-        : this(engine, tokenValidator, new CallbackServerManager(engine, tokenValidator, settings), new FileSystem(), new ProcessManager(), settings)
+    internal ExtensionScripts(
+        IDebugEngine engine,
+        TokenValidator tokenValidator,
+        IFileSystem fileSystem,
+        IProcessManager processManager,
+        ISettings settings)
+        : this(engine, tokenValidator, new CallbackServerManager(engine, tokenValidator, settings), fileSystem, processManager, settings)
     {
     }
 

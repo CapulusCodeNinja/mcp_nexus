@@ -67,9 +67,11 @@ public class DebugEngine : IDebugEngine
     /// <summary>
     /// Initializes a new instance of the <see cref="DebugEngine"/> class with default dependencies.
     /// </summary>
+    /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="processManager">The process manager abstraction.</param>
     /// <param name="settings">The product settings.</param>
-    public DebugEngine(ISettings settings)
-        : this(new FileSystem(), new ProcessManager(), new BatchProcessor(settings), settings)
+    public DebugEngine(IFileSystem fileSystem, IProcessManager processManager, ISettings settings)
+        : this(fileSystem, processManager, new BatchProcessor(settings), settings)
     {
     }
 
@@ -87,7 +89,7 @@ public class DebugEngine : IDebugEngine
         m_Settings = settings ?? throw new ArgumentNullException(nameof(settings));
         m_BatchProcessor = batchProcessor;
 
-        m_ExtensionScripts = new ExtensionScripts(this, m_Settings);
+        m_ExtensionScripts = new ExtensionScripts(this, fileSystem, processManager, m_Settings);
 
         m_Logger = LogManager.GetCurrentClassLogger();
         m_Logger.Info("DebugEngine initialized with max {MaxSessions} concurrent sessions", m_Settings.Get().McpNexus.SessionManagement.MaxConcurrentSessions);
