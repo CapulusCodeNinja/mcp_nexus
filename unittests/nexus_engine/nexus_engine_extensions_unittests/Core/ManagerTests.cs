@@ -306,4 +306,228 @@ public class ManagerTests : IDisposable
         _ = m_Manager.ExtensionExists("test");
         _ = m_Manager.GetExtensionsVersion();
     }
+
+    /// <summary>
+    /// Verifies that constructor handles directory creation failure gracefully.
+    /// </summary>
+    [Fact]
+    public void Constructor_WhenDirectoryCreationFails_HandlesGracefully()
+    {
+        // Arrange
+        _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
+        _ = m_FileSystemMock.Setup(fs => fs.CreateDirectory(It.IsAny<string>()));
+        _ = m_FileSystemMock.SetupSequence(fs => fs.DirectoryExists(It.IsAny<string>()))
+            .Returns(false) // First check - doesn't exist
+            .Returns(false); // After creation - still doesn't exist (creation failed)
+
+        // Act - should not throw
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
+
+        // Assert
+        _ = m_Manager.Should().NotBeNull();
+    }
+
+    /// <summary>
+    /// Verifies that ValidateExtension returns invalid when script file does not exist.
+    /// </summary>
+    [Fact]
+    public void ValidateExtension_WhenScriptFileDoesNotExist_ReturnsInvalid()
+    {
+        // Arrange
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
+        var extensionName = "TestExtension";
+        var metadata = new Nexus.Engine.Extensions.Models.ExtensionMetadata
+        {
+            Name = extensionName,
+            ScriptFile = "script.ps1",
+            ScriptType = "powershell",
+            FullScriptPath = "C:\\extensions\\TestExtension\\script.ps1",
+        };
+
+        // Manually add extension to manager's internal dictionary via reflection
+        var extensionsField = typeof(Manager).GetField("m_Extensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (extensionsField?.GetValue(m_Manager) is System.Collections.Generic.Dictionary<string, Nexus.Engine.Extensions.Models.ExtensionMetadata> extensions)
+        {
+            extensions[extensionName] = metadata;
+        }
+
+        // Setup file system to return false for file exists check
+        _ = m_FileSystemMock.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(false);
+
+        // Act
+        var (isValid, errorMessage) = m_Manager.ValidateExtension(extensionName);
+
+        // Assert
+        _ = isValid.Should().BeFalse();
+        _ = errorMessage.Should().Contain("not found");
+    }
+
+    /// <summary>
+    /// Verifies that ValidateExtension returns invalid when script file is null or empty.
+    /// </summary>
+    [Fact]
+    public void ValidateExtension_WhenScriptFileIsEmpty_ReturnsInvalid()
+    {
+        // Arrange
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
+        var extensionName = "TestExtension";
+        var metadata = new Nexus.Engine.Extensions.Models.ExtensionMetadata
+        {
+            Name = extensionName,
+            ScriptFile = string.Empty,
+            ScriptType = "powershell",
+        };
+
+        // Manually add extension to manager's internal dictionary via reflection
+        var extensionsField = typeof(Manager).GetField("m_Extensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (extensionsField?.GetValue(m_Manager) is System.Collections.Generic.Dictionary<string, Nexus.Engine.Extensions.Models.ExtensionMetadata> extensions)
+        {
+            extensions[extensionName] = metadata;
+        }
+
+        // Act
+        var (isValid, errorMessage) = m_Manager.ValidateExtension(extensionName);
+
+        // Assert
+        _ = isValid.Should().BeFalse();
+        _ = errorMessage.Should().Contain("no script file");
+    }
+
+    /// <summary>
+    /// Verifies that ValidateExtension returns invalid when script type is unsupported.
+    /// </summary>
+    [Fact]
+    public void ValidateExtension_WhenScriptTypeIsUnsupported_ReturnsInvalid()
+    {
+        // Arrange
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
+        var extensionName = "TestExtension";
+        var metadata = new Nexus.Engine.Extensions.Models.ExtensionMetadata
+        {
+            Name = extensionName,
+            ScriptFile = "script.sh",
+            ScriptType = "bash",
+            FullScriptPath = "C:\\extensions\\TestExtension\\script.sh",
+        };
+
+        // Manually add extension to manager's internal dictionary via reflection
+        var extensionsField = typeof(Manager).GetField("m_Extensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (extensionsField?.GetValue(m_Manager) is System.Collections.Generic.Dictionary<string, Nexus.Engine.Extensions.Models.ExtensionMetadata> extensions)
+        {
+            extensions[extensionName] = metadata;
+        }
+
+        // Setup file system to return true for file exists check
+        _ = m_FileSystemMock.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
+
+        // Act
+        var (isValid, errorMessage) = m_Manager.ValidateExtension(extensionName);
+
+        // Assert
+        _ = isValid.Should().BeFalse();
+        _ = errorMessage.Should().Contain("unsupported script type");
+    }
+
+    /// <summary>
+    /// Verifies that ValidateExtension returns invalid when script type is null or empty.
+    /// </summary>
+    [Fact]
+    public void ValidateExtension_WhenScriptTypeIsEmpty_ReturnsInvalid()
+    {
+        // Arrange
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
+        var extensionName = "TestExtension";
+        var metadata = new Nexus.Engine.Extensions.Models.ExtensionMetadata
+        {
+            Name = extensionName,
+            ScriptFile = "script.ps1",
+            ScriptType = string.Empty,
+            FullScriptPath = "C:\\extensions\\TestExtension\\script.ps1",
+        };
+
+        // Manually add extension to manager's internal dictionary via reflection
+        var extensionsField = typeof(Manager).GetField("m_Extensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (extensionsField?.GetValue(m_Manager) is System.Collections.Generic.Dictionary<string, Nexus.Engine.Extensions.Models.ExtensionMetadata> extensions)
+        {
+            extensions[extensionName] = metadata;
+        }
+
+        // Setup file system to return true for file exists check
+        _ = m_FileSystemMock.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
+
+        // Act
+        var (isValid, errorMessage) = m_Manager.ValidateExtension(extensionName);
+
+        // Assert
+        _ = isValid.Should().BeFalse();
+        _ = errorMessage.Should().Contain("no script type");
+    }
+
+    /// <summary>
+    /// Verifies that constructor handles absolute path configuration correctly.
+    /// </summary>
+    [Fact]
+    public void Constructor_WithAbsolutePathConfiguration_UsesPathAsIs()
+    {
+        // Arrange
+        var absolutePath = "C:\\Absolute\\Extensions\\Path";
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    ExtensionsPath = absolutePath,
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
+        _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.Is<string>(p => p == absolutePath))).Returns(true);
+
+        // Act
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
+
+        // Assert
+        _ = m_Manager.Should().NotBeNull();
+        m_FileSystemMock.Verify(fs => fs.DirectoryExists(It.Is<string>(p => p == absolutePath)), Times.AtLeastOnce);
+    }
+
+    /// <summary>
+    /// Verifies that LoadExtensionsAsync handles directory that doesn't exist.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task LoadExtensionsAsync_WhenDirectoryDoesNotExist_CreatesDirectory()
+    {
+        // Arrange
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
+        _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
+
+        // Act
+        await m_Manager.LoadExtensionsAsync();
+
+        // Assert
+        m_FileSystemMock.Verify(fs => fs.CreateDirectory(It.IsAny<string>()), Times.AtLeastOnce);
+    }
+
+    /// <summary>
+    /// Verifies that LoadExtensionsAsync propagates file system errors from GetFiles.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task LoadExtensionsAsync_WhenGetFilesThrowsException_PropagatesException()
+    {
+        // Arrange
+        m_Manager = new Manager(m_FileSystemMock.Object, m_Settings.Object);
+
+        // Reset mock after constructor setup
+        m_FileSystemMock.Reset();
+        _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        _ = m_FileSystemMock.Setup(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>()))
+            .Throws(new UnauthorizedAccessException("Access denied"));
+
+        // Act & Assert - exception should propagate since GetFiles is not wrapped in try-catch
+        _ = await Assert.ThrowsAsync<UnauthorizedAccessException>(async () => await m_Manager.LoadExtensionsAsync());
+    }
 }

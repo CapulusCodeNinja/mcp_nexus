@@ -149,4 +149,85 @@ public class ResponseFormattingMiddlewareTests
         var responseBody = await reader.ReadToEndAsync();
         _ = responseBody.Should().Contain("File not found");
     }
+
+    /// <summary>
+    /// Verifies that InvokeAsync handles OperationCanceledException gracefully without sending error response.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InvokeAsync_WithOperationCanceledException_DoesNotSendErrorResponse()
+    {
+        RequestDelegate next = (HttpContext context) => throw new OperationCanceledException();
+        var middleware = new ResponseFormattingMiddleware(next);
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        await middleware.InvokeAsync(context);
+
+        // Should not have written to response body
+        _ = context.Response.StatusCode.Should().Be(200); // Default status code
+        context.Response.Body.Position = 0;
+        var reader = new StreamReader(context.Response.Body);
+        var responseBody = await reader.ReadToEndAsync();
+        _ = responseBody.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that InvokeAsync handles exception when writing to response fails.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InvokeAsync_WhenWritingResponseFails_HandlesGracefully()
+    {
+        RequestDelegate next = (HttpContext context) => throw new InvalidOperationException("Test error");
+        var middleware = new ResponseFormattingMiddleware(next);
+        var context = new DefaultHttpContext();
+        var throwingStream = new ThrowingMemoryStream();
+        context.Response.Body = throwingStream;
+
+        // Should not throw even if writing fails
+        await middleware.InvokeAsync(context);
+    }
+
+    /// <summary>
+    /// Memory stream that throws exception on write.
+    /// </summary>
+    private class ThrowingMemoryStream : MemoryStream
+    {
+        /// <summary>
+        /// Writes to the stream, throwing exception after first write.
+        /// </summary>
+        /// <param name="buffer">The buffer to write.</param>
+        /// <param name="offset">The offset.</param>
+        /// <param name="count">The count.</param>
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            if (Position > 0)
+            {
+                throw new IOException("Write failed");
+            }
+
+            base.Write(buffer, offset, count);
+        }
+
+        /// <summary>
+        /// Writes to the stream asynchronously, throwing exception after first write.
+        /// </summary>
+        /// <param name="buffer">The buffer to write.</param>
+        /// <param name="offset">The offset.</param>
+        /// <param name="count">The count.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The write task.</returns>
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+#pragma warning disable IDE0046 // Convert to conditional expression - keeping explicit throw for clarity
+            if (Position > 0)
+            {
+                throw new IOException("Write failed");
+            }
+#pragma warning restore IDE0046
+
+            return base.WriteAsync(buffer, offset, count, cancellationToken);
+        }
+    }
 }
