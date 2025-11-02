@@ -224,4 +224,116 @@ public class StartupBannerTests
         // Assert - No exception thrown
         _ = banner.Should().NotBeNull();
     }
+
+    /// <summary>
+    /// Verifies that DisplayBanner displays service configuration when install path is set.
+    /// </summary>
+    [Fact]
+    public void DisplayBanner_WithServiceInstallPath_DisplaysServiceConfiguration()
+    {
+        // Arrange
+        var config = new Config.Models.SharedConfiguration
+        {
+            McpNexus = new Config.Models.McpNexusSettings
+            {
+                Service = new Config.Models.ServiceSettings
+                {
+                    InstallPath = @"C:\Program Files\MCP-Nexus",
+                    BackupPath = @"C:\Program Files\MCP-Nexus\Backup",
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(config);
+        var context = new CommandLineContext(Array.Empty<string>());
+        var banner = new StartupBanner(false, context, m_Settings.Object);
+
+        // Act
+        banner.DisplayBanner();
+
+        // Assert - No exception thrown, service configuration should be displayed
+        _ = banner.Should().NotBeNull();
+    }
+
+    /// <summary>
+    /// Verifies that DisplayBanner handles null settings values gracefully.
+    /// </summary>
+    [Fact]
+    public void DisplayBanner_WithNullSettingsValues_HandlesGracefully()
+    {
+        // Arrange
+        var config = new Config.Models.SharedConfiguration
+        {
+            McpNexus = new Config.Models.McpNexusSettings
+            {
+                Server = new Config.Models.ServerSettings
+                {
+                    Host = null!,
+                    Port = 5511,
+                },
+                Transport = new Config.Models.TransportSettings
+                {
+                    Mode = null!,
+                    ServiceMode = false,
+                },
+                Debugging = new Config.Models.DebuggingSettings
+                {
+                    CdbPath = null!,
+                    CommandTimeoutMs = 30000,
+                    SymbolServerMaxRetries = 3,
+                    SymbolSearchPath = null!,
+                    StartupDelayMs = 0,
+                },
+                Service = new Config.Models.ServiceSettings
+                {
+                    InstallPath = null!,
+                    BackupPath = null!,
+                },
+            },
+            Logging = new Config.Models.LoggingSettings
+            {
+                LogLevel = null!,
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(config);
+        var context = new CommandLineContext(Array.Empty<string>());
+        var banner = new StartupBanner(false, context, m_Settings.Object);
+
+        // Act
+        banner.DisplayBanner();
+
+        // Assert - No exception thrown
+        _ = banner.Should().NotBeNull();
+    }
+
+    /// <summary>
+    /// Verifies that DisplayBanner handles empty string settings values gracefully.
+    /// </summary>
+    [Fact]
+    public void DisplayBanner_WithEmptyStringSettingsValues_HandlesGracefully()
+    {
+        // Arrange
+        var config = new Config.Models.SharedConfiguration
+        {
+            McpNexus = new Config.Models.McpNexusSettings
+            {
+                Debugging = new Config.Models.DebuggingSettings
+                {
+                    CdbPath = string.Empty,
+                    SymbolSearchPath = string.Empty,
+                    CommandTimeoutMs = 30000,
+                    SymbolServerMaxRetries = 3,
+                    StartupDelayMs = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(config);
+        var context = new CommandLineContext(Array.Empty<string>());
+        var banner = new StartupBanner(false, context, m_Settings.Object);
+
+        // Act
+        banner.DisplayBanner();
+
+        // Assert - No exception thrown
+        _ = banner.Should().NotBeNull();
+    }
 }

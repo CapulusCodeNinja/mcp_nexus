@@ -885,17 +885,15 @@ public class CommandQueueTests : IDisposable
     }
 
     /// <summary>
-    /// Verifies that GetCommandInfoAsync returns null when command does not exist.
+    /// Verifies that GetCommandInfoAsync throws KeyNotFoundException when command does not exist.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task GetCommandInfoAsync_WhenCommandNotFound_ReturnsNull()
+    public async Task GetCommandInfoAsync_WhenCommandNotFound_ThrowsKeyNotFoundException()
     {
-        // Act
-        var result = await m_Queue.GetCommandInfoAsync("nonexistent-command-id");
-
-        // Assert
-        _ = result.Should().BeNull();
+        // Act & Assert
+        var act = async () => await m_Queue.GetCommandInfoAsync("nonexistent-command-id");
+        _ = await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage("*nonexistent-command-id*");
     }
 
     /// <summary>
