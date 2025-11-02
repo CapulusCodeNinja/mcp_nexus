@@ -3,6 +3,7 @@ using FluentAssertions;
 using Moq;
 
 using Nexus.Config;
+using Nexus.Config.Models;
 using Nexus.Engine.Batch;
 using Nexus.Engine.Internal;
 using Nexus.Engine.Share.Events;
@@ -30,6 +31,17 @@ public class CommandQueueTests : IDisposable
     public CommandQueueTests()
     {
         m_Settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
         m_BatchProcessor = new Mock<IBatchProcessor>();
 
         m_Queue = new CommandQueue("test-session-1", m_Settings.Object, m_BatchProcessor.Object);

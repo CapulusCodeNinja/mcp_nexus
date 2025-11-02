@@ -3,6 +3,7 @@ using FluentAssertions;
 using Moq;
 
 using Nexus.Config;
+using Nexus.Config.Models;
 using Nexus.Engine.Extensions.Core;
 using Nexus.External.Apis.FileSystem;
 
@@ -26,6 +27,18 @@ public class ManagerTests : IDisposable
     {
         m_FileSystemMock = new Mock<IFileSystem>();
         m_Settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    ExtensionsPath = "extensions",
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
 
         // Setup default file system mock behavior
         _ = m_FileSystemMock.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
@@ -43,13 +56,13 @@ public class ManagerTests : IDisposable
     }
 
     /// <summary>
-    /// Verifies that constructor throws ArgumentNullException when fileSystem is null.
+    /// Verifies that constructor throws NullReferenceException when settings is null.
     /// </summary>
     [Fact]
-    public void Constructor_WithNullFileSystem_ThrowsArgumentNullException()
+    public void Constructor_WithNullSettings_ThrowsNullReferenceException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => new Manager(null!));
+        _ = Assert.Throws<NullReferenceException>(() => new Manager(m_FileSystemMock.Object, null!));
     }
 
     /// <summary>

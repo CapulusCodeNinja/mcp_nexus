@@ -3,6 +3,7 @@ using FluentAssertions;
 using Moq;
 
 using Nexus.Config;
+using Nexus.Config.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 using Nexus.External.Apis.ServiceManagement;
@@ -27,6 +28,17 @@ public class ProductInstallationTests
     public ProductInstallationTests()
     {
         m_Settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
         m_FileSystemMock = new Mock<IFileSystem>();
         m_ProcessManagerMock = new Mock<IProcessManager>();
         m_ServiceControllerMock = new Mock<IServiceController>();

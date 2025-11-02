@@ -4,6 +4,7 @@ using Moq;
 
 using Nexus.CommandLine;
 using Nexus.Config;
+using Nexus.Config.Models;
 using Nexus.Startup;
 
 using Xunit;
@@ -23,6 +24,17 @@ public class MainHostedServiceTests
     public MainHostedServiceTests()
     {
         m_Settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
     }
 
     /// <summary>

@@ -3,6 +3,7 @@ using FluentAssertions;
 using Moq;
 
 using Nexus.Config;
+using Nexus.Config.Models;
 using Nexus.Engine.Batch.Internal;
 
 using Xunit;
@@ -25,6 +26,24 @@ public class BatchResultParserTests
     public BatchResultParserTests()
     {
         m_Settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Batching = new BatchingSettings
+                {
+                    Enabled = true,
+                    MaxBatchSize = 5,
+                    MinBatchSize = 2,
+                    ExcludedCommands = new List<string> { "!analyze", "!dump", "!heap" },
+                },
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
         m_Processor = new BatchProcessor(m_Settings.Object);
         m_Parser = new BatchResultParser(m_Processor);
     }

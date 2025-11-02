@@ -3,6 +3,7 @@ using FluentAssertions;
 using Moq;
 
 using Nexus.Config;
+using Nexus.Config.Models;
 
 using Xunit;
 
@@ -21,6 +22,24 @@ public class BatchProcessorTests
     public BatchProcessorTests()
     {
         m_Settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Batching = new BatchingSettings
+                {
+                    Enabled = true,
+                    MaxBatchSize = 5,
+                    MinBatchSize = 2,
+                    ExcludedCommands = new List<string> { "!analyze", "!dump", "!heap" },
+                },
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
     }
 
     /// <summary>

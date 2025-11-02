@@ -3,6 +3,7 @@ using FluentAssertions;
 using Moq;
 
 using Nexus.Config;
+using Nexus.Config.Models;
 using Nexus.Engine.Preprocessing;
 using Nexus.External.Apis.FileSystem;
 
@@ -24,6 +25,17 @@ public class CommandPreprocessorTests
     public CommandPreprocessorTests()
     {
         m_Settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
         m_FileSystemMock = new Mock<IFileSystem>();
 
         // Setup default behavior - all directories exist, no creation needed

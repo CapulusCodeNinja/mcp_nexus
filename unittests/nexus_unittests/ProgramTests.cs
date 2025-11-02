@@ -7,6 +7,7 @@ using Moq;
 
 using Nexus.CommandLine;
 using Nexus.Config;
+using Nexus.Config.Models;
 using Nexus.Startup;
 
 using Xunit;
@@ -26,6 +27,17 @@ public class ProgramTests
     public ProgramTests()
     {
         m_Settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
     }
 
     /// <summary>
@@ -106,6 +118,7 @@ public class ProgramTests
 
         // Act
         var hostBuilder = Program.CreateHostBuilder(context, m_Settings.Object);
+        _ = hostBuilder.ConfigureServices(services => services.AddSingleton(m_Settings.Object));
         var host = hostBuilder.Build();
         var hostedServices = host.Services.GetServices<IHostedService>();
 

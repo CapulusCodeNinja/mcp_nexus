@@ -6,6 +6,7 @@ using FluentAssertions;
 using Moq;
 
 using Nexus.Config;
+using Nexus.Config.Models;
 using Nexus.Engine.Internal;
 using Nexus.Engine.Preprocessing;
 using Nexus.External.Apis.FileSystem;
@@ -31,6 +32,17 @@ public class CdbSessionTests
     public CdbSessionTests()
     {
         m_Settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
         m_MockFileSystem = new Mock<IFileSystem>();
         m_MockProcessManager = new Mock<IProcessManager>();
         m_MockProcess = new Mock<Process>();
