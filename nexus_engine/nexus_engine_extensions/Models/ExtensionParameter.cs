@@ -5,7 +5,7 @@ namespace Nexus.Engine.Extensions.Models;
 /// <summary>
 /// Defines a parameter that an extension accepts.
 /// </summary>
-public class ExtensionParameter
+internal class ExtensionParameter
 {
     /// <summary>
     /// Gets or sets name of the parameter.

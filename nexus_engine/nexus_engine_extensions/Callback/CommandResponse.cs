@@ -5,7 +5,7 @@ namespace Nexus.Engine.Extensions.Callback;
 /// <summary>
 /// Response model for command operations.
 /// </summary>
-public class CommandResponse
+internal class CommandResponse
 {
     /// <summary>
     /// Gets or sets a value indicating whether the operation was successful.

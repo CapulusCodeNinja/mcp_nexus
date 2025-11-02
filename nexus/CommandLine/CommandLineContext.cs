@@ -3,7 +3,7 @@ namespace Nexus.CommandLine;
 /// <summary>
 /// Represents the command line context for the application.
 /// </summary>
-public class CommandLineContext
+internal class CommandLineContext
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandLineContext"/> class.

@@ -3,7 +3,7 @@ namespace Nexus.Setup.Models;
 /// <summary>
 /// Result of a service installation or update operation.
 /// </summary>
-public class ServiceInstallationResult
+internal class ServiceInstallationResult
 {
     /// <summary>
     /// Gets or sets a value indicating whether the operation succeeded.

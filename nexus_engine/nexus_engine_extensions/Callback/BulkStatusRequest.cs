@@ -5,7 +5,7 @@ namespace Nexus.Engine.Extensions.Callback;
 /// <summary>
 /// Request model for getting bulk command status via callback.
 /// </summary>
-public class BulkStatusRequest
+internal class BulkStatusRequest
 {
     /// <summary>
     /// Gets or sets the list of command IDs to get status for.

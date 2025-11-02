@@ -5,7 +5,7 @@ namespace Nexus.Engine.Extensions.Callback;
 /// <summary>
 /// Request model for queuing a command via callback.
 /// </summary>
-public class QueueCommandRequest
+internal class QueueCommandRequest
 {
     /// <summary>
     /// Gets or sets the command to queue.

@@ -5,7 +5,7 @@ namespace Nexus.Engine.Extensions.Callback;
 /// <summary>
 /// Model for command status information.
 /// </summary>
-public class CommandStatus
+internal class CommandStatus
 {
     /// <summary>
     /// Gets or sets the command ID.

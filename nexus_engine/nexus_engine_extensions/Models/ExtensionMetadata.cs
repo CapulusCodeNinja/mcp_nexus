@@ -3,7 +3,7 @@ namespace Nexus.Engine.Extensions.Models;
 /// <summary>
 /// Represents metadata for an extension script.
 /// </summary>
-public class ExtensionMetadata
+internal class ExtensionMetadata
 {
     /// <summary>
     /// Gets or sets the name of the extension.

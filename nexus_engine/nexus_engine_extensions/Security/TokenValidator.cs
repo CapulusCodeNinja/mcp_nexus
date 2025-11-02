@@ -7,7 +7,7 @@ namespace Nexus.Engine.Extensions.Security;
 /// <summary>
 /// Validates security tokens for extension script callbacks.
 /// </summary>
-public class TokenValidator : IDisposable
+internal class TokenValidator : IDisposable
 {
     private readonly Logger m_Logger;
     private readonly Dictionary<string, TokenInfo> m_ValidTokens = new();

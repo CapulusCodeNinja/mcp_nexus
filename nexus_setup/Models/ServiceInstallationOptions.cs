@@ -3,7 +3,7 @@ namespace Nexus.Setup.Models;
 /// <summary>
 /// Options for service installation.
 /// </summary>
-public class ServiceInstallationOptions
+internal class ServiceInstallationOptions
 {
     /// <summary>
     /// Gets or sets the service name.

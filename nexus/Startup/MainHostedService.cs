@@ -16,7 +16,7 @@ namespace Nexus.Startup;
 /// Main hosted service that orchestrates the entire application startup sequence.
 /// </summary>
 [SupportedOSPlatform("windows")]
-public class MainHostedService : IHostedService
+internal class MainHostedService : IHostedService
 {
     private readonly Logger m_Logger;
     private readonly ISettings m_Settings;

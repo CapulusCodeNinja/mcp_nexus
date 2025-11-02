@@ -5,7 +5,7 @@ namespace Nexus.Engine.Extensions.Callback;
 /// <summary>
 /// Request model for logging via callback.
 /// </summary>
-public class LogRequest
+internal class LogRequest
 {
     /// <summary>
     /// Gets or sets the log level.

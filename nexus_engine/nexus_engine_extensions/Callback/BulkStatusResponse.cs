@@ -5,7 +5,7 @@ namespace Nexus.Engine.Extensions.Callback;
 /// <summary>
 /// Response model for bulk status operations.
 /// </summary>
-public class BulkStatusResponse
+internal class BulkStatusResponse
 {
     /// <summary>
     /// Gets or sets a value indicating whether the operation was successful.
