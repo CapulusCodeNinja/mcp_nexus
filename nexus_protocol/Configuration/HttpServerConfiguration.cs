@@ -4,7 +4,7 @@ namespace Nexus.Protocol.Configuration;
 /// Configuration options for the HTTP-based MCP server.
 /// Defines limits, timeouts, and security settings.
 /// </summary>
-public class HttpServerConfiguration
+internal class HttpServerConfiguration
 {
     /// <summary>
     /// Gets or sets the maximum request body size in bytes.

@@ -5,7 +5,6 @@ using Microsoft.Extensions.Hosting;
 using Nexus.CommandLine;
 using Nexus.Config;
 using Nexus.Protocol;
-using Nexus.Protocol.Configuration;
 using Nexus.Setup;
 
 using NLog;
@@ -107,15 +106,7 @@ internal class MainHostedService : IHostedService
 
         try
         {
-            // Create and configure WebApplication using protocol library (all logic encapsulated)
-            var app = HttpServerSetup.CreateConfiguredWebApplication(
-                m_Settings,
-                m_CommandLineContext.IsServiceMode);
-
-            m_ProtocolServer.SetWebApplication(app);
-
-            // Start the protocol server (which starts the WebApplication)
-            await m_ProtocolServer.StartAsync(cancellationToken);
+            await m_ProtocolServer.StartAsync(m_CommandLineContext.IsServiceMode, true, cancellationToken);
 
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, cancellationToken);
@@ -143,16 +134,7 @@ internal class MainHostedService : IHostedService
 
         try
         {
-            // Create and configure Host using protocol library (all logic encapsulated)
-            var host = HttpServerSetup.CreateConfiguredHost(
-                m_Settings,
-                m_CommandLineContext.IsServiceMode);
-
-            // Get the protocol server from DI and configure it
-            m_ProtocolServer.SetHost(host);
-
-            // Start the protocol server (which starts the Host)
-            await m_ProtocolServer.StartAsync(cancellationToken);
+            await m_ProtocolServer.StartAsync(m_CommandLineContext.IsServiceMode, false, cancellationToken);
 
             // Keep running until cancellation
             await Task.Delay(Timeout.Infinite, cancellationToken);

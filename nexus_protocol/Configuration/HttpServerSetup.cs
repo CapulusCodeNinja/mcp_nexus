@@ -18,7 +18,7 @@ namespace Nexus.Protocol.Configuration;
 /// Static helper class for configuring HTTP server services for MCP.
 /// Provides methods to set up server limits, CORS, rate limiting, and MCP protocol.
 /// </summary>
-public static class HttpServerSetup
+internal static class HttpServerSetup
 {
     /// <summary>
     /// Configures all HTTP services required for MCP server operation.

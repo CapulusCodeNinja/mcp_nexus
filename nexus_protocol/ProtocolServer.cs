@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 
 using Nexus.Config;
+using Nexus.Protocol.Configuration;
 using Nexus.Protocol.Services;
 
 using NLog;
@@ -47,10 +48,12 @@ public class ProtocolServer : IProtocolServer
     /// <summary>
     /// Starts the protocol server with the current configuration.
     /// </summary>
+    /// <param name="isServiceMode">Run the protocol server in service mode.</param>
+    /// <param name="isHttpMode">Run the protocol server in http mode.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A task that represents the asynchronous start operation.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the server is already running.</exception>
-    public async Task StartAsync(CancellationToken cancellationToken = default)
+    public async Task StartAsync(bool isServiceMode, bool isHttpMode, CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(m_Disposed, this);
 
@@ -59,9 +62,23 @@ public class ProtocolServer : IProtocolServer
             throw new InvalidOperationException("Protocol server is already running.");
         }
 
-        if (m_WebApplication == null && m_Host == null)
+        if (isServiceMode && isHttpMode == false)
         {
-            throw new InvalidOperationException("Server instance must be set before starting. Call SetWebApplication() for HTTP mode or set Host for Stdio mode.");
+            throw new InvalidOperationException("Running the protocal server as service but not in HTTP mode is not supported");
+        }
+
+        if (isServiceMode || isHttpMode)
+        {
+            // Create and configure WebApplication using protocol library (all logic encapsulated)
+            SetWebApplication(HttpServerSetup.CreateConfiguredWebApplication(
+                m_Settings,
+                isServiceMode));
+        }
+        else
+        {
+            SetHost(HttpServerSetup.CreateConfiguredHost(
+                m_Settings,
+                isServiceMode));
         }
 
         m_Logger.Info("Starting MCP protocol server...");
@@ -139,7 +156,7 @@ public class ProtocolServer : IProtocolServer
     /// <param name="app">The configured web application.</param>
     /// <exception cref="ArgumentNullException">Thrown when app is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when trying to set WebApplication while server is running.</exception>
-    public void SetWebApplication(WebApplication app)
+    private void SetWebApplication(WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
         ObjectDisposedException.ThrowIf(m_Disposed, this);
@@ -161,7 +178,7 @@ public class ProtocolServer : IProtocolServer
     /// <param name="host">The configured host.</param>
     /// <exception cref="ArgumentNullException">Thrown when host is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when trying to set Host while server is running.</exception>
-    public void SetHost(IHost host)
+    private void SetHost(IHost host)
     {
         ArgumentNullException.ThrowIfNull(host);
         ObjectDisposedException.ThrowIf(m_Disposed, this);
