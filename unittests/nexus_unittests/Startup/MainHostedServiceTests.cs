@@ -7,6 +7,7 @@ using Nexus.Config;
 using Nexus.Config.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
+using Nexus.External.Apis.Security;
 using Nexus.External.Apis.ServiceManagement;
 using Nexus.Startup;
 
@@ -22,6 +23,7 @@ public class MainHostedServiceTests
     private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IFileSystem> m_FileSystem;
     private readonly Mock<IProcessManager> m_ProcessManager;
+    private readonly Mock<IAdministratorChecker> m_AdminChecker;
     private readonly Mock<IServiceController> m_ServiceController;
 
     /// <summary>
@@ -33,6 +35,7 @@ public class MainHostedServiceTests
         m_FileSystem = new Mock<IFileSystem>();
         m_ProcessManager = new Mock<IProcessManager>();
         m_ServiceController = new Mock<IServiceController>();
+        m_AdminChecker = new Mock<IAdministratorChecker>();
 
         var sharedConfig = new SharedConfiguration
         {
@@ -57,7 +60,7 @@ public class MainHostedServiceTests
         var context = new CommandLineContext(Array.Empty<string>());
 
         // Act
-        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
 
         // Assert
         _ = service.Should().NotBeNull();
@@ -72,7 +75,7 @@ public class MainHostedServiceTests
     {
         // Arrange
         var context = new CommandLineContext(Array.Empty<string>());
-        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
 
         // Act
         await service.StopAsync(CancellationToken.None);
@@ -89,7 +92,7 @@ public class MainHostedServiceTests
     {
         // Arrange
         var context = new CommandLineContext(Array.Empty<string>());
-        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var service = new MainHostedService(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
         var cts = new CancellationTokenSource();
         cts.Cancel();
 

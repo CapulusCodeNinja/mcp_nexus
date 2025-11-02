@@ -1,6 +1,7 @@
 using System.Runtime.Versioning;
 
 using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.Security;
 using Nexus.External.Apis.ServiceManagement;
 
 using NLog;
@@ -37,15 +38,26 @@ namespace Nexus.Setup.Validation
         }
 
         /// <summary>
+        /// Gets the administrator checker abstraction used for validation.
+        /// </summary>
+        protected IAdministratorChecker AdministratorChecker
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="BaseValidator"/> class.
         /// </summary>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        protected BaseValidator(IFileSystem fileSystem, IServiceController serviceController)
+        /// <param name="administratorChecker">Administrator checker abstraction.</param>
+        protected BaseValidator(IFileSystem fileSystem, IServiceController serviceController, IAdministratorChecker administratorChecker)
         {
             m_Logger = LogManager.GetCurrentClassLogger();
             FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
             ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
+            AdministratorChecker = administratorChecker ?? throw new ArgumentNullException(nameof(administratorChecker));
         }
 
         /// <summary>
@@ -54,7 +66,7 @@ namespace Nexus.Setup.Validation
         /// <returns>True if running as administrator, false otherwise.</returns>
         protected bool ValidateAdministratorPrivileges()
         {
-            var isAdmin = IsRunningAsAdministrator();
+            var isAdmin = AdministratorChecker.IsRunningAsAdministrator();
             if (!isAdmin)
             {
                 m_Logger.Error("Administrator privileges required to install to Program Files");
@@ -151,24 +163,6 @@ namespace Nexus.Setup.Validation
 
                 // Fallback to immediate parent
                 return Path.GetDirectoryName(directoryPath) ?? string.Empty;
-            }
-        }
-
-        /// <summary>
-        /// Checks if the current process is running with administrator privileges.
-        /// </summary>
-        /// <returns>True if running as administrator, false otherwise.</returns>
-        private static bool IsRunningAsAdministrator()
-        {
-            try
-            {
-                var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
-                var principal = new System.Security.Principal.WindowsPrincipal(identity);
-                return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
-            }
-            catch
-            {
-                return false;
             }
         }
     }

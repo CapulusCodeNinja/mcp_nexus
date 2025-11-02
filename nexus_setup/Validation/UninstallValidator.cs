@@ -2,6 +2,7 @@ using System.Runtime.Versioning;
 
 using Nexus.Config.Models;
 using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.Security;
 using Nexus.External.Apis.ServiceManagement;
 
 using NLog;
@@ -24,8 +25,9 @@ namespace Nexus.Setup.Validation
         /// </summary>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        public UninstallValidator(IFileSystem fileSystem, IServiceController serviceController)
-            : base(fileSystem, serviceController)
+        /// <param name="administratorChecker">Administrator checker abstraction. If null, uses default implementation.</param>
+        public UninstallValidator(IFileSystem fileSystem, IServiceController serviceController, IAdministratorChecker administratorChecker)
+            : base(fileSystem, serviceController, administratorChecker)
         {
             m_Logger = LogManager.GetCurrentClassLogger();
         }

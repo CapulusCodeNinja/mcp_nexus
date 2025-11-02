@@ -7,6 +7,7 @@ using Nexus.CommandLine;
 using Nexus.Config;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
+using Nexus.External.Apis.Security;
 using Nexus.External.Apis.ServiceManagement;
 using Nexus.Logging;
 using Nexus.Startup;
@@ -36,10 +37,11 @@ internal static class Program
             var settings = new Settings();
             var filesystem = new FileSystem();
             var processManager = new ProcessManager();
+            var adminChecker = new AdministratorChecker();
             var serviceController = new ServiceControllerWrapper();
 
             // Use hosted service for ALL command types
-            var host = CreateHostBuilder(cmd, filesystem, processManager, serviceController, settings).Build();
+            var host = CreateHostBuilder(cmd, filesystem, processManager, serviceController, adminChecker, settings).Build();
             await host.RunAsync();
 
             return 0;
@@ -62,10 +64,17 @@ internal static class Program
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>
+    /// <param name="adminChecker">Administrative right checker.</param>
     /// <param name="settings">The product settings.</param>
     /// <returns>Configured host builder.</returns>
     [SupportedOSPlatform("windows")]
-    internal static IHostBuilder CreateHostBuilder(CommandLineContext cmd, IFileSystem fileSystem, IProcessManager processManager, IServiceController serviceController, ISettings settings)
+    internal static IHostBuilder CreateHostBuilder(
+        CommandLineContext cmd,
+        IFileSystem fileSystem,
+        IProcessManager processManager,
+        IServiceController serviceController,
+        IAdministratorChecker adminChecker,
+        ISettings settings)
     {
         var builder = Host.CreateDefaultBuilder(cmd.Args)
             .ConfigureLogging((context, logging) => logging.AddNexusLogging(
@@ -78,7 +87,7 @@ internal static class Program
 
                 // Register ONLY the main hosted service (no others)
                 var ununsedHost = services.AddHostedService(sp =>
-                    new MainHostedService(cmd, fileSystem, processManager, serviceController, settings));
+                    new MainHostedService(cmd, fileSystem, processManager, serviceController, adminChecker, settings));
                 });
 
         // Configure Windows Service support if in service mode

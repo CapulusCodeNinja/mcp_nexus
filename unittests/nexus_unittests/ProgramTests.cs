@@ -10,6 +10,7 @@ using Nexus.Config;
 using Nexus.Config.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
+using Nexus.External.Apis.Security;
 using Nexus.External.Apis.ServiceManagement;
 using Nexus.Startup;
 
@@ -25,6 +26,7 @@ public class ProgramTests
     private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IFileSystem> m_FileSystem;
     private readonly Mock<IProcessManager> m_ProcessManager;
+    private readonly Mock<IAdministratorChecker> m_AdminChecker;
     private readonly Mock<IServiceController> m_ServiceController;
 
     /// <summary>
@@ -35,6 +37,7 @@ public class ProgramTests
         m_Settings = new Mock<ISettings>();
         m_FileSystem = new Mock<IFileSystem>();
         m_ProcessManager = new Mock<IProcessManager>();
+        m_AdminChecker = new Mock<IAdministratorChecker>();
         m_ServiceController = new Mock<IServiceController>();
 
         var sharedConfig = new SharedConfiguration
@@ -60,7 +63,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--http" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -76,7 +79,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--stdio" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -92,7 +95,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--service" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -108,7 +111,7 @@ public class ProgramTests
         var context = new CommandLineContext(Array.Empty<string>());
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
         var host = hostBuilder.Build();
         var registeredContext = host.Services.GetService<CommandLineContext>();
 
@@ -127,7 +130,7 @@ public class ProgramTests
         var context = new CommandLineContext(Array.Empty<string>());
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
         _ = hostBuilder.ConfigureServices(services => services.AddSingleton(m_Settings.Object));
         var host = hostBuilder.Build();
         var hostedServices = host.Services.GetServices<IHostedService>();
@@ -146,7 +149,7 @@ public class ProgramTests
         var context = new CommandLineContext(Array.Empty<string>());
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -162,7 +165,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--install" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -178,7 +181,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--update" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();
@@ -194,7 +197,7 @@ public class ProgramTests
         var context = new CommandLineContext(new[] { "--uninstall" });
 
         // Act
-        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_Settings.Object);
+        var hostBuilder = Program.CreateHostBuilder(context, m_FileSystem.Object, m_ProcessManager.Object, m_ServiceController.Object, m_AdminChecker.Object, m_Settings.Object);
 
         // Assert
         _ = hostBuilder.Should().NotBeNull();

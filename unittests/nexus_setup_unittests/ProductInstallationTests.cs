@@ -6,6 +6,7 @@ using Nexus.Config;
 using Nexus.Config.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
+using Nexus.External.Apis.Security;
 using Nexus.External.Apis.ServiceManagement;
 
 using Xunit;
@@ -19,6 +20,7 @@ public class ProductInstallationTests
 {
     private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IFileSystem> m_FileSystemMock;
+    private readonly Mock<IAdministratorChecker> m_AdminChecker;
     private readonly Mock<IProcessManager> m_ProcessManagerMock;
     private readonly Mock<IServiceController> m_ServiceControllerMock;
 
@@ -42,6 +44,7 @@ public class ProductInstallationTests
         m_FileSystemMock = new Mock<IFileSystem>();
         m_ProcessManagerMock = new Mock<IProcessManager>();
         m_ServiceControllerMock = new Mock<IServiceController>();
+        m_AdminChecker = new Mock<IAdministratorChecker>();
     }
 
     /// <summary>
@@ -55,6 +58,7 @@ public class ProductInstallationTests
             m_FileSystemMock.Object,
             m_ProcessManagerMock.Object,
             m_ServiceControllerMock.Object,
+            m_AdminChecker.Object,
             m_Settings.Object);
 
         // Assert
@@ -73,6 +77,7 @@ public class ProductInstallationTests
             m_FileSystemMock.Object,
             m_ProcessManagerMock.Object,
             m_ServiceControllerMock.Object,
+            m_AdminChecker.Object,
             m_Settings.Object);
 
         // Act
@@ -94,6 +99,7 @@ public class ProductInstallationTests
             m_FileSystemMock.Object,
             m_ProcessManagerMock.Object,
             m_ServiceControllerMock.Object,
+            m_AdminChecker.Object,
             m_Settings.Object);
 
         // Act
@@ -115,6 +121,7 @@ public class ProductInstallationTests
             m_FileSystemMock.Object,
             m_ProcessManagerMock.Object,
             m_ServiceControllerMock.Object,
+            m_AdminChecker.Object,
             m_Settings.Object);
 
         // Act

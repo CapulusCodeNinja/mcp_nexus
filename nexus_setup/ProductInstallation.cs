@@ -3,6 +3,7 @@ using System.Runtime.Versioning;
 using Nexus.Config;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
+using Nexus.External.Apis.Security;
 using Nexus.External.Apis.ServiceManagement;
 using Nexus.Setup.Core;
 using Nexus.Setup.Management;
@@ -35,11 +36,13 @@ namespace Nexus.Setup
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="processManager">Process manager abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
+        /// <param name="adminChecker">Administrative right checker.</param>
         /// <param name="settings">The product settings.</param>
         public ProductInstallation(
             IFileSystem fileSystem,
             IProcessManager processManager,
             IServiceController serviceController,
+            IAdministratorChecker adminChecker,
             ISettings settings)
         {
             m_FileSystem = fileSystem;
@@ -49,8 +52,8 @@ namespace Nexus.Setup
             m_Installer = new ServiceInstaller(m_FileSystem, processManager, serviceController);
             m_Updater = new ServiceUpdater(m_FileSystem, processManager, serviceController);
 
-            m_InstallationValidator = new InstallationValidator(fileSystem, serviceController);
-            m_UninstallValidator = new UninstallValidator(fileSystem, serviceController);
+            m_InstallationValidator = new InstallationValidator(fileSystem, serviceController, adminChecker);
+            m_UninstallValidator = new UninstallValidator(fileSystem, serviceController, adminChecker);
 
             m_BackupManager = new BackupManager(fileSystem);
             m_FileManager = new FileManager(fileSystem);

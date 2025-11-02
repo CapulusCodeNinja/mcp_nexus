@@ -6,6 +6,7 @@ using Nexus.CommandLine;
 using Nexus.Config;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
+using Nexus.External.Apis.Security;
 using Nexus.External.Apis.ServiceManagement;
 using Nexus.Protocol;
 using Nexus.Setup;
@@ -24,8 +25,9 @@ internal class MainHostedService : IHostedService
     private readonly ISettings m_Settings;
     private readonly IFileSystem m_FileSystem;
     private readonly IProcessManager m_ProcessManager;
-    private readonly CommandLineContext m_CommandLineContext;
     private readonly IProtocolServer m_ProtocolServer;
+    private readonly IAdministratorChecker m_AdminChecker;
+    private readonly CommandLineContext m_CommandLineContext;
     private readonly IProductInstallation m_ProductInstallation;
 
     /// <summary>
@@ -35,10 +37,23 @@ internal class MainHostedService : IHostedService
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
     /// <param name="serviceController">Service controller abstraction.</param>
+    /// <param name="adminChecker">Administrative right checker.</param>
     /// <param name="settings">The product settings.</param>
     public MainHostedService(
-        CommandLineContext commandLineContext, IFileSystem fileSystem, IProcessManager processManager, IServiceController serviceController, ISettings settings)
-        : this(commandLineContext, new ProtocolServer(fileSystem, processManager, settings), new ProductInstallation(fileSystem, processManager, serviceController, settings), fileSystem, processManager, settings)
+        CommandLineContext commandLineContext,
+        IFileSystem fileSystem,
+        IProcessManager processManager,
+        IServiceController serviceController,
+        IAdministratorChecker adminChecker,
+        ISettings settings)
+        : this(
+            commandLineContext,
+            new ProtocolServer(fileSystem, processManager, settings),
+            new ProductInstallation(fileSystem, processManager, serviceController, adminChecker, settings),
+            fileSystem,
+            processManager,
+            adminChecker,
+            settings)
     {
     }
 
@@ -50,9 +65,16 @@ internal class MainHostedService : IHostedService
     /// <param name="productInstallation">The product setup finctionality.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager abstraction.</param>
+    /// <param name="adminChecker">Administrative right checker.</param>
     /// <param name="settings">The product settings.</param>
     internal MainHostedService(
-        CommandLineContext commandLineContext, IProtocolServer protocolServer, IProductInstallation productInstallation, IFileSystem fileSystem, IProcessManager processManager, ISettings settings)
+        CommandLineContext commandLineContext,
+        IProtocolServer protocolServer,
+        IProductInstallation productInstallation,
+        IFileSystem fileSystem,
+        IProcessManager processManager,
+        IAdministratorChecker adminChecker,
+        ISettings settings)
     {
         m_Logger = LogManager.GetCurrentClassLogger();
         m_CommandLineContext = commandLineContext;
@@ -61,6 +83,7 @@ internal class MainHostedService : IHostedService
         m_Settings = settings;
         m_FileSystem = fileSystem;
         m_ProcessManager = processManager;
+        m_AdminChecker = adminChecker;
     }
 
     /// <summary>

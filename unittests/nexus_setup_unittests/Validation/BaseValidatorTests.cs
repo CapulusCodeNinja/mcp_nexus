@@ -3,6 +3,7 @@ using FluentAssertions;
 using Moq;
 
 using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.Security;
 using Nexus.External.Apis.ServiceManagement;
 using Nexus.Setup.Validation;
 
@@ -19,6 +20,7 @@ public class BaseValidatorTests
 {
     private readonly Mock<IFileSystem> m_FileSystemMock;
     private readonly Mock<IServiceController> m_ServiceControllerMock;
+    private readonly Mock<IAdministratorChecker> m_AdministratorCheckerMock;
     private readonly Logger m_Logger;
 
     /// <summary>
@@ -28,6 +30,7 @@ public class BaseValidatorTests
     {
         m_FileSystemMock = new Mock<IFileSystem>();
         m_ServiceControllerMock = new Mock<IServiceController>();
+        m_AdministratorCheckerMock = new Mock<IAdministratorChecker>();
         m_Logger = LogManager.GetCurrentClassLogger();
     }
 
@@ -39,7 +42,7 @@ public class BaseValidatorTests
     {
         // Act & Assert
         _ = Assert.Throws<ArgumentNullException>(() =>
-            new TestableBaseValidator(m_Logger, null!, m_ServiceControllerMock.Object));
+            new TestableBaseValidator(m_Logger, null!, m_ServiceControllerMock.Object, m_AdministratorCheckerMock.Object));
     }
 
     /// <summary>
@@ -50,7 +53,18 @@ public class BaseValidatorTests
     {
         // Act & Assert
         _ = Assert.Throws<ArgumentNullException>(() =>
-            new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, null!));
+            new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, null!, m_AdministratorCheckerMock.Object));
+    }
+
+    /// <summary>
+    /// Verifies that constructor throws ArgumentNullException when administratorChecker is null.
+    /// </summary>
+    [Fact]
+    public void Constructor_WithNullAdministratorChecker_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        _ = Assert.Throws<ArgumentNullException>(() =>
+            new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object, null!));
     }
 
     /// <summary>
@@ -60,26 +74,46 @@ public class BaseValidatorTests
     public void Constructor_WithValidParameters_Succeeds()
     {
         // Act
-        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object);
+        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object, m_AdministratorCheckerMock.Object);
 
         // Assert
         _ = validator.Should().NotBeNull();
     }
 
     /// <summary>
-    /// Verifies that ValidateAdministratorPrivileges returns a boolean result.
+    /// Verifies that ValidateAdministratorPrivileges returns true when running as admin.
     /// </summary>
     [Fact]
-    public void ValidateAdministratorPrivileges_ReturnsBoolean()
+    public void ValidateAdministratorPrivileges_WhenRunningAsAdmin_ReturnsTrue()
     {
         // Arrange
-        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object);
+        _ = m_AdministratorCheckerMock.Setup(ac => ac.IsRunningAsAdministrator())
+            .Returns(true);
+        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object, m_AdministratorCheckerMock.Object);
 
         // Act
         var result = validator.PublicValidateAdministratorPrivileges();
 
-        // Assert - Result depends on whether test is run as admin, just verify it returns a boolean
-        _ = result.GetType().Should().Be(typeof(bool));
+        // Assert
+        _ = result.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that ValidateAdministratorPrivileges returns false when not running as admin.
+    /// </summary>
+    [Fact]
+    public void ValidateAdministratorPrivileges_WhenNotRunningAsAdmin_ReturnsFalse()
+    {
+        // Arrange
+        _ = m_AdministratorCheckerMock.Setup(ac => ac.IsRunningAsAdministrator())
+            .Returns(false);
+        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object, m_AdministratorCheckerMock.Object);
+
+        // Act
+        var result = validator.PublicValidateAdministratorPrivileges();
+
+        // Assert
+        _ = result.Should().BeFalse();
     }
 
     /// <summary>
@@ -89,7 +123,7 @@ public class BaseValidatorTests
     public void ValidateDirectoryPermissions_WithExistingParentDirectory_ReturnsTrue()
     {
         // Arrange
-        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object);
+        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object, m_AdministratorCheckerMock.Object);
         var directoryPath = @"C:\Program Files\MCP-Nexus\installation";
         var directoryName = "Installation";
 
@@ -110,7 +144,7 @@ public class BaseValidatorTests
     public void ValidateDirectoryPermissions_WithNonExistentParentDirectory_ReturnsFalse()
     {
         // Arrange
-        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object);
+        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object, m_AdministratorCheckerMock.Object);
         var directoryPath = @"C:\NonExistent\MCP-Nexus\installation";
         var directoryName = "Installation";
 
@@ -131,7 +165,7 @@ public class BaseValidatorTests
     public void ValidateDirectoryPermissions_WithException_ReturnsFalse()
     {
         // Arrange
-        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object);
+        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object, m_AdministratorCheckerMock.Object);
         var directoryPath = @"C:\Program Files\MCP-Nexus\installation";
         var directoryName = "Installation";
 
@@ -152,7 +186,7 @@ public class BaseValidatorTests
     public void ValidateDirectoryPermissions_WithEmptyPath_ReturnsTrue()
     {
         // Arrange
-        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object);
+        var validator = new TestableBaseValidator(m_Logger, m_FileSystemMock.Object, m_ServiceControllerMock.Object, m_AdministratorCheckerMock.Object);
 
         // Act
         var result = validator.PublicValidateDirectoryPermissions(string.Empty, "Test");
@@ -172,8 +206,9 @@ public class BaseValidatorTests
         /// <param name="logger">Logger instance.</param>
         /// <param name="fileSystem">File system abstraction.</param>
         /// <param name="serviceController">Service controller abstraction.</param>
-        public TestableBaseValidator(Logger logger, IFileSystem fileSystem, IServiceController serviceController)
-            : base(fileSystem, serviceController)
+        /// <param name="administratorChecker">Administrator checker abstraction.</param>
+        public TestableBaseValidator(Logger logger, IFileSystem fileSystem, IServiceController serviceController, IAdministratorChecker administratorChecker)
+            : base(fileSystem, serviceController, administratorChecker)
         {
             _ = logger; // parameter intentionally unused in accessor
         }
