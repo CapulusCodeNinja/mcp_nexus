@@ -6,7 +6,7 @@ namespace Nexus.Protocol.Notifications;
 /// Interface for bridging MCP notifications to a transport mechanism.
 /// Implementations handle the actual delivery of notifications (stdio, HTTP, etc.).
 /// </summary>
-internal interface INotificationBridge
+public interface INotificationBridge
 {
     /// <summary>
     /// Sends a notification through the transport mechanism.

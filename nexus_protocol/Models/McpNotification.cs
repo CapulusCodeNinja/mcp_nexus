@@ -6,7 +6,7 @@ namespace Nexus.Protocol.Models;
 /// Represents a server-initiated Model Context Protocol (MCP) notification.
 /// Notifications are one-way messages that do not expect a response.
 /// </summary>
-internal class McpNotification
+public class McpNotification
 {
     /// <summary>
     /// Gets or sets the JSON-RPC protocol version.
