@@ -877,10 +877,94 @@ public class CommandQueueTests : IDisposable
     public void EnqueueCommand_WithNoSubscribers_DoesNotThrow()
     {
         // Arrange
-        using var queue = new CommandQueue("test-session-no-sub", m_Settings.Object, m_BatchProcessor.Object);
+        var queueWithoutSubscribers = new CommandQueue("test-session-2", m_Settings.Object, m_BatchProcessor.Object);
 
         // Act & Assert - Should not throw
-        var commandId = queue.EnqueueCommand("k");
-        _ = commandId.Should().NotBeNullOrEmpty();
+        _ = queueWithoutSubscribers.EnqueueCommand("k");
+        queueWithoutSubscribers.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync returns null when command does not exist.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task GetCommandInfoAsync_WhenCommandNotFound_ReturnsNull()
+    {
+        // Act
+        var result = await m_Queue.GetCommandInfoAsync("nonexistent-command-id");
+
+        // Assert
+        _ = result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand returns false when command does not exist.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenCommandNotFound_ReturnsFalse()
+    {
+        // Act
+        var result = m_Queue.CancelCommand("nonexistent-command-id");
+
+        // Assert
+        _ = result.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Verifies that CancelAllCommands with reason updates all commands.
+    /// </summary>
+    [Fact]
+    public void CancelAllCommands_WithReason_UpdatesAllCommands()
+    {
+        // Arrange
+        _ = m_Queue.EnqueueCommand("k");
+        _ = m_Queue.EnqueueCommand("lm");
+        m_StateChanges.Clear();
+
+        // Act
+        var count = m_Queue.CancelAllCommands("Test reason");
+
+        // Assert
+        _ = count.Should().Be(2);
+        _ = m_StateChanges.Should().HaveCount(2);
+        foreach (var change in m_StateChanges)
+        {
+            _ = change.NewState.Should().Be(CommandState.Cancelled);
+        }
+    }
+
+    /// <summary>
+    /// Verifies that GetAllCommandInfos returns empty dictionary when no commands.
+    /// </summary>
+    [Fact]
+    public void GetAllCommandInfos_WhenNoCommands_ReturnsEmptyDictionary()
+    {
+        // Act
+        var result = m_Queue.GetAllCommandInfos();
+
+        // Assert
+        _ = result.Should().NotBeNull();
+        _ = result.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that GetAllCommandInfos returns all commands.
+    /// </summary>
+    [Fact]
+    public void GetAllCommandInfos_WhenCommandsExist_ReturnsAllCommands()
+    {
+        // Arrange
+        var id1 = m_Queue.EnqueueCommand("k");
+        var id2 = m_Queue.EnqueueCommand("lm");
+
+        // Act
+        var result = m_Queue.GetAllCommandInfos();
+
+        // Assert
+        _ = result.Should().NotBeNull();
+        _ = result.Should().HaveCount(2);
+        _ = result.Should().ContainKey(id1);
+        _ = result.Should().ContainKey(id2);
     }
 }

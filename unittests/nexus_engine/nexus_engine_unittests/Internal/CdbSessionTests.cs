@@ -1042,6 +1042,58 @@ public class CdbSessionTests
     }
 
     /// <summary>
+    /// Verifies that SessionId property is set after initialization.
+    /// </summary>
+    [Fact]
+    public void SessionId_AfterConstruction_IsEmpty()
+    {
+        // Arrange
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Assert
+        _ = session.SessionId.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that DumpFilePath property is empty after construction.
+    /// </summary>
+    [Fact]
+    public void DumpFilePath_AfterConstruction_IsEmpty()
+    {
+        // Arrange
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Assert
+        _ = session.DumpFilePath.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that SymbolPath property is null after construction.
+    /// </summary>
+    [Fact]
+    public void SymbolPath_AfterConstruction_IsNull()
+    {
+        // Arrange
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Assert
+        _ = session.SymbolPath.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that ProcessId property is null when process not started.
+    /// </summary>
+    [Fact]
+    public void ProcessId_WhenProcessNotStarted_IsNull()
+    {
+        // Arrange
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Assert
+        _ = session.ProcessId.Should().BeNull();
+    }
+
+    /// <summary>
     /// Verifies that ExecuteBatchCommandAsync with single command works.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>

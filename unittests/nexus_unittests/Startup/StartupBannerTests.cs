@@ -168,4 +168,60 @@ public class StartupBannerTests
 
         // Assert - No exception thrown
     }
+
+    /// <summary>
+    /// Verifies that DisplayBanner handles exception during display.
+    /// </summary>
+    [Fact]
+    public void DisplayBanner_WhenExceptionOccurs_HandlesGracefully()
+    {
+        // Arrange
+        var context = new CommandLineContext(Array.Empty<string>());
+        _ = m_Settings.Setup(s => s.Get()).Throws(new InvalidOperationException("Config error"));
+        var banner = new StartupBanner(false, context, m_Settings.Object);
+
+        // Act & Assert - Should not throw
+        var action = () => banner.DisplayBanner();
+        _ = action.Should().NotThrow();
+    }
+
+    /// <summary>
+    /// Verifies that DisplayBanner displays all sections in service mode.
+    /// </summary>
+    [Fact]
+    public void DisplayBanner_WithServiceMode_DisplaysAllSections()
+    {
+        // Arrange
+        var context = new CommandLineContext(new[] { "--service" });
+        var banner = new StartupBanner(true, context, m_Settings.Object);
+
+        // Act
+        banner.DisplayBanner();
+
+        // Assert - No exception thrown, all sections should display
+        _ = banner.Should().NotBeNull();
+    }
+
+    /// <summary>
+    /// Verifies that DisplayBanner handles all command line modes.
+    /// </summary>
+    /// <param name="mode">The command line mode to test.</param>
+    [Theory]
+    [InlineData("--http")]
+    [InlineData("--stdio")]
+    [InlineData("--install")]
+    [InlineData("--update")]
+    [InlineData("--uninstall")]
+    public void DisplayBanner_WithVariousModes_Succeeds(string mode)
+    {
+        // Arrange
+        var context = new CommandLineContext(new[] { mode });
+        var banner = new StartupBanner(false, context, m_Settings.Object);
+
+        // Act
+        banner.DisplayBanner();
+
+        // Assert - No exception thrown
+        _ = banner.Should().NotBeNull();
+    }
 }

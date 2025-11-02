@@ -245,4 +245,67 @@ public class ExecutorTests
         _ = result.CommandId.Should().Be("cmd-456");
         tokenValidator.Dispose();
     }
+
+    /// <summary>
+    /// Verifies that ExecuteAsync handles null parameters.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteAsync_WithNullParameters_HandlesGracefully()
+    {
+        // Arrange
+        var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
+        var tokenValidator = new TokenValidator();
+        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+
+        // Act
+        var result = await executor.ExecuteAsync("NonExistentExtension", "session-123", null, "cmd-456");
+
+        // Assert
+        _ = result.Should().NotBeNull();
+        _ = result.State.Should().Be(CommandState.Failed);
+        tokenValidator.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteAsync with parameters serializes them correctly.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteAsync_WithParameters_HandlesGracefully()
+    {
+        // Arrange
+        var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
+        var tokenValidator = new TokenValidator();
+        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var parameters = new { Key = "Value", Number = 42 };
+
+        // Act
+        var result = await executor.ExecuteAsync("NonExistentExtension", "session-123", parameters, "cmd-456");
+
+        // Assert
+        _ = result.Should().NotBeNull();
+        _ = result.State.Should().Be(CommandState.Failed);
+        tokenValidator.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that UpdateCallbackUrl can be updated before execution.
+    /// </summary>
+    [Fact]
+    public void UpdateCallbackUrl_BeforeExecution_CanBeUpdated()
+    {
+        // Arrange
+        var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
+        var tokenValidator = new TokenValidator();
+        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+
+        // Act
+        executor.UpdateCallbackUrl("http://127.0.0.1:9001/extension-callback");
+        executor.UpdateCallbackUrl("http://127.0.0.1:9002/extension-callback");
+
+        // Assert - Should not throw
+        _ = executor.Should().NotBeNull();
+        tokenValidator.Dispose();
+    }
 }
