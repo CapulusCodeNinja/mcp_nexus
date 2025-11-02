@@ -2,8 +2,8 @@ using System.ComponentModel;
 
 using ModelContextProtocol.Server;
 
-using Nexus.Engine;
 using Nexus.External.Apis.FileSystem;
+using Nexus.Protocol.Services;
 using Nexus.Protocol.Utilities;
 
 using NLog;
@@ -54,7 +54,7 @@ internal static class OpenDumpAnalyzeSessionTool
                     $"Dump file not found: {dumpPath}");
             }
 
-            var sessionId = await DebugEngine.Instance.CreateSessionAsync(dumpPath, symbolsPath);
+            var sessionId = await EngineService.Get().CreateSessionAsync(dumpPath, symbolsPath);
 
             logger.Info("Successfully created session: {SessionId}", sessionId);
 

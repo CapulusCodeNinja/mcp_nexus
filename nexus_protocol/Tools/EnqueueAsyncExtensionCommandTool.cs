@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 using ModelContextProtocol.Server;
 
-using Nexus.Engine;
+using Nexus.Protocol.Services;
 using Nexus.Protocol.Utilities;
 
 using NLog;
@@ -47,7 +47,7 @@ internal static class EnqueueAsyncExtensionCommandTool
                 throw new ArgumentException("extensionName cannot be empty", nameof(extensionName));
             }
 
-            var commandId = await DebugEngine.Instance.EnqueueExtensionScriptAsync(sessionId, extensionName, parameters);
+            var commandId = await EngineService.Get().EnqueueExtensionScriptAsync(sessionId, extensionName, parameters);
 
             logger.Info("Extension Script enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
 

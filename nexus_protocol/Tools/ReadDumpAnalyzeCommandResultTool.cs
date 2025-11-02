@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 using ModelContextProtocol.Server;
 
-using Nexus.Engine;
+using Nexus.Protocol.Services;
 using Nexus.Protocol.Utilities;
 
 using NLog;
@@ -35,7 +35,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
 
         try
         {
-            var commandInfo = await DebugEngine.Instance.GetCommandInfoAsync(sessionId, commandId);
+            var commandInfo = await EngineService.Get().GetCommandInfoAsync(sessionId, commandId);
 
             logger.Info("Command {CommandId} result retrieved: State={State}", commandId, commandInfo.State);
 

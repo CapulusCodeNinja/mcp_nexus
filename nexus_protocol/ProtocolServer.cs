@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 
+using Nexus.Config;
+using Nexus.Protocol.Services;
+
 using NLog;
 
 namespace Nexus.Protocol;
@@ -17,14 +20,19 @@ public class ProtocolServer : IProtocolServer
     private IHost? m_Host;
     private bool m_Disposed;
 
+    private readonly ISettings m_Settings;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ProtocolServer"/> class.
     /// </summary>
+    /// <param name="settings">The product settings.</param>
     /// <exception cref="ArgumentNullException">Thrown when serviceProvider is null.</exception>
-    public ProtocolServer()
+    public ProtocolServer(ISettings settings)
     {
         IsRunning = false;
         m_Logger = LogManager.GetCurrentClassLogger();
+        m_Settings = settings;
+        EngineService.Initialize(m_Settings);
     }
 
     /// <summary>

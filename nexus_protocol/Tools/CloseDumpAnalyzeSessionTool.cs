@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 using ModelContextProtocol.Server;
 
-using Nexus.Engine;
+using Nexus.Protocol.Services;
 using Nexus.Protocol.Utilities;
 
 using NLog;
@@ -33,7 +33,7 @@ internal static class CloseDumpAnalyzeSessionTool
 
         try
         {
-            await DebugEngine.Instance.CloseSessionAsync(sessionId);
+            await EngineService.Get().CloseSessionAsync(sessionId);
 
             logger.Info("Successfully closed session: {SessionId}", sessionId);
 

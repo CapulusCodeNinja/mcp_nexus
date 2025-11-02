@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 using ModelContextProtocol.Server;
 
-using Nexus.Engine;
+using Nexus.Protocol.Services;
 using Nexus.Protocol.Utilities;
 
 using NLog;
@@ -45,7 +45,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
                 throw new ArgumentException("command cannot be empty", nameof(command));
             }
 
-            var commandId = DebugEngine.Instance.EnqueueCommand(sessionId, command);
+            var commandId = EngineService.Get().EnqueueCommand(sessionId, command);
 
             logger.Info("Command enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
 

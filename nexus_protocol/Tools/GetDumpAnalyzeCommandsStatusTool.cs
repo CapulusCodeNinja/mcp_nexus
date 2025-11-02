@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 using ModelContextProtocol.Server;
 
-using Nexus.Engine;
+using Nexus.Protocol.Services;
 using Nexus.Protocol.Utilities;
 
 using NLog;
@@ -33,7 +33,7 @@ internal static class GetDumpAnalyzeCommandsStatusTool
 
         try
         {
-            var allCommands = DebugEngine.Instance.GetAllCommandInfos(sessionId);
+            var allCommands = EngineService.Get().GetAllCommandInfos(sessionId);
 
             var commandStatuses = allCommands.Values.Select(cmd => new
             {

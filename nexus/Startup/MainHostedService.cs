@@ -31,7 +31,7 @@ public class MainHostedService : IHostedService
     /// <param name="settings">The product settings.</param>
     public MainHostedService(
         CommandLineContext commandLineContext, ISettings settings)
-        : this(commandLineContext, new ProtocolServer(), new ProductInstallation(settings), settings)
+        : this(commandLineContext, new ProtocolServer(settings), new ProductInstallation(settings), settings)
     {
     }
 

@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 using ModelContextProtocol.Server;
 
-using Nexus.Engine;
+using Nexus.Protocol.Services;
 using Nexus.Protocol.Utilities;
 
 using NLog;
@@ -35,7 +35,7 @@ internal static class CancelCommandTool
 
         try
         {
-            var cancelled = DebugEngine.Instance.CancelCommand(sessionId, commandId);
+            var cancelled = EngineService.Get().CancelCommand(sessionId, commandId);
 
             logger.Info("Command {CommandId} cancellation: {Result}", commandId, cancelled ? "Success" : "NotFound");
 
