@@ -1184,4 +1184,104 @@ public class CdbSessionTests
         // Assert
         _ = result.Should().BeFalse();
     }
+
+    /// <summary>
+    /// Verifies that SendQuitCommandAsync handles null InputWriter gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SendQuitCommandAsync_WithNullInputWriter_HandlesGracefully()
+    {
+        // Arrange
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Act - Should not throw when InputWriter is null
+        var act = async () => await accessor.SendQuitCommandAsync();
+
+        // Assert
+        _ = await act.Should().NotThrowAsync();
+    }
+
+    /// <summary>
+    /// Verifies that WaitForProcessExitAsync handles null process gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task WaitForProcessExitAsync_WithNullProcess_HandlesGracefully()
+    {
+        // Arrange
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+        // Act - Should not throw when process is null
+        var act = async () => await accessor.WaitForProcessExitAsync();
+
+        // Assert
+        _ = await act.Should().NotThrowAsync();
+    }
+
+    /// <summary>
+    /// Verifies that DisposeAsync handles exception during disposal gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DisposeAsync_WithException_HandlesGracefully()
+    {
+        // Arrange
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Act - DisposeAsync should handle exceptions gracefully
+        var act = async () => await session.DisposeAsync();
+
+        // Assert - Should not throw even if internal operations fail
+        _ = await act.Should().NotThrowAsync();
+    }
+
+    /// <summary>
+    /// Verifies that InitializeAsync throws exception when initialization fails.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InitializeAsync_WhenInitializationFails_ThrowsException()
+    {
+        // Arrange
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
+        _ = m_MockFileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.IO.SearchOption>()))
+            .Returns(Array.Empty<string>());
+
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Act - InitializeAsync will fail because CDB path won't be found
+        var act = async () => await session.InitializeAsync("session-123", "C:\\dummy.dmp", null);
+
+        // Assert - Should throw because CDB executable not found
+        _ = await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// Verifies that InitializeAsync disposes session when initialization fails.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InitializeAsync_WhenInitializationFails_DisposesSession()
+    {
+        // Arrange
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
+        _ = m_MockFileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<System.IO.SearchOption>()))
+            .Returns(Array.Empty<string>());
+
+        var session = new CdbSession(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, CreatePreprocessor());
+
+        // Act
+        try
+        {
+            await session.InitializeAsync("session-123", "C:\\dummy.dmp", null);
+        }
+        catch
+        {
+            // Expected to throw
+        }
+
+        // Assert - Session should be disposed after initialization failure
+        _ = session.IsInitialized.Should().BeFalse();
+    }
 }

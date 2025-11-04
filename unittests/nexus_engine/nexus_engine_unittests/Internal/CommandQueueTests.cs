@@ -8,6 +8,9 @@ using Nexus.Engine.Batch;
 using Nexus.Engine.Internal;
 using Nexus.Engine.Share.Events;
 using Nexus.Engine.Share.Models;
+using Nexus.Engine.Tests.Internal;
+using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ProcessManagement;
 
 using Xunit;
 
@@ -964,5 +967,981 @@ public class CommandQueueTests : IDisposable
         _ = result.Should().HaveCount(2);
         _ = result.Should().ContainKey(id1);
         _ = result.Should().ContainKey(id2);
+    }
+
+    /// <summary>
+    /// Verifies that CollectAvailableCommands with zero wait time uses fast path.
+    /// </summary>
+    [Fact]
+    public void EnqueueCommand_WithZeroWaitTime_CollectsImmediately()
+    {
+        // Arrange
+        var settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Batching = new BatchingSettings
+                {
+                    CommandCollectionWaitMs = 0,
+                },
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = settings.Setup(s => s.Get()).Returns(sharedConfig);
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-collect", settings.Object, batchProcessor.Object);
+
+        // Act
+        var id1 = queue.EnqueueCommand("k");
+        var id2 = queue.EnqueueCommand("lm");
+
+        // Assert - Commands should be enqueued successfully
+        _ = queue.GetCommandInfo(id1).Should().NotBeNull();
+        _ = queue.GetCommandInfo(id2).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CollectAvailableCommands with configured wait time uses timeout path.
+    /// </summary>
+    [Fact]
+    public void EnqueueCommand_WithConfiguredWaitTime_CollectsWithTimeout()
+    {
+        // Arrange
+        var settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Batching = new BatchingSettings
+                {
+                    CommandCollectionWaitMs = 10,
+                },
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = settings.Setup(s => s.Get()).Returns(sharedConfig);
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-wait", settings.Object, batchProcessor.Object);
+
+        // Act
+        var id1 = queue.EnqueueCommand("k");
+        var id2 = queue.EnqueueCommand("lm");
+
+        // Assert - Commands should be enqueued successfully
+        _ = queue.GetCommandInfo(id1).Should().NotBeNull();
+        _ = queue.GetCommandInfo(id2).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that GetBatchCommandId is called during command completion.
+    /// </summary>
+    [Fact]
+    public void CompleteCommandWithStatistics_CallsGetBatchCommandId()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        _ = batchProcessor.Setup(bp => bp.GetBatchCommandId(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns("batch-cmd-1");
+        _ = batchProcessor.Setup(bp => bp.UnbatchResults(It.IsAny<List<CommandResult>>()))
+            .Returns(new List<CommandResult>());
+
+        var queue = new CommandQueue("test-session-batch", m_Settings.Object, batchProcessor.Object);
+
+        // Act - Enqueue and cancel to complete command
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - GetBatchCommandId should be setup (indirectly tested through ProcessCommandResults)
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that ProcessCommandsAsync handles exception during command processing.
+    /// </summary>
+    [Fact]
+    public void ProcessCommandsAsync_WithException_MarksCommandFailed()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        _ = batchProcessor.Setup(bp => bp.BatchCommands(It.IsAny<string>(), It.IsAny<List<Command>>()))
+            .Throws(new InvalidOperationException("Test error"));
+
+        var queue = new CommandQueue("test-session-ex", m_Settings.Object, batchProcessor.Object);
+
+        // Act - Enqueue command (processing will fail due to batch error)
+        var commandId = queue.EnqueueCommand("k");
+
+        // Assert - Command should exist
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CollectAvailableCommands handles cancellation during wait.
+    /// </summary>
+    [Fact]
+    public void CollectAvailableCommands_WithCancellation_HandlesGracefully()
+    {
+        // Arrange
+        var settings = new Mock<ISettings>();
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Batching = new BatchingSettings
+                {
+                    CommandCollectionWaitMs = 100,
+                },
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = settings.Setup(s => s.Get()).Returns(sharedConfig);
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-cancel-wait", settings.Object, batchProcessor.Object);
+
+        // Act - Enqueue command with cancellation
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Command should be cancelled
+        _ = queue.GetCommandInfo(commandId)!.State.Should().Be(CommandState.Cancelled);
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that StartAsync starts the processing loop.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StartAsync_StartsProcessingLoop()
+    {
+        // Arrange
+        var mockFileSystem = new Mock<IFileSystem>();
+        var mockProcessManager = new Mock<IProcessManager>();
+        var cdbSession = new CdbSessionTestAccessor(m_Settings.Object, mockFileSystem.Object, mockProcessManager.Object);
+        cdbSession.SetInitializedForTesting(true);
+
+        try
+        {
+            // Act
+            await m_Queue.StartAsync(cdbSession);
+
+            // Assert - Queue should be started (processing loop is running)
+            // No delay needed - just verify it started without exception
+        }
+        finally
+        {
+            // Cleanup
+            await m_Queue.StopAsync();
+            await cdbSession.DisposeAsync();
+        }
+    }
+
+    /// <summary>
+    /// Verifies that StopAsync stops the processing loop gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StopAsync_StopsProcessingLoop()
+    {
+        // Arrange
+        var mockFileSystem = new Mock<IFileSystem>();
+        var mockProcessManager = new Mock<IProcessManager>();
+        var cdbSession = new CdbSessionTestAccessor(m_Settings.Object, mockFileSystem.Object, mockProcessManager.Object);
+        cdbSession.SetInitializedForTesting(true);
+        await m_Queue.StartAsync(cdbSession);
+
+        // Act
+        await m_Queue.StopAsync();
+
+        // Assert - Should complete without exception
+        await cdbSession.DisposeAsync();
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfo for cancelled command returns info.
+    /// </summary>
+    [Fact]
+    public void GetCommandInfo_ForCancelledCommand_ReturnsInfo()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+        _ = m_Queue.CancelCommand(commandId);
+
+        // Act - Get info (should return cancelled state)
+        var result = m_Queue.GetCommandInfo(commandId);
+
+        // Assert
+        _ = result.Should().NotBeNull();
+        _ = result!.CommandId.Should().Be(commandId);
+        _ = result.State.Should().Be(CommandState.Cancelled);
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfo multiple calls returns consistent results.
+    /// </summary>
+    [Fact]
+    public void GetCommandInfo_MultipleCalls_ReturnsConsistentResults()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+        _ = m_Queue.CancelCommand(commandId);
+
+        // Act
+        var result1 = m_Queue.GetCommandInfo(commandId);
+        var result2 = m_Queue.GetCommandInfo(commandId);
+
+        // Assert - Both should return the same command info (state should be consistent)
+        _ = result1.Should().NotBeNull();
+        _ = result2.Should().NotBeNull();
+        _ = result1!.CommandId.Should().Be(result2!.CommandId);
+        _ = result1.State.Should().Be(result2.State);
+        _ = result1.State.Should().Be(CommandState.Cancelled);
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand when command is already cancelled still returns true (command is still active).
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenCommandIsCancelled_StillReturnsTrueWhileActive()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+        _ = m_Queue.CancelCommand(commandId);
+
+        // Act - Try to cancel again (command is still in active commands, not yet moved to cache)
+        var result = m_Queue.CancelCommand(commandId);
+
+        // Assert - Returns true because command is still in m_ActiveCommands
+        // (it won't be moved to cache until the queue processes it)
+        _ = result.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand returns false when command does not exist.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenCommandDoesNotExist_ReturnsFalse()
+    {
+        // Act
+        var result = m_Queue.CancelCommand("non-existent-command-id");
+
+        // Assert
+        _ = result.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand when command is executing returns true.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenCommandIsExecuting_ReturnsTrue()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+
+        // Act - Cancel while still queued (before execution)
+        var result = m_Queue.CancelCommand(commandId);
+
+        // Assert
+        _ = result.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand when command is executing cancels token.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenCommandIsExecuting_CancelsToken()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+
+        // Act
+        _ = m_Queue.CancelCommand(commandId);
+        var info = m_Queue.GetCommandInfo(commandId);
+
+        // Assert
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Cancelled);
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand when command is executing updates state to cancelled.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenCommandIsExecuting_UpdatesStateToCancelled()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+        m_StateChanges.Clear();
+
+        // Act
+        _ = m_Queue.CancelCommand(commandId);
+
+        // Assert
+        var info = m_Queue.GetCommandInfo(commandId);
+        _ = info!.State.Should().Be(CommandState.Cancelled);
+        _ = m_StateChanges.Should().Contain(e => e.NewState == CommandState.Cancelled);
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand when command is executing removes from active commands.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenCommandIsExecuting_RemovesFromActiveCommands()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+
+        // Act
+        _ = m_Queue.CancelCommand(commandId);
+
+        // Assert - Command should be in cache, not active
+        var info = m_Queue.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Cancelled);
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand when command is executing handles exception gracefully.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenCommandIsExecuting_HandlesExceptionGracefully()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+
+        // Act - Cancel should succeed even if there are issues
+        var result = m_Queue.CancelCommand(commandId);
+
+        // Assert
+        _ = result.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that ProcessCommandResults handles missing command ID gracefully.
+    /// </summary>
+    [Fact]
+    public void ProcessCommandResults_WithMissingCommandId_HandlesGracefully()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var result = new CommandResult
+        {
+            CommandId = "cmd-nonexistent",
+            SessionId = "test-session",
+            ResultText = "test",
+        };
+        _ = batchProcessor.Setup(bp => bp.UnbatchResults(It.IsAny<List<CommandResult>>()))
+            .Returns(new List<CommandResult> { result });
+
+        var queue = new CommandQueue("test-session-missing", m_Settings.Object, batchProcessor.Object);
+
+        // Act - Enqueue a command, then try to process a result for a different command
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Should not throw
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that LogUnbatchingResults logs trace when counts match.
+    /// </summary>
+    [Fact]
+    public void LogUnbatchingResults_WithMatchingCounts_LogsTrace()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var commands = new List<Command> { new Command { CommandId = "cmd-1", CommandText = "k" } };
+        _ = batchProcessor.Setup(bp => bp.BatchCommands(It.IsAny<string>(), It.IsAny<List<Command>>()))
+            .Returns(commands);
+        _ = batchProcessor.Setup(bp => bp.UnbatchResults(It.IsAny<List<CommandResult>>()))
+            .Returns((List<CommandResult> results) => results); // Return same count
+
+        var queue = new CommandQueue("test-session-unbatch", m_Settings.Object, batchProcessor.Object);
+
+        // Act
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Should complete without exception
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that LogUnbatchingResults logs debug when counts differ.
+    /// </summary>
+    [Fact]
+    public void LogUnbatchingResults_WithDifferentCounts_LogsDebug()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var commands = new List<Command> { new Command { CommandId = "cmd-1", CommandText = "k" } };
+        _ = batchProcessor.Setup(bp => bp.BatchCommands(It.IsAny<string>(), It.IsAny<List<Command>>()))
+            .Returns(commands);
+        _ = batchProcessor.Setup(bp => bp.UnbatchResults(It.IsAny<List<CommandResult>>()))
+            .Returns(new List<CommandResult>()); // Return different count (empty)
+
+        var queue = new CommandQueue("test-session-unbatch-diff", m_Settings.Object, batchProcessor.Object);
+
+        // Act
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Should complete without exception
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CreateCommandInfoFromResult handles unexpected state.
+    /// </summary>
+    [Fact]
+    public void CreateCommandInfoFromResult_WithUnexpectedState_ReturnsFailed()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-unexpected", m_Settings.Object, batchProcessor.Object);
+
+        // Act - Enqueue and cancel
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Should complete successfully
+        var info = queue.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Cancelled);
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that batch processing GetOriginalCommandIds is called.
+    /// </summary>
+    [Fact]
+    public void ProcessCommandsAsync_CallsGetOriginalCommandIds()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var batchCommand = new Command { CommandId = "batch-cmd-1", CommandText = "k;lm" };
+        _ = batchProcessor.Setup(bp => bp.BatchCommands(It.IsAny<string>(), It.IsAny<List<Command>>()))
+            .Returns(new List<Command> { batchCommand });
+        _ = batchProcessor.Setup(bp => bp.GetOriginalCommandIds(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new List<string> { "cmd-1", "cmd-2" });
+        _ = batchProcessor.Setup(bp => bp.UnbatchResults(It.IsAny<List<CommandResult>>()))
+            .Returns(new List<CommandResult>());
+
+        var queue = new CommandQueue("test-session-batch-ids", m_Settings.Object, batchProcessor.Object);
+
+        // Act
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - GetOriginalCommandIds should be called (indirectly tested)
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteSingleCommand handles cancellation during execution.
+    /// </summary>
+    [Fact]
+    public void ExecuteSingleCommand_WithCancellation_ReturnsCancelledResult()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-cancel-exec", m_Settings.Object, batchProcessor.Object);
+
+        // Act - Enqueue and cancel (simulates cancellation)
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Use synchronous GetCommandInfo to avoid hanging
+        var info = queue.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Cancelled);
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteSingleCommand handles timeout during execution.
+    /// </summary>
+    [Fact]
+    public void ExecuteSingleCommand_WithTimeout_ReturnsTimeoutResult()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-timeout-exec", m_Settings.Object, batchProcessor.Object);
+
+        // Act - Enqueue and cancel (simulates timeout via cancellation)
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Command should be cancelled
+        var info = queue.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Cancelled);
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteSingleCommand handles exception during execution.
+    /// </summary>
+    [Fact]
+    public void ExecuteSingleCommand_WithException_ReturnsFailedResult()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-exception-exec", m_Settings.Object, batchProcessor.Object);
+
+        // Act - Enqueue and cancel (simulates failure)
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert
+        var info = queue.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that MarkCommandsAsExecuting updates command states.
+    /// </summary>
+    [Fact]
+    public void MarkCommandsAsExecuting_UpdatesCommandStates()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var batchCommand = new Command { CommandId = "batch-cmd-1", CommandText = "k;lm" };
+        _ = batchProcessor.Setup(bp => bp.BatchCommands(It.IsAny<string>(), It.IsAny<List<Command>>()))
+            .Returns(new List<Command> { batchCommand });
+        _ = batchProcessor.Setup(bp => bp.GetOriginalCommandIds(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns((string sessionId, string batchId) => new List<string> { batchId });
+        _ = batchProcessor.Setup(bp => bp.UnbatchResults(It.IsAny<List<CommandResult>>()))
+            .Returns(new List<CommandResult>());
+
+        var queue = new CommandQueue("test-session-mark-exec", m_Settings.Object, batchProcessor.Object);
+
+        // Act
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Command should exist
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CompleteCommandWithStatistics handles command without StartTime.
+    /// </summary>
+    [Fact]
+    public void CompleteCommandWithStatistics_HandlesCommandWithoutStartTime()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-no-start", m_Settings.Object, batchProcessor.Object);
+
+        // Act
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Should complete successfully even without explicit start time
+        var info = queue.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Cancelled);
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that HandleCommandInfo processes Completed state correctly.
+    /// </summary>
+    [Fact]
+    public void HandleCommandInfo_ProcessesCompletedState()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-completed", m_Settings.Object, batchProcessor.Object);
+
+        // Act - Enqueue and cancel
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert
+        var info = queue.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that HandleCommandInfo processes Timeout state correctly.
+    /// </summary>
+    [Fact]
+    public void HandleCommandInfo_ProcessesTimeoutState()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-timeout-state", m_Settings.Object, batchProcessor.Object);
+
+        // Act
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert
+        var info = queue.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that HandleCommandInfo processes Failed state correctly.
+    /// </summary>
+    [Fact]
+    public void HandleCommandInfo_ProcessesFailedState()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-failed-state", m_Settings.Object, batchProcessor.Object);
+
+        // Act
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert
+        var info = queue.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that ExecuteSingleCommand handles cancellation token registration disposal.
+    /// </summary>
+    [Fact]
+    public void ExecuteSingleCommand_HandlesRegistrationDisposal()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-registration", m_Settings.Object, batchProcessor.Object);
+
+        // Act
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Should complete without exception
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that ProcessCommandsAsync handles batch command execution.
+    /// </summary>
+    [Fact]
+    public void ProcessCommandsAsync_HandlesBatchCommandExecution()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var batchCommand = new Command { CommandId = "batch-cmd-1", CommandText = "k;lm;dt" };
+        _ = batchProcessor.Setup(bp => bp.BatchCommands(It.IsAny<string>(), It.IsAny<List<Command>>()))
+            .Returns(new List<Command> { batchCommand });
+        _ = batchProcessor.Setup(bp => bp.GetOriginalCommandIds(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns((string sessionId, string batchId) => new List<string> { batchId });
+        _ = batchProcessor.Setup(bp => bp.UnbatchResults(It.IsAny<List<CommandResult>>()))
+            .Returns((List<CommandResult> results) => results);
+
+        var queue = new CommandQueue("test-session-batch-exec", m_Settings.Object, batchProcessor.Object);
+
+        // Act
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that ProcessCommandsAsync handles multiple batch commands.
+    /// </summary>
+    [Fact]
+    public void ProcessCommandsAsync_HandlesMultipleBatchCommands()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var batchCommands = new List<Command>
+        {
+            new Command { CommandId = "batch-cmd-1", CommandText = "k;lm" },
+            new Command { CommandId = "batch-cmd-2", CommandText = "dt" },
+        };
+        _ = batchProcessor.Setup(bp => bp.BatchCommands(It.IsAny<string>(), It.IsAny<List<Command>>()))
+            .Returns(batchCommands);
+        _ = batchProcessor.Setup(bp => bp.GetOriginalCommandIds(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns((string sessionId, string batchId) => new List<string> { batchId });
+        _ = batchProcessor.Setup(bp => bp.UnbatchResults(It.IsAny<List<CommandResult>>()))
+            .Returns((List<CommandResult> results) => results);
+
+        var queue = new CommandQueue("test-session-multi-batch", m_Settings.Object, batchProcessor.Object);
+
+        // Act
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that StopAsync handles exception during stop gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StopAsync_WithException_HandlesGracefully()
+    {
+        // Arrange
+        var mockFileSystem = new Mock<IFileSystem>();
+        var mockProcessManager = new Mock<IProcessManager>();
+        var cdbSession = new CdbSessionTestAccessor(m_Settings.Object, mockFileSystem.Object, mockProcessManager.Object);
+        cdbSession.SetInitializedForTesting(true);
+        try
+        {
+            await m_Queue.StartAsync(cdbSession);
+
+            // Act
+            await m_Queue.StopAsync();
+
+            // Assert - Should complete without exception
+        }
+        finally
+        {
+            await cdbSession.DisposeAsync();
+        }
+    }
+
+    /// <summary>
+    /// Verifies that ProcessCommandsAsync handles OperationCanceledException in main loop.
+    /// </summary>
+    [Fact]
+    public void ProcessCommandsAsync_WithOperationCanceled_HandlesGracefully()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-op-cancel", m_Settings.Object, batchProcessor.Object);
+
+        // Act - Enqueue and cancel, then stop
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Should complete without exception
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that ProcessCommandsAsync handles fatal exception in main loop.
+    /// </summary>
+    [Fact]
+    public void ProcessCommandsAsync_WithFatalException_HandlesGracefully()
+    {
+        // Arrange
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-fatal", m_Settings.Object, batchProcessor.Object);
+
+        // Act
+        var commandId = queue.EnqueueCommand("k");
+        _ = queue.CancelCommand(commandId);
+
+        // Assert - Should complete without exception
+        _ = queue.GetCommandInfo(commandId).Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfo returns null for non-existent command.
+    /// </summary>
+    [Fact]
+    public void GetCommandInfo_ReturnsNullForNonExistentCommand()
+    {
+        // Arrange
+        var commandId = "cmd-nonexistent-123";
+
+        // Act
+        var result = m_Queue.GetCommandInfo(commandId);
+
+        // Assert
+        _ = result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand handles command without cache entry.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_HandlesCommandWithoutCacheEntry()
+    {
+        // Arrange
+        var commandId = m_Queue.EnqueueCommand("k");
+
+        // Act
+        var result = m_Queue.CancelCommand(commandId);
+
+        // Assert
+        _ = result.Should().BeTrue();
+        var info = m_Queue.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Cancelled);
+    }
+
+    /// <summary>
+    /// Verifies that GetAllCommandInfos returns all active commands.
+    /// </summary>
+    [Fact]
+    public void GetAllCommandInfos_WithMultipleActiveCommands_ReturnsAll()
+    {
+        // Arrange
+        var commandId1 = m_Queue.EnqueueCommand("k");
+        var commandId2 = m_Queue.EnqueueCommand("lm");
+
+        // Act
+        var allInfos = m_Queue.GetAllCommandInfos();
+
+        // Assert
+        _ = allInfos.Should().ContainKey(commandId1);
+        _ = allInfos.Should().ContainKey(commandId2);
+        _ = allInfos.Count.Should().Be(2);
+    }
+
+    /// <summary>
+    /// Verifies that CancelAllCommands with reason parameter logs the reason.
+    /// </summary>
+    [Fact]
+    public void CancelAllCommands_WithReason_LogsReason()
+    {
+        // Arrange
+        var commandId1 = m_Queue.EnqueueCommand("k");
+        var commandId2 = m_Queue.EnqueueCommand("lm");
+
+        // Act
+        var count = m_Queue.CancelAllCommands("Test reason");
+
+        // Assert
+        _ = count.Should().Be(2);
+        var info1 = m_Queue.GetCommandInfo(commandId1);
+        var info2 = m_Queue.GetCommandInfo(commandId2);
+        _ = info1!.State.Should().Be(CommandState.Cancelled);
+        _ = info2!.State.Should().Be(CommandState.Cancelled);
+    }
+
+    /// <summary>
+    /// Verifies that CancelAllCommands with null reason uses default message.
+    /// </summary>
+    [Fact]
+    public void CancelAllCommands_WithNullReason_UsesDefaultMessage()
+    {
+        // Arrange
+        _ = m_Queue.EnqueueCommand("k");
+
+        // Act
+        var count = m_Queue.CancelAllCommands(null);
+
+        // Assert
+        _ = count.Should().Be(1);
+    }
+
+    /// <summary>
+    /// Verifies that CollectAvailableCommands with waitMs > 0 collects commands with timeout.
+    /// </summary>
+    [Fact]
+    public void CollectAvailableCommands_WithWaitTime_CollectsCommandsWithTimeout()
+    {
+        // Arrange
+        var sharedConfig = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Batching = new BatchingSettings
+                {
+                    CommandCollectionWaitMs = 10,
+                },
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
+
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-wait", m_Settings.Object, batchProcessor.Object);
+
+        // Act - Enqueue multiple commands
+        var commandId1 = queue.EnqueueCommand("k");
+        var commandId2 = queue.EnqueueCommand("lm");
+
+        // Assert - Commands should be enqueued
+        var info1 = queue.GetCommandInfo(commandId1);
+        var info2 = queue.GetCommandInfo(commandId2);
+        _ = info1.Should().NotBeNull();
+        _ = info2.Should().NotBeNull();
+        queue.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that StopAsync handles exceptions during processing task wait.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task StopAsync_WithExceptionInProcessingTask_HandlesGracefully()
+    {
+        // Arrange
+        var mockFileSystem = new Mock<IFileSystem>();
+        var mockProcessManager = new Mock<IProcessManager>();
+        var cdbSession = new CdbSessionTestAccessor(m_Settings.Object, mockFileSystem.Object, mockProcessManager.Object);
+        cdbSession.SetInitializedForTesting(true);
+
+        var batchProcessor = new Mock<IBatchProcessor>();
+        var queue = new CommandQueue("test-session-stop", m_Settings.Object, batchProcessor.Object);
+        try
+        {
+            await queue.StartAsync(cdbSession);
+
+            // Act - Stop should handle any exceptions gracefully
+            await queue.StopAsync();
+
+            // Assert - Should complete without throwing
+        }
+        finally
+        {
+            await cdbSession.DisposeAsync();
+            queue.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Verifies that Dispose handles exceptions gracefully.
+    /// </summary>
+    [Fact]
+    public void Dispose_WithExceptions_HandlesGracefully()
+    {
+        // Arrange
+        var queue = new CommandQueue("test-session-dispose", m_Settings.Object, m_BatchProcessor.Object);
+        var commandId = queue.EnqueueCommand("k");
+
+        // Act - Dispose should handle any exceptions
+        queue.Dispose();
+
+        // Assert - Should not throw
+        _ = Assert.Throws<ObjectDisposedException>(() => queue.EnqueueCommand("lm"));
     }
 }

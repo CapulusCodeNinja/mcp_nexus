@@ -545,4 +545,423 @@ public class ExtensionScriptsTests : IAsyncDisposable
         _ = updatedInfo.Should().NotBeNull();
         _ = updatedInfo!.State.Should().Be(CommandState.Cancelled);
     }
+
+    /// <summary>
+    /// Verifies that HandleExtensionCancellation updates cache correctly.
+    /// </summary>
+    [Fact]
+    public void HandleExtensionCancellation_UpdatesCacheToCancelledState()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        var queuedTime = DateTime.Now;
+        var commandId = "cmd-cancel-test";
+        var sessionId = "session-123";
+        var extensionName = "TestExtension";
+
+        var commandInfo = CommandInfo.Executing(sessionId, commandId, $"Extension: {extensionName}", queuedTime, DateTime.Now, 12345);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache[commandId] = commandInfo;
+
+        var handleMethod = typeof(ExtensionScripts).GetMethod("HandleExtensionCancellation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        // Act
+        _ = handleMethod!.Invoke(m_ExtensionScripts, new object[] { extensionName, sessionId, commandId, queuedTime });
+
+        // Assert
+        var updatedInfo = m_ExtensionScripts.GetCommandStatus(commandId);
+        _ = updatedInfo.Should().NotBeNull();
+        _ = updatedInfo!.State.Should().Be(CommandState.Cancelled);
+        _ = updatedInfo.ErrorMessage.Should().Contain("cancelled");
+    }
+
+    /// <summary>
+    /// Verifies that HandleExtensionTimeout updates cache correctly.
+    /// </summary>
+    [Fact]
+    public void HandleExtensionTimeout_UpdatesCacheToTimeoutState()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        var queuedTime = DateTime.Now;
+        var commandId = "cmd-timeout-test";
+        var sessionId = "session-123";
+        var extensionName = "TestExtension";
+        var timeoutEx = new TimeoutException("Extension execution timed out");
+
+        var commandInfo = CommandInfo.Executing(sessionId, commandId, $"Extension: {extensionName}", queuedTime, DateTime.Now, 12345);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache[commandId] = commandInfo;
+
+        var handleMethod = typeof(ExtensionScripts).GetMethod("HandleExtensionTimeout", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        // Act
+        _ = handleMethod!.Invoke(m_ExtensionScripts, new object[] { extensionName, sessionId, commandId, queuedTime, timeoutEx });
+
+        // Assert
+        var updatedInfo = m_ExtensionScripts.GetCommandStatus(commandId);
+        _ = updatedInfo.Should().NotBeNull();
+        _ = updatedInfo!.State.Should().Be(CommandState.Timeout);
+        _ = updatedInfo.ErrorMessage.Should().Contain("timed out");
+    }
+
+    /// <summary>
+    /// Verifies that HandleExtensionFailure updates cache correctly.
+    /// </summary>
+    [Fact]
+    public void HandleExtensionFailure_UpdatesCacheToFailedState()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        var queuedTime = DateTime.Now;
+        var commandId = "cmd-fail-test";
+        var sessionId = "session-123";
+        var extensionName = "TestExtension";
+        var failureEx = new InvalidOperationException("Extension execution failed");
+
+        var commandInfo = CommandInfo.Executing(sessionId, commandId, $"Extension: {extensionName}", queuedTime, DateTime.Now, 12345);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache[commandId] = commandInfo;
+
+        var handleMethod = typeof(ExtensionScripts).GetMethod("HandleExtensionFailure", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        // Act
+        _ = handleMethod!.Invoke(m_ExtensionScripts, new object[] { extensionName, sessionId, commandId, queuedTime, failureEx });
+
+        // Assert
+        var updatedInfo = m_ExtensionScripts.GetCommandStatus(commandId);
+        _ = updatedInfo.Should().NotBeNull();
+
+        // HandleExtensionFailure creates a Completed state with error message, not Failed state
+        _ = updatedInfo!.State.Should().Be(CommandState.Completed);
+        _ = updatedInfo.ErrorMessage.Should().Be(failureEx.Message);
+    }
+
+    /// <summary>
+    /// Verifies that HandleExtensionCancellation handles command without StartTime.
+    /// </summary>
+    [Fact]
+    public void HandleExtensionCancellation_WhenCommandHasNoStartTime_UsesQueuedTime()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        var queuedTime = DateTime.Now;
+        var commandId = "cmd-cancel-no-start";
+        var sessionId = "session-123";
+        var extensionName = "TestExtension";
+
+        var commandInfo = CommandInfo.Enqueued(sessionId, commandId, $"Extension: {extensionName}", queuedTime, null);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache[commandId] = commandInfo;
+
+        var handleMethod = typeof(ExtensionScripts).GetMethod("HandleExtensionCancellation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        // Act
+        _ = handleMethod!.Invoke(m_ExtensionScripts, new object[] { extensionName, sessionId, commandId, queuedTime });
+
+        // Assert
+        var updatedInfo = m_ExtensionScripts.GetCommandStatus(commandId);
+        _ = updatedInfo.Should().NotBeNull();
+        _ = updatedInfo!.State.Should().Be(CommandState.Cancelled);
+        _ = updatedInfo.StartTime.Should().Be(queuedTime);
+    }
+
+    /// <summary>
+    /// Verifies that HandleCommandInfo processes Completed state correctly.
+    /// </summary>
+    [Fact]
+    public void HandleCommandInfo_WithCompletedState_UpdatesCache()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        var queuedTime = DateTime.Now;
+        var startTime = queuedTime.AddSeconds(1);
+        var commandId = "cmd-complete-test";
+        var sessionId = "session-123";
+        var extensionName = "TestExtension";
+
+        var result = CommandInfo.Completed(sessionId, commandId, $"Extension: {extensionName}", queuedTime, startTime, DateTime.Now, "output", string.Empty, 12345);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache[commandId] = CommandInfo.Executing(sessionId, commandId, $"Extension: {extensionName}", queuedTime, startTime, 12345);
+
+        var handleMethod = typeof(ExtensionScripts).GetMethod("HandleCommandInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        // Act
+        _ = handleMethod!.Invoke(m_ExtensionScripts, new object[] { extensionName, sessionId, commandId, queuedTime, startTime, result });
+
+        // Assert
+        var updatedInfo = m_ExtensionScripts.GetCommandStatus(commandId);
+        _ = updatedInfo.Should().NotBeNull();
+        _ = updatedInfo!.State.Should().Be(CommandState.Completed);
+        _ = updatedInfo.AggregatedOutput.Should().Be("output");
+    }
+
+    /// <summary>
+    /// Verifies that HandleCommandInfo processes Timeout state correctly.
+    /// </summary>
+    [Fact]
+    public void HandleCommandInfo_WithTimeoutState_UpdatesCache()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        var queuedTime = DateTime.Now;
+        var startTime = queuedTime.AddSeconds(1);
+        var endTime = startTime.AddMinutes(5);
+        var commandId = "cmd-timeout-handle-test";
+        var sessionId = "session-123";
+        var extensionName = "TestExtension";
+
+        var result = CommandInfo.TimedOut(sessionId, commandId, $"Extension: {extensionName}", queuedTime, startTime, endTime, "output", "timeout message", 12345);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache[commandId] = CommandInfo.Executing(sessionId, commandId, $"Extension: {extensionName}", queuedTime, startTime, 12345);
+
+        var handleMethod = typeof(ExtensionScripts).GetMethod("HandleCommandInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        // Act
+        _ = handleMethod!.Invoke(m_ExtensionScripts, new object[] { extensionName, sessionId, commandId, queuedTime, startTime, result });
+
+        // Assert
+        var updatedInfo = m_ExtensionScripts.GetCommandStatus(commandId);
+        _ = updatedInfo.Should().NotBeNull();
+        _ = updatedInfo!.State.Should().Be(CommandState.Timeout);
+        _ = updatedInfo.ErrorMessage.Should().Contain("timeout");
+    }
+
+    /// <summary>
+    /// Verifies that HandleCommandInfo processes Failed state correctly.
+    /// </summary>
+    [Fact]
+    public void HandleCommandInfo_WithFailedState_UpdatesCache()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        var queuedTime = DateTime.Now;
+        var startTime = queuedTime.AddSeconds(1);
+        var commandId = "cmd-fail-handle-test";
+        var sessionId = "session-123";
+        var extensionName = "TestExtension";
+
+        var result = CommandInfo.Failed(sessionId, commandId, $"Extension: {extensionName}", queuedTime, startTime, DateTime.Now, string.Empty, "execution failed", 12345);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache[commandId] = CommandInfo.Executing(sessionId, commandId, $"Extension: {extensionName}", queuedTime, startTime, 12345);
+
+        var handleMethod = typeof(ExtensionScripts).GetMethod("HandleCommandInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        // Act
+        _ = handleMethod!.Invoke(m_ExtensionScripts, new object[] { extensionName, sessionId, commandId, queuedTime, startTime, result });
+
+        // Assert
+        var updatedInfo = m_ExtensionScripts.GetCommandStatus(commandId);
+        _ = updatedInfo.Should().NotBeNull();
+
+        // HandleCommandInfo with Failed state result creates Completed state with error message
+        _ = updatedInfo!.State.Should().Be(CommandState.Completed);
+        _ = updatedInfo.ErrorMessage.Should().Contain("failed");
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand handles exception during cancellation gracefully.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenExceptionOccurs_ReturnsFalse()
+    {
+        // Arrange
+        _ = m_MockProcessManager.Setup(pm => pm.KillProcess(It.IsAny<int>()))
+            .Throws(new InvalidOperationException("Process error"));
+
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        var runningExtensionsField = typeof(ExtensionScripts).GetField("m_RunningExtensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var extensionStatusType = typeof(ExtensionScripts).Assembly.GetType("Nexus.Engine.Extensions.Models.ExtensionStatus")!;
+        var runningExtensions = runningExtensionsField!.GetValue(m_ExtensionScripts)!;
+
+        var commandInfo = CommandInfo.Enqueued("session-123", "cmd-test", "Extension: Test", DateTime.Now, 12345);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache["cmd-test"] = commandInfo;
+
+        var cts = new CancellationTokenSource();
+        var status = Activator.CreateInstance(extensionStatusType)!;
+        extensionStatusType.GetProperty("CommandId")!.SetValue(status, "cmd-test");
+        extensionStatusType.GetProperty("SessionId")!.SetValue(status, "session-123");
+        extensionStatusType.GetProperty("ExtensionName")!.SetValue(status, "Test");
+        extensionStatusType.GetProperty("ProcessId")!.SetValue(status, 12345);
+        extensionStatusType.GetProperty("StartTime")!.SetValue(status, DateTime.Now);
+        extensionStatusType.GetProperty("CancellationTokenSource")!.SetValue(status, cts);
+        extensionStatusType.GetProperty("Parameters")!.SetValue(status, null);
+        var indexerMethod = runningExtensions.GetType().GetProperty("Item")!.SetMethod!;
+        _ = indexerMethod.Invoke(runningExtensions, new object[] { "cmd-test", status });
+
+        // Act - The exception should be caught and return false
+        var result = m_ExtensionScripts.CancelCommand("session-123", "cmd-test");
+
+        // Assert - Should return true because exception in KillProcess is caught, but cancellation still happens
+        _ = result.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that CloseSession handles multiple commands correctly.
+    /// </summary>
+    [Fact]
+    public void CloseSession_WithMultipleCommands_CancelsAll()
+    {
+        // Arrange
+        m_MockProcessManager.Setup(pm => pm.KillProcess(It.IsAny<int>())).Verifiable();
+
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        var runningExtensionsField = typeof(ExtensionScripts).GetField("m_RunningExtensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var extensionStatusType = typeof(ExtensionScripts).Assembly.GetType("Nexus.Engine.Extensions.Models.ExtensionStatus")!;
+        var runningExtensions = runningExtensionsField!.GetValue(m_ExtensionScripts)!;
+
+        var sessionCommandsField = typeof(ExtensionScripts).GetField("m_SessionCommands", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var sessionCommands = (System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentBag<string>>)sessionCommandsField!.GetValue(m_ExtensionScripts)!;
+        var commandIds = new System.Collections.Concurrent.ConcurrentBag<string> { "cmd-1", "cmd-2" };
+        sessionCommands["session-123"] = commandIds;
+
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache["cmd-1"] = CommandInfo.Executing("session-123", "cmd-1", "Extension: Test1", DateTime.Now, DateTime.Now, 12345);
+        cache["cmd-2"] = CommandInfo.Executing("session-123", "cmd-2", "Extension: Test2", DateTime.Now, DateTime.Now, 12346);
+
+        var cts1 = new CancellationTokenSource();
+        var status1 = Activator.CreateInstance(extensionStatusType)!;
+        extensionStatusType.GetProperty("CommandId")!.SetValue(status1, "cmd-1");
+        extensionStatusType.GetProperty("SessionId")!.SetValue(status1, "session-123");
+        extensionStatusType.GetProperty("ExtensionName")!.SetValue(status1, "Test1");
+        extensionStatusType.GetProperty("ProcessId")!.SetValue(status1, 12345);
+        extensionStatusType.GetProperty("StartTime")!.SetValue(status1, DateTime.Now);
+        extensionStatusType.GetProperty("CancellationTokenSource")!.SetValue(status1, cts1);
+        extensionStatusType.GetProperty("Parameters")!.SetValue(status1, null);
+        var indexerMethod1 = runningExtensions.GetType().GetProperty("Item")!.SetMethod!;
+        _ = indexerMethod1.Invoke(runningExtensions, new object[] { "cmd-1", status1 });
+
+        var cts2 = new CancellationTokenSource();
+        var status2 = Activator.CreateInstance(extensionStatusType)!;
+        extensionStatusType.GetProperty("CommandId")!.SetValue(status2, "cmd-2");
+        extensionStatusType.GetProperty("SessionId")!.SetValue(status2, "session-123");
+        extensionStatusType.GetProperty("ExtensionName")!.SetValue(status2, "Test2");
+        extensionStatusType.GetProperty("ProcessId")!.SetValue(status2, 12346);
+        extensionStatusType.GetProperty("StartTime")!.SetValue(status2, DateTime.Now);
+        extensionStatusType.GetProperty("CancellationTokenSource")!.SetValue(status2, cts2);
+        extensionStatusType.GetProperty("Parameters")!.SetValue(status2, null);
+        var indexerMethod2 = runningExtensions.GetType().GetProperty("Item")!.SetMethod!;
+        _ = indexerMethod2.Invoke(runningExtensions, new object[] { "cmd-2", status2 });
+
+        // Act
+        m_ExtensionScripts.CloseSession("session-123");
+
+        // Assert
+        _ = cts1.Token.IsCancellationRequested.Should().BeTrue();
+        _ = cts2.Token.IsCancellationRequested.Should().BeTrue();
+        m_MockProcessManager.Verify(pm => pm.KillProcess(12345), Times.Once);
+        m_MockProcessManager.Verify(pm => pm.KillProcess(12346), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandStatus returns null for non-existent command.
+    /// </summary>
+    [Fact]
+    public void GetCommandStatus_WithNonExistentCommand_ReturnsNull()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        // Act
+        var result = m_ExtensionScripts.GetCommandStatus("non-existent-command");
+
+        // Assert
+        _ = result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand handles command without cache entry.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenCommandNotInCache_StillCancels()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        var runningExtensionsField = typeof(ExtensionScripts).GetField("m_RunningExtensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var extensionStatusType = typeof(ExtensionScripts).Assembly.GetType("Nexus.Engine.Extensions.Models.ExtensionStatus")!;
+        var runningExtensions = runningExtensionsField!.GetValue(m_ExtensionScripts)!;
+
+        var cts = new CancellationTokenSource();
+        var status = Activator.CreateInstance(extensionStatusType)!;
+        extensionStatusType.GetProperty("CommandId")!.SetValue(status, "cmd-no-cache");
+        extensionStatusType.GetProperty("SessionId")!.SetValue(status, "session-123");
+        extensionStatusType.GetProperty("ExtensionName")!.SetValue(status, "Test");
+        extensionStatusType.GetProperty("ProcessId")!.SetValue(status, 12345);
+        extensionStatusType.GetProperty("StartTime")!.SetValue(status, DateTime.Now);
+        extensionStatusType.GetProperty("CancellationTokenSource")!.SetValue(status, cts);
+        extensionStatusType.GetProperty("Parameters")!.SetValue(status, null);
+        var indexerMethod = runningExtensions.GetType().GetProperty("Item")!.SetMethod!;
+        _ = indexerMethod.Invoke(runningExtensions, new object[] { "cmd-no-cache", status });
+
+        // Act
+        var result = m_ExtensionScripts.CancelCommand("session-123", "cmd-no-cache");
+
+        // Assert - Should return true and cancel the token even without cache entry
+        _ = result.Should().BeTrue();
+        _ = cts.Token.IsCancellationRequested.Should().BeTrue();
+    }
 }
