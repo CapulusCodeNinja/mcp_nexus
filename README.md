@@ -1,8 +1,8 @@
 # MCP Nexus
 
-![MCP Nexus Icon](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/mcp_nexus_small.png?raw=true)
-
 **AI-Powered Windows Crash Dump Analysis Platform**
+
+![MCP Nexus Icon](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/mcp_nexus_small.png?raw=true)
 
 ![Tests](https://img.shields.io/badge/tests-1228%20passing-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-87.1%25%20lines-green)
