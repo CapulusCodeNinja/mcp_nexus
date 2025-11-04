@@ -2,8 +2,8 @@
 
 **AI-Powered Windows Crash Dump Analysis Platform**
 
-![Tests](https://img.shields.io/badge/tests-980%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-74.1%25%20lines-green)
+![Tests](https://img.shields.io/badge/tests-1228%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-87.1%25%20lines-green)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
@@ -187,9 +187,9 @@ nexus_extensions/           - PowerShell extension system
 
 ### Test Statistics
 
-- ✅ **980 total tests** (all passing)
-- 📊 **74.1% line coverage** (target: 75%)
-- 🔀 **67.9% branch coverage** (target: 75%)
+- ✅ **1228 total tests** (all passing)
+- 📊 **87.1% line coverage** (target: 75%)
+- 🔀 **77.8% branch coverage** (target: 75%)
 - ⚡ **Fast execution** (~5 seconds for full suite)
 - 🎯 **Zero build warnings**
 

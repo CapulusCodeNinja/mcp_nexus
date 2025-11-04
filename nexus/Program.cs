@@ -88,7 +88,7 @@ internal static class Program
                 // Register ONLY the main hosted service (no others)
                 var ununsedHost = services.AddHostedService(sp =>
                     new MainHostedService(cmd, fileSystem, processManager, serviceController, adminChecker, settings));
-                });
+            });
 
         // Configure Windows Service support if in service mode
         if (cmd.IsServiceMode)
