@@ -1,77 +1,82 @@
 <Project>
-  <!-- 
+    <!-- 
     This file is automatically imported by all projects in subdirectories.
     It defines common properties and version management for the entire solution.
   -->
-  <PropertyGroup Label="Common Project Properties">
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
+    <PropertyGroup Label="Common Project Properties">
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <TargetFramework>net8.0</TargetFramework>
+        <ApplicationIcon>$(MSBuildThisFileDirectory)/images/mcp_nexus.ico</ApplicationIcon>
+    </PropertyGroup>
 
-  <PropertyGroup Label="Shared Build Output">
-    <!-- All projects build to a common directory structure -->
-    <BaseOutputPath>$(MSBuildThisFileDirectory)build\bin\$(MSBuildProjectName)\</BaseOutputPath>
-    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)build\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
-  </PropertyGroup>
+    <PropertyGroup Label="Shared Build Output">
+        <!-- All projects build to a common directory structure -->
+        <BaseOutputPath>$(MSBuildThisFileDirectory)build\bin\$(MSBuildProjectName)\</BaseOutputPath>
+        <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)build\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    </PropertyGroup>
 
-  <PropertyGroup Label="Code Quality">
-    <!-- Only treat warnings as errors in non-test projects -->
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-  </PropertyGroup>
+    <ItemGroup>
+        <Content Include="$(MSBuildThisFileDirectory)/images/mcp_nexus.ico" />
+    </ItemGroup>
 
-  <PropertyGroup Label="Documentation">
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
+    <PropertyGroup Label="Code Quality">
+        <!-- Only treat warnings as errors in non-test projects -->
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    </PropertyGroup>
 
-  <PropertyGroup Label="Company Information">
-    <Company>CapulusCodeNinja</Company>
-    <Copyright>Copyright © 2025 David Roller (aka CapulusCodeNinja on GitHub)</Copyright>
-  </PropertyGroup>
+    <PropertyGroup Label="Documentation">
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
 
-  <PropertyGroup Label="Default Versioning">
-    <!-- Default version for all projects (can be overridden per project) -->
-    <VersionPrefix>1.1.2</VersionPrefix>
+    <PropertyGroup Label="Company Information">
+        <Company>CapulusCodeNinja</Company>
+        <Copyright>Copyright © 2025 David Roller (aka CapulusCodeNinja on GitHub)</Copyright>
+    </PropertyGroup>
+
+    <PropertyGroup Label="Default Versioning">
+        <!-- Default version for all projects (can be overridden per project) -->
+        <VersionPrefix>1.1.2</VersionPrefix>
         <VersionSuffix>0</VersionSuffix>
-    
-    <!-- Calculated version -->
-    <Version Condition="'$(Version)' == ''">$(VersionPrefix).$(VersionSuffix)</Version>
-    <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(Version)</AssemblyVersion>
-    <FileVersion Condition="'$(FileVersion)' == ''">$(Version)</FileVersion>
-  </PropertyGroup>
-  
-  <ItemGroup>
-    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" Condition="Exists('$(MSBuildThisFileDirectory)stylecop.json')" />
-  </ItemGroup>
 
-  <PropertyGroup Label="NuGet Package Versions">
-    <!-- Microsoft Extensions -->
-    <MicrosoftExtensionsLoggingAbstractionsVersion>8.0.3</MicrosoftExtensionsLoggingAbstractionsVersion>
-    <MicrosoftExtensionsLoggingVersion>8.0.0</MicrosoftExtensionsLoggingVersion>
-    <MicrosoftExtensionsConfigurationVersion>8.0.0</MicrosoftExtensionsConfigurationVersion>
-    <MicrosoftExtensionsHostingAbstractionsVersion>8.0.1</MicrosoftExtensionsHostingAbstractionsVersion>
-    <MicrosoftExtensionsDependencyInjectionVersion>8.0.0</MicrosoftExtensionsDependencyInjectionVersion>
-    <MicrosoftExtensionsDependencyInjectionAbstractionsVersion>8.0.2</MicrosoftExtensionsDependencyInjectionAbstractionsVersion>
-    
-    <!-- System packages -->
-    <SystemThreadingChannelsVersion>8.0.0</SystemThreadingChannelsVersion>
-    <SystemServiceProcessServiceControllerVersion>8.0.1</SystemServiceProcessServiceControllerVersion>
-    
-    <!-- Third-party packages -->
-    <ModelContextProtocolVersion>0.4.0-preview.1</ModelContextProtocolVersion>
-    <AspNetCoreRateLimitVersion>5.0.0</AspNetCoreRateLimitVersion>
-    <NLogWebAspNetCoreVersion>6.0.4</NLogWebAspNetCoreVersion>
-    <StyleCopAnalyzersVersion>1.2.0-beta.507</StyleCopAnalyzersVersion>
-    
-    <!-- Test packages -->
-    <MicrosoftNetTestSdkVersion>17.11.1</MicrosoftNetTestSdkVersion>
-    <XunitVersion>2.9.2</XunitVersion>
-    <XunitRunnerVisualStudioVersion>2.8.2</XunitRunnerVisualStudioVersion>
-    <MoqVersion>4.20.72</MoqVersion>
-    <FluentAssertionsVersion>6.12.0</FluentAssertionsVersion>
-    <CoverletCollectorVersion>6.0.0</CoverletCollectorVersion>
-  </PropertyGroup>
+        <!-- Calculated version -->
+        <Version Condition="'$(Version)' == ''">$(VersionPrefix).$(VersionSuffix)</Version>
+        <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(Version)</AssemblyVersion>
+        <FileVersion Condition="'$(FileVersion)' == ''">$(Version)</FileVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" Condition="Exists('$(MSBuildThisFileDirectory)stylecop.json')" />
+    </ItemGroup>
+
+    <PropertyGroup Label="NuGet Package Versions">
+        <!-- Microsoft Extensions -->
+        <MicrosoftExtensionsLoggingAbstractionsVersion>8.0.3</MicrosoftExtensionsLoggingAbstractionsVersion>
+        <MicrosoftExtensionsLoggingVersion>8.0.0</MicrosoftExtensionsLoggingVersion>
+        <MicrosoftExtensionsConfigurationVersion>8.0.0</MicrosoftExtensionsConfigurationVersion>
+        <MicrosoftExtensionsHostingAbstractionsVersion>8.0.1</MicrosoftExtensionsHostingAbstractionsVersion>
+        <MicrosoftExtensionsDependencyInjectionVersion>8.0.0</MicrosoftExtensionsDependencyInjectionVersion>
+        <MicrosoftExtensionsDependencyInjectionAbstractionsVersion>8.0.2</MicrosoftExtensionsDependencyInjectionAbstractionsVersion>
+
+        <!-- System packages -->
+        <SystemThreadingChannelsVersion>8.0.0</SystemThreadingChannelsVersion>
+        <SystemServiceProcessServiceControllerVersion>8.0.1</SystemServiceProcessServiceControllerVersion>
+
+        <!-- Third-party packages -->
+        <ModelContextProtocolVersion>0.4.0-preview.1</ModelContextProtocolVersion>
+        <AspNetCoreRateLimitVersion>5.0.0</AspNetCoreRateLimitVersion>
+        <NLogWebAspNetCoreVersion>6.0.4</NLogWebAspNetCoreVersion>
+        <StyleCopAnalyzersVersion>1.2.0-beta.507</StyleCopAnalyzersVersion>
+
+        <!-- Test packages -->
+        <MicrosoftNetTestSdkVersion>17.11.1</MicrosoftNetTestSdkVersion>
+        <XunitVersion>2.9.2</XunitVersion>
+        <XunitRunnerVisualStudioVersion>2.8.2</XunitRunnerVisualStudioVersion>
+        <MoqVersion>4.20.72</MoqVersion>
+        <FluentAssertionsVersion>6.12.0</FluentAssertionsVersion>
+        <CoverletCollectorVersion>6.0.0</CoverletCollectorVersion>
+    </PropertyGroup>
 
 </Project>

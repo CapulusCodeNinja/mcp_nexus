@@ -56,6 +56,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution_files", "solution_
 		stylecop.json = stylecop.json
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{77BD1110-A51F-4D35-831C-23AC7A5A8B34}"
+	ProjectSection(SolutionItems) = preProject
+		images\mcp_nexus.ico = images\mcp_nexus.ico
+		images\mcp_nexus.png = images\mcp_nexus.png
+		images\mcp_nexus_small.png = images\mcp_nexus_small.png
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
