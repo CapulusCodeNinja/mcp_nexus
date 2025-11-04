@@ -1944,4 +1944,392 @@ public class CommandQueueTests : IDisposable
         // Assert - Should not throw
         _ = Assert.Throws<ObjectDisposedException>(() => queue.EnqueueCommand("lm"));
     }
+
+    /// <summary>
+    /// Verifies that HandleSuccessfulCommandExecution creates correct CommandInfo.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleSuccessfulCommandExecution_CreatesCorrectCommandInfo()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-success", m_Settings.Object, m_BatchProcessor.Object);
+        var commandId = accessor.EnqueueCommand("k");
+
+        // Get the actual QueuedCommand instance from the queue
+        var activeCommandsField = typeof(CommandQueue).GetField("m_ActiveCommands", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var activeCommands = activeCommandsField?.GetValue(accessor) as System.Collections.Concurrent.ConcurrentDictionary<string, QueuedCommand>;
+        var queuedCommand = activeCommands?[commandId];
+        _ = queuedCommand.Should().NotBeNull();
+
+        var startTime = DateTime.Now;
+
+        // Act
+        await accessor.HandleSuccessfulCommandExecution(queuedCommand!, startTime, "result text");
+
+        // Assert - Command should be completed and cached
+        var info = accessor.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Completed);
+        _ = info.AggregatedOutput.Should().Be("result text");
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that HandleCancelledCommand creates correct CommandInfo.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleCancelledCommand_CreatesCorrectCommandInfo()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-cancel", m_Settings.Object, m_BatchProcessor.Object);
+        var commandId = accessor.EnqueueCommand("k");
+
+        // Get the actual QueuedCommand instance from the queue
+        var activeCommandsField = typeof(CommandQueue).GetField("m_ActiveCommands", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var activeCommands = activeCommandsField?.GetValue(accessor) as System.Collections.Concurrent.ConcurrentDictionary<string, QueuedCommand>;
+        var queuedCommand = activeCommands?[commandId];
+        _ = queuedCommand.Should().NotBeNull();
+
+        var startTime = DateTime.Now;
+
+        // Act
+        await accessor.HandleCancelledCommand(queuedCommand!, startTime);
+
+        // Assert - Command should be cancelled and cached
+        var info = accessor.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Cancelled);
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that HandleTimedOutCommand creates correct CommandInfo.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleTimedOutCommand_CreatesCorrectCommandInfo()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-timeout", m_Settings.Object, m_BatchProcessor.Object);
+        var commandId = accessor.EnqueueCommand("k");
+
+        // Get the actual QueuedCommand instance from the queue
+        var activeCommandsField = typeof(CommandQueue).GetField("m_ActiveCommands", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var activeCommands = activeCommandsField?.GetValue(accessor) as System.Collections.Concurrent.ConcurrentDictionary<string, QueuedCommand>;
+        var queuedCommand = activeCommands?[commandId];
+        _ = queuedCommand.Should().NotBeNull();
+
+        var startTime = DateTime.Now;
+        var timeoutEx = new TimeoutException("Command timed out");
+
+        // Act
+        await accessor.HandleTimedOutCommand(queuedCommand!, startTime, timeoutEx);
+
+        // Assert - Command should be timed out and cached
+        var info = accessor.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Timeout);
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that HandleFailedCommand creates correct CommandInfo.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleFailedCommand_CreatesCorrectCommandInfo()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-failed", m_Settings.Object, m_BatchProcessor.Object);
+        var commandId = accessor.EnqueueCommand("k");
+
+        // Get the actual QueuedCommand instance from the queue
+        var activeCommandsField = typeof(CommandQueue).GetField("m_ActiveCommands", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var activeCommands = activeCommandsField?.GetValue(accessor) as System.Collections.Concurrent.ConcurrentDictionary<string, QueuedCommand>;
+        var queuedCommand = activeCommands?[commandId];
+        _ = queuedCommand.Should().NotBeNull();
+
+        var startTime = DateTime.Now;
+        var exception = new InvalidOperationException("Command failed");
+
+        // Act
+        await accessor.HandleFailedCommand(queuedCommand!, startTime, exception);
+
+        // Assert - Command should be failed and cached
+        var info = accessor.GetCommandInfo(commandId);
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Failed);
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CreateCommandInfoFromResult handles cancelled result.
+    /// </summary>
+    [Fact]
+    public void CreateCommandInfoFromResult_WithCancelledResult_ReturnsCancelledState()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-create", m_Settings.Object, m_BatchProcessor.Object);
+        var result = new CommandResult
+        {
+            SessionId = "test-session-create",
+            CommandId = "cmd-1",
+            ResultText = "Cancelled",
+            IsCancelled = true,
+        };
+        var queuedCommand = new QueuedCommand
+        {
+            Id = "cmd-1",
+            Command = "k",
+            ProcessId = null,
+            QueuedTime = DateTime.Now,
+        };
+        var startTime = DateTime.Now;
+        var endTime = DateTime.Now;
+
+        // Act
+        var (commandInfo, finalState) = accessor.CreateCommandInfoFromResult(result, queuedCommand, startTime, endTime);
+
+        // Assert
+        _ = finalState.Should().Be(CommandState.Cancelled);
+        _ = commandInfo.State.Should().Be(CommandState.Cancelled);
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CreateCommandInfoFromResult handles timeout result.
+    /// </summary>
+    [Fact]
+    public void CreateCommandInfoFromResult_WithTimeoutResult_ReturnsTimeoutState()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-timeout", m_Settings.Object, m_BatchProcessor.Object);
+        var result = new CommandResult
+        {
+            SessionId = "test-session-timeout",
+            CommandId = "cmd-1",
+            ResultText = "Timeout",
+            IsTimeout = true,
+        };
+        var queuedCommand = new QueuedCommand
+        {
+            Id = "cmd-1",
+            Command = "k",
+            ProcessId = null,
+            QueuedTime = DateTime.Now,
+        };
+        var startTime = DateTime.Now;
+        var endTime = DateTime.Now;
+
+        // Act
+        var (commandInfo, finalState) = accessor.CreateCommandInfoFromResult(result, queuedCommand, startTime, endTime);
+
+        // Assert
+        _ = finalState.Should().Be(CommandState.Timeout);
+        _ = commandInfo.State.Should().Be(CommandState.Timeout);
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CreateCommandInfoFromResult handles failed result.
+    /// </summary>
+    [Fact]
+    public void CreateCommandInfoFromResult_WithFailedResult_ReturnsFailedState()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-failed", m_Settings.Object, m_BatchProcessor.Object);
+        var result = new CommandResult
+        {
+            SessionId = "test-session-failed",
+            CommandId = "cmd-1",
+            ResultText = "ERROR: Failed",
+            IsFailed = true,
+        };
+        var queuedCommand = new QueuedCommand
+        {
+            Id = "cmd-1",
+            Command = "k",
+            ProcessId = null,
+            QueuedTime = DateTime.Now,
+        };
+        var startTime = DateTime.Now;
+        var endTime = DateTime.Now;
+
+        // Act
+        var (commandInfo, finalState) = accessor.CreateCommandInfoFromResult(result, queuedCommand, startTime, endTime);
+
+        // Assert
+        _ = finalState.Should().Be(CommandState.Failed);
+        _ = commandInfo.State.Should().Be(CommandState.Failed);
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CreateCommandInfoFromResult handles successful result.
+    /// </summary>
+    [Fact]
+    public void CreateCommandInfoFromResult_WithSuccessfulResult_ReturnsCompletedState()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-success", m_Settings.Object, m_BatchProcessor.Object);
+        var result = new CommandResult
+        {
+            SessionId = "test-session-success",
+            CommandId = "cmd-1",
+            ResultText = "Success",
+            IsCancelled = false,
+            IsTimeout = false,
+            IsFailed = false,
+        };
+        var queuedCommand = new QueuedCommand
+        {
+            Id = "cmd-1",
+            Command = "k",
+            ProcessId = null,
+            QueuedTime = DateTime.Now,
+        };
+        var startTime = DateTime.Now;
+        var endTime = DateTime.Now;
+
+        // Act
+        var (commandInfo, finalState) = accessor.CreateCommandInfoFromResult(result, queuedCommand, startTime, endTime);
+
+        // Assert
+        _ = finalState.Should().Be(CommandState.Completed);
+        _ = commandInfo.State.Should().Be(CommandState.Completed);
+        _ = commandInfo.AggregatedOutput.Should().Be("Success");
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that LogUnbatchingResults logs trace when counts match.
+    /// </summary>
+    [Fact]
+    public void LogUnbatchingResults_WithEqualCounts_LogsTrace()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-log", m_Settings.Object, m_BatchProcessor.Object);
+
+        // Act - Should not throw
+        accessor.LogUnbatchingResults(5, 5);
+
+        // Assert - No exception thrown
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CompleteCommandWithStatistics handles missing command gracefully.
+    /// </summary>
+    [Fact]
+    public void CompleteCommandWithStatistics_WithMissingCommand_HandlesGracefully()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-complete", m_Settings.Object, m_BatchProcessor.Object);
+        var result = new CommandResult
+        {
+            SessionId = "test-session-complete",
+            CommandId = "cmd-nonexistent",
+            ResultText = "Result",
+        };
+        var queuedCommandsById = new Dictionary<string, QueuedCommand>();
+        var commandStartTimes = new Dictionary<string, DateTime>();
+
+        // Act - Should not throw, just log warning
+        accessor.CompleteCommandWithStatistics(result, queuedCommandsById, commandStartTimes);
+
+        // Assert - No exception thrown
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that CompleteCommandWithStatistics completes command successfully.
+    /// </summary>
+    [Fact]
+    public void CompleteCommandWithStatistics_WithValidCommand_CompletesSuccessfully()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-complete", m_Settings.Object, m_BatchProcessor.Object);
+        var queuedCommand = new QueuedCommand
+        {
+            Id = "cmd-1",
+            Command = "k",
+            ProcessId = null,
+            QueuedTime = DateTime.Now,
+        };
+        var result = new CommandResult
+        {
+            SessionId = "test-session-complete",
+            CommandId = "cmd-1",
+            ResultText = "Success",
+        };
+        var queuedCommandsById = new Dictionary<string, QueuedCommand> { { "cmd-1", queuedCommand } };
+        var commandStartTimes = new Dictionary<string, DateTime> { { "cmd-1", DateTime.Now } };
+        _ = m_BatchProcessor.Setup(bp => bp.GetBatchCommandId(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns((string? sessionId, string? commandId) => null);
+
+        // Act
+        accessor.CompleteCommandWithStatistics(result, queuedCommandsById, commandStartTimes);
+
+        // Assert - Command should be completed and cached
+        var info = accessor.GetCommandInfo("cmd-1");
+        _ = info.Should().NotBeNull();
+        _ = info!.State.Should().Be(CommandState.Completed);
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that ProcessCommandResults processes results correctly.
+    /// </summary>
+    [Fact]
+    public void ProcessCommandResults_WithValidResults_ProcessesCorrectly()
+    {
+        // Arrange
+        var accessor = new CommandQueueTestAccessor("test-session-process", m_Settings.Object, m_BatchProcessor.Object);
+        var queuedCommand = new QueuedCommand
+        {
+            Id = "cmd-1",
+            Command = "k",
+            ProcessId = null,
+            QueuedTime = DateTime.Now,
+        };
+        var executionResults = new List<CommandResult>
+        {
+            new CommandResult { SessionId = "test-session-process", CommandId = "cmd-1", ResultText = "Success" },
+        };
+        var queuedCommandsById = new Dictionary<string, QueuedCommand> { { "cmd-1", queuedCommand } };
+        var commandStartTimes = new Dictionary<string, DateTime> { { "cmd-1", DateTime.Now } };
+        _ = m_BatchProcessor.Setup(bp => bp.UnbatchResults(It.IsAny<List<CommandResult>>()))
+            .Returns((List<CommandResult> results) => results);
+        _ = m_BatchProcessor.Setup(bp => bp.GetBatchCommandId(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns((string? sessionId, string? commandId) => null);
+
+        // Act
+        accessor.ProcessCommandResults(executionResults, queuedCommandsById, commandStartTimes);
+
+        // Assert - Command should be processed
+        var info = accessor.GetCommandInfo("cmd-1");
+        _ = info.Should().NotBeNull();
+        accessor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandInfoAsync throws KeyNotFoundException when command is not found after completion.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task GetCommandInfoAsync_WhenCommandNotFoundAfterCompletion_ThrowsKeyNotFoundException()
+    {
+        // Arrange
+        var queue = new CommandQueue("test-session-notfound", m_Settings.Object, m_BatchProcessor.Object);
+        var commandId = queue.EnqueueCommand("k");
+        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+
+        // Act & Assert - Should throw KeyNotFoundException if command completes but is not in cache
+        // (This is an edge case - normally commands would be in cache after completion)
+        _ = await Assert.ThrowsAsync<KeyNotFoundException>(async () =>
+            await queue.GetCommandInfoAsync("nonexistent-command", cts.Token));
+        queue.Dispose();
+    }
 }

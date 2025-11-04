@@ -126,5 +126,55 @@ internal class CommandQueueTestAccessor : CommandQueue
     {
         base.SetCommandResult(command, result);
     }
+
+    /// <summary>
+    /// Exposes the protected ProcessCommandResults method using reflection.
+    /// </summary>
+    /// <param name="executionResults">Execution results.</param>
+    /// <param name="queuedCommandsById">Queued commands by ID.</param>
+    /// <param name="commandStartTimes">Command start times.</param>
+    public void ProcessCommandResults(System.Collections.Generic.List<CommandResult> executionResults, System.Collections.Generic.Dictionary<string, QueuedCommand> queuedCommandsById, System.Collections.Generic.Dictionary<string, DateTime> commandStartTimes)
+    {
+        var method = typeof(CommandQueue).GetMethod("ProcessCommandResults", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        _ = method?.Invoke(this, new object[] { executionResults, queuedCommandsById, commandStartTimes });
+    }
+
+    /// <summary>
+    /// Exposes the protected CompleteCommandWithStatistics method using reflection.
+    /// </summary>
+    /// <param name="result">The command result.</param>
+    /// <param name="queuedCommandsById">Queued commands by ID.</param>
+    /// <param name="commandStartTimes">Command start times.</param>
+    public void CompleteCommandWithStatistics(CommandResult result, System.Collections.Generic.Dictionary<string, QueuedCommand> queuedCommandsById, System.Collections.Generic.Dictionary<string, DateTime> commandStartTimes)
+    {
+        var method = typeof(CommandQueue).GetMethod("CompleteCommandWithStatistics", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        _ = method?.Invoke(this, new object[] { result, queuedCommandsById, commandStartTimes });
+    }
+
+    /// <summary>
+    /// Exposes the protected CreateCommandInfoFromResult method using reflection.
+    /// </summary>
+    /// <param name="result">The command result.</param>
+    /// <param name="queuedCommand">The queued command.</param>
+    /// <param name="startTime">Start time.</param>
+    /// <param name="endTime">End time.</param>
+    /// <returns>Tuple of CommandInfo and CommandState.</returns>
+    public (CommandInfo CommandInfo, CommandState FinalState) CreateCommandInfoFromResult(CommandResult result, QueuedCommand queuedCommand, DateTime startTime, DateTime endTime)
+    {
+        var method = typeof(CommandQueue).GetMethod("CreateCommandInfoFromResult", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var resultObj = method?.Invoke(this, new object[] { result, queuedCommand, startTime, endTime });
+        return ((CommandInfo, CommandState))resultObj!;
+    }
+
+    /// <summary>
+    /// Exposes the protected LogUnbatchingResults method using reflection.
+    /// </summary>
+    /// <param name="executionCount">Execution count.</param>
+    /// <param name="individualCount">Individual count.</param>
+    public void LogUnbatchingResults(int executionCount, int individualCount)
+    {
+        var method = typeof(CommandQueue).GetMethod("LogUnbatchingResults", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        _ = method?.Invoke(this, new object[] { executionCount, individualCount });
+    }
 }
 
