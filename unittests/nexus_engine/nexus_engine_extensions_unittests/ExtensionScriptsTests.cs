@@ -4,10 +4,8 @@ using Moq;
 
 using Nexus.Config;
 using Nexus.Config.Models;
-#pragma warning disable IDE0005 // Using directive is unnecessary - ExtensionScripts is in this namespace
-using Nexus.Engine.Extensions;
-#pragma warning restore IDE0005
 using Nexus.Engine.Share;
+using Nexus.Engine.Share.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 
@@ -273,5 +271,278 @@ public class ExtensionScriptsTests : IAsyncDisposable
 
         // Assert - Should not throw
         _ = m_ExtensionScripts.Should().NotBeNull();
+    }
+
+    /// <summary>
+    /// Verifies that GetCommandStatus increments read count on multiple calls.
+    /// </summary>
+    [Fact]
+    public void GetCommandStatus_MultipleCalls_IncrementsReadCount()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        // Manually add a command to cache for testing
+        var commandInfo = CommandInfo.Enqueued("session-123", "cmd-test", "Extension: Test", DateTime.Now, null);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache["cmd-test"] = commandInfo;
+
+        var initialReadCount = commandInfo.ReadCount;
+
+        // Act
+        _ = m_ExtensionScripts.GetCommandStatus("cmd-test");
+        _ = m_ExtensionScripts.GetCommandStatus("cmd-test");
+
+        // Assert
+        _ = commandInfo.ReadCount.Should().Be(initialReadCount + 2);
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand returns true when extension is running.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenExtensionRunning_ReturnsTrue()
+    {
+        // Arrange
+        m_MockProcessManager.Setup(pm => pm.KillProcess(It.IsAny<int>())).Verifiable();
+
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        // Manually add running extension for testing
+        var runningExtensionsField = typeof(ExtensionScripts).GetField("m_RunningExtensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var extensionStatusType = typeof(ExtensionScripts).Assembly.GetType("Nexus.Engine.Extensions.Models.ExtensionStatus")!;
+        var runningExtensions = runningExtensionsField!.GetValue(m_ExtensionScripts)!;
+
+        var commandInfo = CommandInfo.Enqueued("session-123", "cmd-test", "Extension: Test", DateTime.Now, 12345);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache["cmd-test"] = commandInfo;
+
+        var cts = new CancellationTokenSource();
+        var status = Activator.CreateInstance(extensionStatusType)!;
+        extensionStatusType.GetProperty("CommandId")!.SetValue(status, "cmd-test");
+        extensionStatusType.GetProperty("SessionId")!.SetValue(status, "session-123");
+        extensionStatusType.GetProperty("ExtensionName")!.SetValue(status, "Test");
+        extensionStatusType.GetProperty("ProcessId")!.SetValue(status, 12345);
+        extensionStatusType.GetProperty("StartTime")!.SetValue(status, DateTime.Now);
+        extensionStatusType.GetProperty("CancellationTokenSource")!.SetValue(status, cts);
+        extensionStatusType.GetProperty("Parameters")!.SetValue(status, null);
+        var indexerMethod = runningExtensions.GetType().GetProperty("Item")!.SetMethod!;
+        _ = indexerMethod.Invoke(runningExtensions, new object[] { "cmd-test", status });
+
+        // Act
+        var result = m_ExtensionScripts.CancelCommand("session-123", "cmd-test");
+
+        // Assert
+        _ = result.Should().BeTrue();
+        m_MockProcessManager.Verify(pm => pm.KillProcess(12345), Times.Once);
+        _ = cts.Token.IsCancellationRequested.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand handles exception when killing process gracefully.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_WhenKillProcessThrowsException_StillCancels()
+    {
+        // Arrange
+        _ = m_MockProcessManager.Setup(pm => pm.KillProcess(It.IsAny<int>()))
+            .Throws(new InvalidOperationException("Process not found"));
+
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        // Manually add running extension for testing
+        var runningExtensionsField = typeof(ExtensionScripts).GetField("m_RunningExtensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var extensionStatusType = typeof(ExtensionScripts).Assembly.GetType("Nexus.Engine.Extensions.Models.ExtensionStatus")!;
+        var runningExtensions = runningExtensionsField!.GetValue(m_ExtensionScripts)!;
+
+        var commandInfo = CommandInfo.Enqueued("session-123", "cmd-test", "Extension: Test", DateTime.Now, 12345);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache["cmd-test"] = commandInfo;
+
+        var cts = new CancellationTokenSource();
+        var status = Activator.CreateInstance(extensionStatusType)!;
+        extensionStatusType.GetProperty("CommandId")!.SetValue(status, "cmd-test");
+        extensionStatusType.GetProperty("SessionId")!.SetValue(status, "session-123");
+        extensionStatusType.GetProperty("ExtensionName")!.SetValue(status, "Test");
+        extensionStatusType.GetProperty("ProcessId")!.SetValue(status, 12345);
+        extensionStatusType.GetProperty("StartTime")!.SetValue(status, DateTime.Now);
+        extensionStatusType.GetProperty("CancellationTokenSource")!.SetValue(status, cts);
+        extensionStatusType.GetProperty("Parameters")!.SetValue(status, null);
+        var indexerMethod = runningExtensions.GetType().GetProperty("Item")!.SetMethod!;
+        _ = indexerMethod.Invoke(runningExtensions, new object[] { "cmd-test", status });
+
+        // Act
+        var result = m_ExtensionScripts.CancelCommand("session-123", "cmd-test");
+
+        // Assert - Should still return true because exception is caught and cancellation still happens
+        _ = result.Should().BeTrue();
+        _ = cts.Token.IsCancellationRequested.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that CloseSession with commands cancels them.
+    /// </summary>
+    [Fact]
+    public void CloseSession_WithCommands_CancelsThem()
+    {
+        // Arrange
+        m_MockProcessManager.Setup(pm => pm.KillProcess(It.IsAny<int>())).Verifiable();
+
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        // Manually set up session with commands for testing
+        var sessionCommandsField = typeof(ExtensionScripts).GetField("m_SessionCommands", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var sessionCommands = (System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentBag<string>>)sessionCommandsField!.GetValue(m_ExtensionScripts)!;
+        var commandIds = new System.Collections.Concurrent.ConcurrentBag<string> { "cmd-1", "cmd-2" };
+        sessionCommands["session-123"] = commandIds;
+
+        var runningExtensionsField = typeof(ExtensionScripts).GetField("m_RunningExtensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var extensionStatusType = typeof(ExtensionScripts).Assembly.GetType("Nexus.Engine.Extensions.Models.ExtensionStatus")!;
+        var runningExtensions = runningExtensionsField!.GetValue(m_ExtensionScripts)!;
+
+        var cts1 = new CancellationTokenSource();
+        var status1 = Activator.CreateInstance(extensionStatusType)!;
+        extensionStatusType.GetProperty("CommandId")!.SetValue(status1, "cmd-1");
+        extensionStatusType.GetProperty("SessionId")!.SetValue(status1, "session-123");
+        extensionStatusType.GetProperty("ExtensionName")!.SetValue(status1, "Test1");
+        extensionStatusType.GetProperty("ProcessId")!.SetValue(status1, 12345);
+        extensionStatusType.GetProperty("StartTime")!.SetValue(status1, DateTime.Now);
+        extensionStatusType.GetProperty("CancellationTokenSource")!.SetValue(status1, cts1);
+        extensionStatusType.GetProperty("Parameters")!.SetValue(status1, null);
+        var indexerMethod1 = runningExtensions.GetType().GetProperty("Item")!.SetMethod!;
+        _ = indexerMethod1.Invoke(runningExtensions, new object[] { "cmd-1", status1 });
+
+        // Act
+        m_ExtensionScripts.CloseSession("session-123");
+
+        // Assert
+        _ = m_ExtensionScripts.Should().NotBeNull();
+        m_MockProcessManager.Verify(pm => pm.KillProcess(It.IsAny<int>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that GetSessionCommands returns commands for existing session.
+    /// </summary>
+    [Fact]
+    public void GetSessionCommands_WithExistingSession_ReturnsCommands()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        // Manually add commands to session for testing
+        var commandInfo1 = CommandInfo.Enqueued("session-123", "cmd-1", "Extension: Test1", DateTime.Now, null);
+        var commandInfo2 = CommandInfo.Enqueued("session-123", "cmd-2", "Extension: Test2", DateTime.Now, null);
+
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache["cmd-1"] = commandInfo1;
+        cache["cmd-2"] = commandInfo2;
+
+        var sessionCommandsField = typeof(ExtensionScripts).GetField("m_SessionCommands", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var sessionCommands = (System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentBag<string>>)sessionCommandsField!.GetValue(m_ExtensionScripts)!;
+        var commandIds = new System.Collections.Concurrent.ConcurrentBag<string> { "cmd-1", "cmd-2" };
+        sessionCommands["session-123"] = commandIds;
+
+        // Act
+        var result = m_ExtensionScripts.GetSessionCommands("session-123");
+
+        // Assert
+        _ = result.Should().NotBeNull();
+        _ = result.Should().HaveCount(2);
+        _ = result.Should().Contain(c => c.CommandId == "cmd-1");
+        _ = result.Should().Contain(c => c.CommandId == "cmd-2");
+    }
+
+    /// <summary>
+    /// Verifies that GetSessionCommands handles missing command IDs gracefully.
+    /// </summary>
+    [Fact]
+    public void GetSessionCommands_WithMissingCommandIds_HandlesGracefully()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        // Manually add session with command ID that doesn't exist in cache
+        var sessionCommandsField = typeof(ExtensionScripts).GetField("m_SessionCommands", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var sessionCommands = (System.Collections.Concurrent.ConcurrentDictionary<string, System.Collections.Concurrent.ConcurrentBag<string>>)sessionCommandsField!.GetValue(m_ExtensionScripts)!;
+        var commandIds = new System.Collections.Concurrent.ConcurrentBag<string> { "cmd-missing" };
+        sessionCommands["session-123"] = commandIds;
+
+        // Act
+        var result = m_ExtensionScripts.GetSessionCommands("session-123");
+
+        // Assert
+        _ = result.Should().NotBeNull();
+        _ = result.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that CancelCommand updates cache to cancelled state.
+    /// </summary>
+    [Fact]
+    public void CancelCommand_UpdatesCacheToCancelledState()
+    {
+        // Arrange
+        m_ExtensionScripts = new ExtensionScripts(
+            m_MockEngine.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_MockSettings.Object);
+
+        var commandInfo = CommandInfo.Executing("session-123", "cmd-test", "Extension: Test", DateTime.Now, DateTime.Now, 12345);
+        var cacheField = typeof(ExtensionScripts).GetField("m_CommandCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cache = (System.Collections.Concurrent.ConcurrentDictionary<string, CommandInfo>)cacheField!.GetValue(m_ExtensionScripts)!;
+        cache["cmd-test"] = commandInfo;
+
+        var runningExtensionsField = typeof(ExtensionScripts).GetField("m_RunningExtensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var extensionStatusType = typeof(ExtensionScripts).Assembly.GetType("Nexus.Engine.Extensions.Models.ExtensionStatus")!;
+        var runningExtensions = runningExtensionsField!.GetValue(m_ExtensionScripts)!;
+
+        var cts = new CancellationTokenSource();
+        var status = Activator.CreateInstance(extensionStatusType)!;
+        extensionStatusType.GetProperty("CommandId")!.SetValue(status, "cmd-test");
+        extensionStatusType.GetProperty("SessionId")!.SetValue(status, "session-123");
+        extensionStatusType.GetProperty("ExtensionName")!.SetValue(status, "Test");
+        extensionStatusType.GetProperty("ProcessId")!.SetValue(status, 12345);
+        extensionStatusType.GetProperty("StartTime")!.SetValue(status, DateTime.Now);
+        extensionStatusType.GetProperty("CancellationTokenSource")!.SetValue(status, cts);
+        extensionStatusType.GetProperty("Parameters")!.SetValue(status, null);
+        var indexerMethod = runningExtensions.GetType().GetProperty("Item")!.SetMethod!;
+        _ = indexerMethod.Invoke(runningExtensions, new object[] { "cmd-test", status });
+
+        // Act
+        _ = m_ExtensionScripts.CancelCommand("session-123", "cmd-test");
+
+        // Assert
+        var updatedInfo = m_ExtensionScripts.GetCommandStatus("cmd-test");
+        _ = updatedInfo.Should().NotBeNull();
+        _ = updatedInfo!.State.Should().Be(CommandState.Cancelled);
     }
 }

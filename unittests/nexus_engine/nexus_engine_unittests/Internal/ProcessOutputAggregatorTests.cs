@@ -71,9 +71,7 @@ public sealed class ProcessOutputAggregatorTests
         using var aggregator = new ProcessOutputAggregator();
 
         // Act & Assert
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type - intentional for testing
-        var ex = Assert.Throws<ArgumentNullException>(() => aggregator.Attach(null));
-#pragma warning restore CS8625
+        var ex = Assert.Throws<ArgumentNullException>(() => aggregator.Attach(null!));
         Assert.Equal("process", ex.ParamName);
     }
 

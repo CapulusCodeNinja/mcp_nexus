@@ -220,14 +220,7 @@ public class ResponseFormattingMiddlewareTests
         /// <returns>The write task.</returns>
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-#pragma warning disable IDE0046 // Convert to conditional expression - keeping explicit throw for clarity
-            if (Position > 0)
-            {
-                throw new IOException("Write failed");
-            }
-#pragma warning restore IDE0046
-
-            return base.WriteAsync(buffer, offset, count, cancellationToken);
+            return Position > 0 ? throw new IOException("Write failed") : base.WriteAsync(buffer, offset, count, cancellationToken);
         }
     }
 }

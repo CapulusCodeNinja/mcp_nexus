@@ -56,9 +56,7 @@ public sealed class ProcessOutputLineTests
         const bool isError = false;
 
         // Act
-#pragma warning disable CS8604 // Possible null reference argument - intentional for testing
-        var line = new ProcessOutputLine(text, isError);
-#pragma warning restore CS8604
+        var line = new ProcessOutputLine(text!, isError);
 
         // Assert
         Assert.Equal(string.Empty, line.Text);
