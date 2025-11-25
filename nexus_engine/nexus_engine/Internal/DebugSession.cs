@@ -17,6 +17,7 @@ internal class DebugSession : IDisposable
 {
     private readonly Logger m_Logger;
     private readonly ISettings m_Settings;
+    private readonly IFileSystem m_FileSystem;
     private readonly string m_DumpFilePath;
     private readonly string? m_SymbolPath;
     private readonly CdbSession m_CdbSession;
@@ -96,6 +97,7 @@ internal class DebugSession : IDisposable
         CommandPreprocessor commandPreprocessor)
     {
         m_Settings = settings;
+        m_FileSystem = fileSystem;
         SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
         m_DumpFilePath = dumpFilePath ?? throw new ArgumentNullException(nameof(dumpFilePath));
         m_SymbolPath = symbolPath;
@@ -246,6 +248,26 @@ internal class DebugSession : IDisposable
 
             // Dispose CDB session
             await m_CdbSession.DisposeAsync();
+
+            if (m_Settings.Get().McpNexus.SessionManagement.DeleteDumpFileOnSessionClose && !string.IsNullOrWhiteSpace(m_DumpFilePath))
+            {
+                try
+                {
+                    if (m_FileSystem.FileExists(m_DumpFilePath))
+                    {
+                        m_FileSystem.DeleteFile(m_DumpFilePath);
+                        m_Logger.Info("Deleted dump file {DumpFilePath} for session {SessionId}", m_DumpFilePath, SessionId);
+                    }
+                    else
+                    {
+                        m_Logger.Debug("Dump file {DumpFilePath} for session {SessionId} was already missing", m_DumpFilePath, SessionId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.Warn(ex, "Failed to delete dump file {DumpFilePath} for session {SessionId}", m_DumpFilePath, SessionId);
+                }
+            }
 
             SetState(SessionState.Closed);
             m_Logger.Info("Debug session {SessionId} disposed successfully", SessionId);

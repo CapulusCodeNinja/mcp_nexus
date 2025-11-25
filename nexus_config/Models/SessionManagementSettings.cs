@@ -36,6 +36,11 @@ public class SessionManagementSettings
     public int MemoryCleanupThresholdMB { get; set; } = 1024;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the dump file should be deleted when a session is closed.
+    /// </summary>
+    public bool DeleteDumpFileOnSessionClose { get; set; } = false;
+
+    /// <summary>
     /// Gets the cleanup interval as a TimeSpan.
     /// </summary>
     /// <returns>The cleanup interval.</returns>

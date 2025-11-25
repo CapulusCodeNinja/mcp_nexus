@@ -31,7 +31,7 @@ public class DebugEngineTests : IDisposable
     public DebugEngineTests()
     {
         m_Settings = new Mock<ISettings>();
-        var sharedConfig = new SharedConfiguration
+        _ = m_Settings.Setup(s => s.Get()).Returns(new SharedConfiguration
         {
             McpNexus = new McpNexusSettings
             {
@@ -39,9 +39,9 @@ public class DebugEngineTests : IDisposable
                 {
                     CallbackPort = 0,
                 },
+                SessionManagement = new SessionManagementSettings(),
             },
-        };
-        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
+        });
         m_MockFileSystem = new Mock<IFileSystem>();
         m_BatchProcessor = new Mock<IBatchProcessor>();
         m_MockProcessManager = new Mock<IProcessManager>();
@@ -890,5 +890,163 @@ public class DebugEngineTests : IDisposable
 
         // Act & Assert - Should not throw
         accessor.ThrowIfDisposed();
+    }
+
+    /// <summary>
+    /// Verifies that CloseSessionAsync deletes the dump file when configured to do so.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CloseSessionAsync_WhenDeleteDumpFileOnSessionCloseEnabled_DeletesDumpFile()
+    {
+        // Arrange
+        const string sessionId = "test-session-id-delete-enabled";
+        const string dumpFilePath = @"C:\dummy\dump_enabled.dmp";
+
+        _ = m_Settings.Setup(s => s.Get()).Returns(new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+                SessionManagement = new SessionManagementSettings
+                {
+                    DeleteDumpFileOnSessionClose = true,
+                },
+            },
+        });
+
+        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
+
+        var debugSession = new DebugSessionTestAccessor(
+            sessionId,
+            dumpFilePath,
+            null,
+            m_Settings.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_BatchProcessor.Object);
+
+        var sessionsField = typeof(DebugEngine)
+            .GetField("m_Sessions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        _ = sessionsField.Should().NotBeNull();
+        var sessions = (System.Collections.Concurrent.ConcurrentDictionary<string, Nexus.Engine.Internal.DebugSession>)sessionsField!.GetValue(accessor)!;
+        _ = sessions.TryAdd(sessionId, debugSession);
+
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(dumpFilePath)).Returns(true);
+
+        // Act
+        await accessor.CloseSessionAsync(sessionId);
+
+        // Assert
+        m_MockFileSystem.Verify(fs => fs.DeleteFile(dumpFilePath), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that CloseSessionAsync does not delete the dump file when configuration is disabled.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CloseSessionAsync_WhenDeleteDumpFileOnSessionCloseDisabled_DoesNotDeleteDumpFile()
+    {
+        // Arrange
+        const string sessionId = "test-session-id-delete-disabled";
+        const string dumpFilePath = @"C:\dummy\dump_disabled.dmp";
+
+        _ = m_Settings.Setup(s => s.Get()).Returns(new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+                SessionManagement = new SessionManagementSettings
+                {
+                    DeleteDumpFileOnSessionClose = false,
+                },
+            },
+        });
+
+        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
+
+        var debugSession = new DebugSessionTestAccessor(
+            sessionId,
+            dumpFilePath,
+            null,
+            m_Settings.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_BatchProcessor.Object);
+
+        var sessionsField = typeof(DebugEngine)
+            .GetField("m_Sessions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        _ = sessionsField.Should().NotBeNull();
+        var sessions = (System.Collections.Concurrent.ConcurrentDictionary<string, Nexus.Engine.Internal.DebugSession>)sessionsField!.GetValue(accessor)!;
+        _ = sessions.TryAdd(sessionId, debugSession);
+
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(dumpFilePath)).Returns(true);
+
+        // Act
+        await accessor.CloseSessionAsync(sessionId);
+
+        // Assert
+        m_MockFileSystem.Verify(fs => fs.DeleteFile(It.IsAny<string>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Verifies that CloseSessionAsync does not throw when dump file deletion fails.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CloseSessionAsync_WhenDumpDeletionFails_DoesNotThrow()
+    {
+        // Arrange
+        const string sessionId = "test-session-id-delete-fails";
+        const string dumpFilePath = @"C:\dummy\dump_fails.dmp";
+
+        _ = m_Settings.Setup(s => s.Get()).Returns(new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+                SessionManagement = new SessionManagementSettings
+                {
+                    DeleteDumpFileOnSessionClose = true,
+                },
+            },
+        });
+
+        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
+
+        var debugSession = new DebugSessionTestAccessor(
+            sessionId,
+            dumpFilePath,
+            null,
+            m_Settings.Object,
+            m_MockFileSystem.Object,
+            m_MockProcessManager.Object,
+            m_BatchProcessor.Object);
+
+        var sessionsField = typeof(DebugEngine)
+            .GetField("m_Sessions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        _ = sessionsField.Should().NotBeNull();
+        var sessions = (System.Collections.Concurrent.ConcurrentDictionary<string, Nexus.Engine.Internal.DebugSession>)sessionsField!.GetValue(accessor)!;
+        _ = sessions.TryAdd(sessionId, debugSession);
+
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(dumpFilePath)).Returns(true);
+        _ = m_MockFileSystem.Setup(fs => fs.DeleteFile(dumpFilePath)).Throws(new IOException("Access denied"));
+
+        // Act
+        var exception = await Record.ExceptionAsync(() => accessor.CloseSessionAsync(sessionId));
+
+        // Assert
+        _ = exception.Should().BeNull();
+        m_MockFileSystem.Verify(fs => fs.DeleteFile(dumpFilePath), Times.Once);
     }
 }
