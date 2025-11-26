@@ -20,7 +20,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Include="appsettings.json">
+    <None Include="appsettings.Defaults.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
