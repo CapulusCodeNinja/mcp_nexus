@@ -1,5 +1,3 @@
-using System.IO;
-
 using FluentAssertions;
 
 using Nexus.Protocol.Tools;
