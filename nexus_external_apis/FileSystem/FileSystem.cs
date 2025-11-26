@@ -196,4 +196,15 @@ public class FileSystem : IFileSystem
     {
         return new DirectoryInfo(path);
     }
+
+    /// <summary>
+    /// Probes the specified file path by attempting to read from it to verify basic readability.
+    /// </summary>
+    /// <param name="path">The file path to probe.</param>
+    public void ProbeRead(string path)
+    {
+        using var stream = File.OpenRead(path);
+        Span<byte> buffer = stackalloc byte[1];
+        _ = stream.Read(buffer);
+    }
 }

@@ -58,33 +58,31 @@ internal static class OpenDumpAnalyzeSessionTool
 
             try
             {
-                using var stream = fileSystem.OpenRead(dumpPath);
-                Span<byte> buffer = stackalloc byte[1];
-                _ = stream.Read(buffer);
+                fileSystem.ProbeRead(dumpPath);
             }
             catch (UnauthorizedAccessException ex)
             {
                 logger.Error(ex, "Access denied when opening dump: {DumpPath}", dumpPath);
-                var markdown = MarkdownFormatter.CreateSessionResult(
+                var errorMarkdown = MarkdownFormatter.CreateSessionResult(
                     "N/A",
                     fileSystem.GetFileName(dumpPath) ?? "Unknown",
                     "Failed",
                     null,
                     $"Cannot open dump file for read (access denied): {dumpPath}");
-                markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-                return markdown;
+                errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
+                return errorMarkdown;
             }
             catch (IOException ex)
             {
                 logger.Error(ex, "I/O error when opening dump: {DumpPath}", dumpPath);
-                var markdown = MarkdownFormatter.CreateSessionResult(
+                var errorMarkdown = MarkdownFormatter.CreateSessionResult(
                     "N/A",
                     fileSystem.GetFileName(dumpPath) ?? "Unknown",
                     "Failed",
                     null,
                     $"Cannot open dump file for read: {dumpPath}. {ex.Message}");
-                markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-                return markdown;
+                errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
+                return errorMarkdown;
             }
 
             var sessionId = await EngineService.Get().CreateSessionAsync(dumpPath, symbolsPath);
