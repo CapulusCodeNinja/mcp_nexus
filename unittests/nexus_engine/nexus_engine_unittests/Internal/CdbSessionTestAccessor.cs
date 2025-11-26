@@ -13,6 +13,8 @@ namespace Nexus.Engine.Tests.Internal;
 /// </summary>
 internal class CdbSessionTestAccessor : CdbSession
 {
+    private bool? m_IsProcessExitedOverrideForTesting;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CdbSessionTestAccessor"/> class.
     /// </summary>
@@ -47,9 +49,10 @@ internal class CdbSessionTestAccessor : CdbSession
     /// Exposes the protected WriteQuitCommandAsync method.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public new Task WriteQuitCommandAsync()
+    protected override Task WriteQuitCommandAsync()
     {
-        return base.WriteQuitCommandAsync();
+        WasWriteQuitCommandCalledForTesting = true;
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -98,9 +101,9 @@ internal class CdbSessionTestAccessor : CdbSession
     /// Exposes the protected IsProcessExited method.
     /// </summary>
     /// <returns>True if the process has exited, false otherwise.</returns>
-    public new bool IsProcessExited()
+    public bool GetEffectiveProcessExitedForTesting()
     {
-        return base.IsProcessExited();
+        return IsProcessExited();
     }
 
     /// <summary>
@@ -178,6 +181,32 @@ internal class CdbSessionTestAccessor : CdbSession
     public static new string CreateCommandWithSentinels(string command)
     {
         return CdbSession.CreateCommandWithSentinels(command);
+    }
+
+    /// <summary>
+    /// Sets the process exited state for testing purposes.
+    /// </summary>
+    /// <param name="exited">If set to true, simulates that the CDB process has exited.</param>
+    public void SetProcessExitedForTesting(bool exited)
+    {
+        m_IsProcessExitedOverrideForTesting = exited;
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the quit command was written during testing.
+    /// </summary>
+    public bool WasWriteQuitCommandCalledForTesting
+    {
+        get; private set;
+    }
+
+    /// <summary>
+    /// Overrides the IsProcessExited method to use the test-specific state when provided.
+    /// </summary>
+    /// <returns>True if the process has exited, false otherwise.</returns>
+    protected override bool IsProcessExited()
+    {
+        return m_IsProcessExitedOverrideForTesting ?? base.IsProcessExited();
     }
 
     /// <summary>

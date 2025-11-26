@@ -674,7 +674,7 @@ public class CdbSessionTests
         var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
 
         // Act
-        var result = accessor.IsProcessExited();
+        var result = accessor.GetEffectiveProcessExitedForTesting();
 
         // Assert
         _ = result.Should().BeFalse();
@@ -1179,7 +1179,7 @@ public class CdbSessionTests
         var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
 
         // Act
-        var result = accessor.IsProcessExited();
+        var result = accessor.GetEffectiveProcessExitedForTesting();
 
         // Assert
         _ = result.Should().BeFalse();
@@ -1200,6 +1200,48 @@ public class CdbSessionTests
 
         // Assert
         _ = await act.Should().NotThrowAsync();
+    }
+
+    /// <summary>
+    /// Verifies that SendQuitCommandAsync sends the quit command when the process is still running.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SendQuitCommandAsync_WhenProcessRunning_SendsQuitCommand()
+    {
+        // Arrange
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        accessor.SetProcessExitedForTesting(false);
+        var writer = new StreamWriter(Stream.Null);
+        var inputWriterField = typeof(CdbSession).GetField("m_InputWriter", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        inputWriterField!.SetValue(accessor, writer);
+
+        // Act
+        await accessor.SendQuitCommandAsync();
+
+        // Assert
+        _ = accessor.WasWriteQuitCommandCalledForTesting.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that SendQuitCommandAsync does not attempt to send the quit command when the process has already exited.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task SendQuitCommandAsync_WhenProcessExited_DoesNotSendQuitCommand()
+    {
+        // Arrange
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        accessor.SetProcessExitedForTesting(true);
+        var writer = new StreamWriter(Stream.Null);
+        var inputWriterField = typeof(CdbSession).GetField("m_InputWriter", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        inputWriterField!.SetValue(accessor, writer);
+
+        // Act
+        await accessor.SendQuitCommandAsync();
+
+        // Assert
+        _ = accessor.WasWriteQuitCommandCalledForTesting.Should().BeFalse();
     }
 
     /// <summary>

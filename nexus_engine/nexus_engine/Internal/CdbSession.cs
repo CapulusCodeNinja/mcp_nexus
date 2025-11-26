@@ -251,6 +251,12 @@ internal class CdbSession : ICdbSession
     /// <returns>A task that represents the asynchronous operation.</returns>
     protected virtual async Task SendQuitCommandAsync()
     {
+        if (IsProcessExited())
+        {
+            m_Logger.Debug("Skipping quit command because CDB process has already exited");
+            return;
+        }
+
         if (m_InputWriter != null)
         {
             try

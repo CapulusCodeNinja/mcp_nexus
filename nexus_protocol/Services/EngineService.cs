@@ -73,9 +73,9 @@ namespace Nexus.Protocol.Services
             m_DebugEngineLock.EnterWriteLock();
             try
             {
-                if (m_DebugEngine != null)
+                if (m_DebugEngine is { } debugEngine)
                 {
-                    m_DebugEngine.Dispose();
+                    debugEngine.Dispose();
                     m_DebugEngine = null;
                 }
             }

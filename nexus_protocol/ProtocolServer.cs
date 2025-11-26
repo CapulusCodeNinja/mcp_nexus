@@ -220,15 +220,15 @@ public class ProtocolServer : IProtocolServer
         // Ensure the debug engine and all debug sessions are shut down deterministically
         EngineService.Shutdown();
 
-        if (m_WebApplication != null)
+        if (m_WebApplication is { } webApplication)
         {
-            m_WebApplication.DisposeAsync().GetAwaiter().GetResult();
+            webApplication.DisposeAsync().GetAwaiter().GetResult();
             m_WebApplication = null;
         }
 
-        if (m_Host != null)
+        if (m_Host is { } host)
         {
-            m_Host.Dispose();
+            host.Dispose();
             m_Host = null;
         }
 

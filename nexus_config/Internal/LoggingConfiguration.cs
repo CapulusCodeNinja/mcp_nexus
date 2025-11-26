@@ -167,9 +167,9 @@ internal class LoggingConfiguration(ISettings settings)
             }
 
             // Set the internal log file through LogManager
-            if (LogManager.Configuration != null)
+            if (LogManager.Configuration is { } config)
             {
-                LogManager.Configuration.Variables["internalLogFile"] = internalLogFile;
+                config.Variables["internalLogFile"] = internalLogFile;
             }
         }
         catch (Exception)
