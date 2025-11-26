@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 
 using Nexus.Config;
 using Nexus.Engine.Batch;
+using Nexus.Engine.DumpCheck;
 using Nexus.Engine.Extensions;
 using Nexus.Engine.Internal;
 using Nexus.Engine.Preprocessing;
@@ -64,6 +65,8 @@ public class DebugEngine : IDebugEngine
 
     private readonly IBatchProcessor m_BatchProcessor;
 
+    private readonly IDumpValidator m_DumpValidator;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DebugEngine"/> class with default dependencies.
     /// </summary>
@@ -90,6 +93,7 @@ public class DebugEngine : IDebugEngine
         m_BatchProcessor = batchProcessor;
 
         m_ExtensionScripts = new ExtensionScripts(this, fileSystem, processManager, m_Settings);
+        m_DumpValidator = new DumpValidator(m_FileSystem);
 
         m_Logger = LogManager.GetCurrentClassLogger();
         m_Logger.Info("DebugEngine initialized with max {MaxSessions} concurrent sessions", m_Settings.Get().McpNexus.SessionManagement.MaxConcurrentSessions);
@@ -123,10 +127,7 @@ public class DebugEngine : IDebugEngine
         ThrowIfDisposed();
         ValidateSessionId(dumpFilePath, nameof(dumpFilePath));
 
-        if (!m_FileSystem.FileExists(dumpFilePath))
-        {
-            throw new FileNotFoundException($"Dump file not found: {dumpFilePath}", dumpFilePath);
-        }
+        m_DumpValidator.Validate(dumpFilePath);
 
         if (m_Sessions.Count >= m_Settings.Get().McpNexus.SessionManagement.MaxConcurrentSessions)
         {

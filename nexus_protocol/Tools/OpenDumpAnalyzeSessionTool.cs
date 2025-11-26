@@ -43,48 +43,6 @@ internal static class OpenDumpAnalyzeSessionTool
                 symbolsPath = null;
             }
 
-            if (!fileSystem.FileExists(dumpPath))
-            {
-                logger.Error("Dump file not found: {DumpPath}", dumpPath);
-                var notFoundResult = MarkdownFormatter.CreateSessionResult(
-                    "N/A",
-                    fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                    "Failed",
-                    null,
-                    $"Dump file not found: {dumpPath}");
-                notFoundResult += MarkdownFormatter.GetUsageGuideMarkdown();
-                return notFoundResult;
-            }
-
-            try
-            {
-                fileSystem.ProbeRead(dumpPath);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                logger.Error(ex, "Access denied when opening dump: {DumpPath}", dumpPath);
-                var errorMarkdown = MarkdownFormatter.CreateSessionResult(
-                    "N/A",
-                    fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                    "Failed",
-                    null,
-                    $"Cannot open dump file for read (access denied): {dumpPath}");
-                errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
-                return errorMarkdown;
-            }
-            catch (IOException ex)
-            {
-                logger.Error(ex, "I/O error when opening dump: {DumpPath}", dumpPath);
-                var errorMarkdown = MarkdownFormatter.CreateSessionResult(
-                    "N/A",
-                    fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                    "Failed",
-                    null,
-                    $"Cannot open dump file for read: {dumpPath}. {ex.Message}");
-                errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
-                return errorMarkdown;
-            }
-
             var sessionId = await EngineService.Get().CreateSessionAsync(dumpPath, symbolsPath);
 
             logger.Info("Successfully created session: {SessionId}", sessionId);
@@ -122,6 +80,30 @@ internal static class OpenDumpAnalyzeSessionTool
                 ex.Message);
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.Error(ex, "Access denied when opening dump: {DumpPath}", dumpPath);
+            var errorMarkdown = MarkdownFormatter.CreateSessionResult(
+                "N/A",
+                fileSystem.GetFileName(dumpPath) ?? "Unknown",
+                "Failed",
+                null,
+                $"Cannot open dump file for read (access denied): {dumpPath}");
+            errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
+            return errorMarkdown;
+        }
+        catch (IOException ex)
+        {
+            logger.Error(ex, "I/O error when opening dump: {DumpPath}", dumpPath);
+            var errorMarkdown = MarkdownFormatter.CreateSessionResult(
+                "N/A",
+                fileSystem.GetFileName(dumpPath) ?? "Unknown",
+                "Failed",
+                null,
+                $"Cannot open dump file for read: {dumpPath}. {ex.Message}");
+            errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
+            return errorMarkdown;
         }
         catch (Exception ex)
         {
