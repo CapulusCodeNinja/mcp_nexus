@@ -25,7 +25,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Include="..\..\nexus_config\appsettings.json">
+    <None Include="..\..\nexus_config\appsettings.Defaults.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
