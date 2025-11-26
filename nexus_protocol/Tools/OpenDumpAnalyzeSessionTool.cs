@@ -46,12 +46,45 @@ internal static class OpenDumpAnalyzeSessionTool
             if (!fileSystem.FileExists(dumpPath))
             {
                 logger.Error("Dump file not found: {DumpPath}", dumpPath);
-                return MarkdownFormatter.CreateSessionResult(
+                var notFoundResult = MarkdownFormatter.CreateSessionResult(
                     "N/A",
                     fileSystem.GetFileName(dumpPath) ?? "Unknown",
                     "Failed",
                     null,
                     $"Dump file not found: {dumpPath}");
+                notFoundResult += MarkdownFormatter.GetUsageGuideMarkdown();
+                return notFoundResult;
+            }
+
+            try
+            {
+                using var stream = fileSystem.OpenRead(dumpPath);
+                Span<byte> buffer = stackalloc byte[1];
+                _ = stream.Read(buffer);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                logger.Error(ex, "Access denied when opening dump: {DumpPath}", dumpPath);
+                var markdown = MarkdownFormatter.CreateSessionResult(
+                    "N/A",
+                    fileSystem.GetFileName(dumpPath) ?? "Unknown",
+                    "Failed",
+                    null,
+                    $"Cannot open dump file for read (access denied): {dumpPath}");
+                markdown += MarkdownFormatter.GetUsageGuideMarkdown();
+                return markdown;
+            }
+            catch (IOException ex)
+            {
+                logger.Error(ex, "I/O error when opening dump: {DumpPath}", dumpPath);
+                var markdown = MarkdownFormatter.CreateSessionResult(
+                    "N/A",
+                    fileSystem.GetFileName(dumpPath) ?? "Unknown",
+                    "Failed",
+                    null,
+                    $"Cannot open dump file for read: {dumpPath}. {ex.Message}");
+                markdown += MarkdownFormatter.GetUsageGuideMarkdown();
+                return markdown;
             }
 
             var sessionId = await EngineService.Get().CreateSessionAsync(dumpPath, symbolsPath);
