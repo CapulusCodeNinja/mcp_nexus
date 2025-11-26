@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <AssemblyName>nexus_engine</AssemblyName>
@@ -26,7 +26,7 @@
     <ProjectReference Include="..\..\nexus_config\nexus_config.csproj" />
     <ProjectReference Include="..\nexus_engine_batch\nexus_engine_batch.csproj" />
     <ProjectReference Include="..\nexus_engine_share\nexus_engine_share.csproj" />
-    <ProjectReference Include="..\nexus_engine_share\nexus_engine_dump_check.csproj" />
+      <ProjectReference Include="..\nexus_engine_dump_check\nexus_engine_dump_check.csproj" />
   </ItemGroup>
 
   <ItemGroup>
