@@ -200,6 +200,8 @@ public class ProtocolServer : IProtocolServer
 
     /// <summary>
     /// Disposes of the protocol server and releases all resources.
+    /// Ensures that the underlying debug engine and all associated CDB sessions are
+    /// shut down before the HTTP/Stdio hosts are disposed.
     /// </summary>
     public void Dispose()
     {
@@ -214,6 +216,9 @@ public class ProtocolServer : IProtocolServer
         {
             StopAsync().GetAwaiter().GetResult();
         }
+
+        // Ensure the debug engine and all debug sessions are shut down deterministically
+        EngineService.Shutdown();
 
         if (m_WebApplication != null)
         {

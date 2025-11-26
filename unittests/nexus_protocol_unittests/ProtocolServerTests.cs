@@ -4,8 +4,10 @@ using Moq;
 
 using Nexus.Config;
 using Nexus.Config.Models;
+using Nexus.Engine;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
+using Nexus.Protocol.Services;
 
 using Xunit;
 
@@ -491,5 +493,27 @@ public class ProtocolServerTests : IDisposable
         _ = m_ProtocolServer.IsRunning.Should().BeTrue();
         await m_ProtocolServer.StopAsync();
         _ = m_ProtocolServer.IsRunning.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Verifies that Dispose shuts down the debug engine so that it can be reinitialized afterwards.
+    /// </summary>
+    [Fact]
+    public void Dispose_ShutsDownEngineService_AllowingReinitialize()
+    {
+        // Arrange
+        m_ProtocolServer = new ProtocolServer(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+        var engineBeforeDispose = EngineService.Get();
+
+        // Act
+        m_ProtocolServer.Dispose();
+        EngineService.Initialize(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+        var engineAfterDispose = EngineService.Get();
+
+        // Assert
+        _ = engineBeforeDispose.Should().NotBeNull();
+        _ = engineAfterDispose.Should().NotBeNull();
+        _ = engineAfterDispose.Should().BeOfType<DebugEngine>();
+        _ = engineAfterDispose.Should().NotBeSameAs(engineBeforeDispose);
     }
 }

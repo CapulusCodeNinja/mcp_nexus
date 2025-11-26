@@ -44,6 +44,7 @@ namespace Nexus.Protocol.Services
         /// <summary>
         /// Initializes the debug engine instance with the specified settings.
         /// This method must be called before using <see cref="Get()"/> to retrieve the engine.
+        /// If an existing engine instance is present, it will be disposed before creating a new one.
         /// </summary>
         /// <param name="fileSystem">The file system abstraction.</param>
         /// <param name="processManager">The process manager abstraction.</param>
@@ -54,7 +55,29 @@ namespace Nexus.Protocol.Services
             m_DebugEngineLock.EnterWriteLock();
             try
             {
+                m_DebugEngine?.Dispose();
                 m_DebugEngine = new DebugEngine(fileSystem, processManager, settings);
+            }
+            finally
+            {
+                m_DebugEngineLock.ExitWriteLock();
+            }
+        }
+
+        /// <summary>
+        /// Shuts down the debug engine instance, disposing it if present and clearing the singleton reference.
+        /// This method is safe to call multiple times and will only dispose an existing engine once.
+        /// </summary>
+        public static void Shutdown()
+        {
+            m_DebugEngineLock.EnterWriteLock();
+            try
+            {
+                if (m_DebugEngine != null)
+                {
+                    m_DebugEngine.Dispose();
+                    m_DebugEngine = null;
+                }
             }
             finally
             {
