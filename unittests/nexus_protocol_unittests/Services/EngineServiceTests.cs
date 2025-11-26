@@ -332,4 +332,46 @@ public class EngineServiceTests
         // Assert
         _ = EngineService.Get().Should().NotBeNull();
     }
+
+    /// <summary>
+    /// Verifies that Shutdown disposes the current engine and allows reinitialization.
+    /// </summary>
+    [Fact]
+    public void Shutdown_AfterInitialize_AllowsReinitialize()
+    {
+        // Arrange
+        EngineService.Initialize(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+        var firstEngine = EngineService.Get();
+
+        // Act
+        EngineService.Shutdown();
+        EngineService.Initialize(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+        var secondEngine = EngineService.Get();
+
+        // Assert
+        _ = firstEngine.Should().NotBeNull();
+        _ = secondEngine.Should().NotBeNull();
+        _ = secondEngine.Should().BeOfType<DebugEngine>();
+        _ = secondEngine.Should().NotBeSameAs(firstEngine);
+    }
+
+    /// <summary>
+    /// Verifies that Shutdown is idempotent and can be called multiple times without throwing.
+    /// </summary>
+    [Fact]
+    public void Shutdown_MultipleCalls_DoesNotThrow()
+    {
+        // Arrange
+        EngineService.Initialize(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+
+        // Act
+        var act = () =>
+        {
+            EngineService.Shutdown();
+            EngineService.Shutdown();
+        };
+
+        // Assert
+        _ = act.Should().NotThrow();
+    }
 }

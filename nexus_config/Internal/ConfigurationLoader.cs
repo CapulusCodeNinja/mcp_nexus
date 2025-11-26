@@ -32,7 +32,8 @@ internal class ConfigurationLoader : IConfigurationProvider
 
         return new ConfigurationBuilder()
             .SetBasePath(basePath)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+            .AddJsonFile("appsettings.Defaults.json", optional: false, reloadOnChange: false)
+            .AddJsonFile("appsettings.LocalOverrides.json", optional: true, reloadOnChange: false)
             .AddEnvironmentVariables()
             .Build();
     }

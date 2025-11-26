@@ -19,7 +19,7 @@ namespace Nexus.Startup;
 /// Main hosted service that orchestrates the entire application startup sequence.
 /// </summary>
 [SupportedOSPlatform("windows")]
-internal class MainHostedService : IHostedService
+internal class MainHostedService : IHostedService, IDisposable
 {
     private readonly Logger m_Logger;
     private readonly ISettings m_Settings;
@@ -283,5 +283,26 @@ internal class MainHostedService : IHostedService
         }
 
         m_Logger.Info("Main hosted service stopped");
+    }
+
+    /// <summary>
+    /// Disposes the hosted service and releases all resources.
+    /// Ensures that the underlying protocol server (and its debug engine)
+    /// are disposed when the generic host is torn down.
+    /// </summary>
+    public void Dispose()
+    {
+        m_Logger.Info("Disposing main hosted service...");
+
+        try
+        {
+            m_ProtocolServer.Dispose();
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Error(ex, "Error disposing protocol server");
+        }
+
+        m_Logger.Info("Main hosted service disposed");
     }
 }
