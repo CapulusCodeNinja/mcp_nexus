@@ -24,20 +24,60 @@ namespace Nexus.Protocol.Services
         private static readonly ReaderWriterLockSlim m_DebugEngineLock = new ReaderWriterLockSlim();
 
         /// <summary>
+        /// The last file system instance used to initialize the debug engine.
+        /// Stored to allow safe reinitialization after shutdown in concurrent scenarios.
+        /// </summary>
+        private static IFileSystem? m_FileSystem;
+
+        /// <summary>
+        /// The last process manager instance used to initialize the debug engine.
+        /// Stored to allow safe reinitialization after shutdown in concurrent scenarios.
+        /// </summary>
+        private static IProcessManager? m_ProcessManager;
+
+        /// <summary>
+        /// The last settings instance used to initialize the debug engine.
+        /// Stored to allow safe reinitialization after shutdown in concurrent scenarios.
+        /// </summary>
+        private static ISettings? m_Settings;
+
+        /// <summary>
         /// Retrieves the debug engine instance in a thread-safe manner.
+        /// If the engine has been shut down but initialization dependencies are known,
+        /// the engine will be lazily re-created to avoid race conditions between
+        /// initialization, shutdown, and retrieval.
         /// </summary>
         /// <returns>The initialized debug engine instance.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the debug engine has not been initialized via <see cref="Initialize(IFileSystem, IProcessManager, ISettings)"/>.</exception>
+        /// <exception cref="NullReferenceException">Thrown when the debug engine has never been initialized and cannot be created.</exception>
         public static IDebugEngine Get()
         {
-            m_DebugEngineLock.EnterReadLock();
+            m_DebugEngineLock.EnterUpgradeableReadLock();
             try
             {
-                return m_DebugEngine!;
+                if (m_DebugEngine != null)
+                {
+                    return m_DebugEngine;
+                }
+
+                if (m_FileSystem == null || m_ProcessManager == null || m_Settings == null)
+                {
+                    throw new NullReferenceException("Debug engine has not been initialized.");
+                }
+
+                m_DebugEngineLock.EnterWriteLock();
+                try
+                {
+                    m_DebugEngine ??= new DebugEngine(m_FileSystem, m_ProcessManager, m_Settings);
+                    return m_DebugEngine;
+                }
+                finally
+                {
+                    m_DebugEngineLock.ExitWriteLock();
+                }
             }
             finally
             {
-                m_DebugEngineLock.ExitReadLock();
+                m_DebugEngineLock.ExitUpgradeableReadLock();
             }
         }
 
@@ -49,14 +89,22 @@ namespace Nexus.Protocol.Services
         /// <param name="fileSystem">The file system abstraction.</param>
         /// <param name="processManager">The process manager abstraction.</param>
         /// <param name="settings">The product settings.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="settings"/> is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when any of the parameters is null.</exception>
         public static void Initialize(IFileSystem fileSystem, IProcessManager processManager, ISettings settings)
         {
+            ArgumentNullException.ThrowIfNull(fileSystem);
+            ArgumentNullException.ThrowIfNull(processManager);
+            ArgumentNullException.ThrowIfNull(settings);
+
             m_DebugEngineLock.EnterWriteLock();
             try
             {
+                m_FileSystem = fileSystem;
+                m_ProcessManager = processManager;
+                m_Settings = settings;
+
                 m_DebugEngine?.Dispose();
-                m_DebugEngine = new DebugEngine(fileSystem, processManager, settings);
+                m_DebugEngine = new DebugEngine(m_FileSystem, m_ProcessManager, m_Settings);
             }
             finally
             {

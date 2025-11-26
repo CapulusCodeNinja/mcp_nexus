@@ -59,7 +59,7 @@ internal static class OpenDumpAnalyzeSessionTool
         }
         catch (FileNotFoundException ex)
         {
-            logger.Error(ex, "Dump file not found: {DumpPath}", dumpPath);
+            logger.Error(ex, "File not found: {Message}", ex.Message);
             var markdown = MarkdownFormatter.CreateSessionResult(
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
@@ -83,13 +83,13 @@ internal static class OpenDumpAnalyzeSessionTool
         }
         catch (UnauthorizedAccessException ex)
         {
-            logger.Error(ex, "Access denied when opening dump: {DumpPath}", dumpPath);
+            logger.Error(ex, "Access denied: {Message}", ex.Message);
             var errorMarkdown = MarkdownFormatter.CreateSessionResult(
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Failed",
                 null,
-                $"Cannot open dump file for read (access denied): {dumpPath}");
+                $"Cannot open file (access denied): {ex.Message}");
             errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return errorMarkdown;
         }
@@ -101,7 +101,7 @@ internal static class OpenDumpAnalyzeSessionTool
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Failed",
                 null,
-                $"Cannot open dump file for read: {dumpPath}. {ex.Message}");
+                $"Cannot open file: {ex.Message}");
             errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return errorMarkdown;
         }

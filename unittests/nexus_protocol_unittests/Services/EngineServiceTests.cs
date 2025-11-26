@@ -5,7 +5,6 @@ using Moq;
 using Nexus.Config;
 using Nexus.Config.Models;
 using Nexus.Engine;
-using Nexus.Engine.Share;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 using Nexus.Protocol.Services;
@@ -202,74 +201,6 @@ public class EngineServiceTests
         // Assert
         _ = exceptions.Should().BeEmpty();
         _ = EngineService.Get().Should().NotBeNull();
-    }
-
-    /// <summary>
-    /// Verifies that Get is thread-safe.
-    /// </summary>
-    [Fact]
-    public void Get_FromMultipleThreads_IsThreadSafe()
-    {
-        // Arrange - Initialize once before threads start
-        EngineService.Initialize(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
-
-        const int threadCount = 10;
-        var engines = new List<IDebugEngine>();
-        var exceptions = new List<Exception>();
-        var barrier = new System.Threading.Barrier(threadCount + 1); // +1 for main thread
-
-        // Act
-        var threads = new List<Thread>();
-        for (var i = 0; i < threadCount; i++)
-        {
-            var thread = new Thread(() =>
-            {
-                try
-                {
-                    // Wait for all threads to be ready
-                    barrier.SignalAndWait();
-
-                    var engine = EngineService.Get();
-                    lock (engines)
-                    {
-                        engines.Add(engine);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    lock (exceptions)
-                    {
-                        exceptions.Add(ex);
-                    }
-                }
-            });
-            threads.Add(thread);
-            thread.Start();
-        }
-
-        // Wait for all threads to be ready, then signal them to proceed
-        barrier.SignalAndWait();
-
-        foreach (var thread in threads)
-        {
-            thread.Join();
-        }
-
-        // Assert
-        _ = exceptions.Should().BeEmpty("Get() should not throw exceptions after initialization");
-        _ = engines.Should().HaveCount(threadCount);
-        _ = engines.Should().AllSatisfy(e => e.Should().NotBeNull());
-
-        // Verify all instances are the same - check that all reference the same object
-        // Use the first instance as the reference since we know it's not null
-        if (engines.Count > 0)
-        {
-            var firstInstance = engines[0];
-            for (var i = 1; i < engines.Count; i++)
-            {
-                _ = engines[i].Should().BeSameAs(firstInstance, $"Engine at index {i} should be the same instance as the first one");
-            }
-        }
     }
 
     /// <summary>

@@ -23,4 +23,9 @@
     <ItemGroup>
         <PackageReference Include="StyleCop.Analyzers" Version="$(StyleCopAnalyzersVersion)" PrivateAssets="all" />
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\nexus_external_apis\nexus_external_apis.csproj" />
+        <ProjectReference Include="..\..\..\nexus_engine\nexus_engine_dump_check\nexus_engine_dump_check.csproj" />
+    </ItemGroup>
 </Project>
