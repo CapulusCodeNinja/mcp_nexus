@@ -184,6 +184,16 @@ internal class CdbSessionTestAccessor : CdbSession
     }
 
     /// <summary>
+    /// Exposes the CleanupOldCdbLogs method for testing.
+    /// </summary>
+    /// <param name="sessionsDirectory">The directory containing the CDB log files.</param>
+    /// <param name="retentionDays">The retention period in days.</param>
+    public void CleanupOldCdbLogsForTesting(string sessionsDirectory, int retentionDays)
+    {
+        CleanupOldCdbLogs(sessionsDirectory, retentionDays);
+    }
+
+    /// <summary>
     /// Sets the process exited state for testing purposes.
     /// </summary>
     /// <param name="exited">If set to true, simulates that the CDB process has exited.</param>

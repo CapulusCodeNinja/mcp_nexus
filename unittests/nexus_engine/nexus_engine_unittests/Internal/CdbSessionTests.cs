@@ -581,6 +581,53 @@ public class CdbSessionTests
     }
 
     /// <summary>
+    /// Verifies that CleanupOldCdbLogs deletes CDB log files older than the configured retention period
+    /// based on their creation time and leaves newer files intact.
+    /// </summary>
+    [Fact]
+    public void CleanupOldCdbLogs_DeletesFilesOlderThanRetentionDays()
+    {
+        // Arrange
+        var tempRoot = Path.Combine(Path.GetTempPath(), "MCPNexusCdbRetentionTests", Guid.NewGuid().ToString("N"));
+        var sessionsDirectory = Path.Combine(tempRoot, "Sessions");
+        _ = Directory.CreateDirectory(sessionsDirectory);
+
+        var oldFilePath = Path.Combine(sessionsDirectory, "cdb_old.log");
+        var recentFilePath = Path.Combine(sessionsDirectory, "cdb_recent.log");
+
+        File.WriteAllText(oldFilePath, "old");
+        File.WriteAllText(recentFilePath, "recent");
+
+        File.SetCreationTime(oldFilePath, DateTime.Now.AddDays(-10));
+        File.SetCreationTime(recentFilePath, DateTime.Now);
+
+        try
+        {
+            var directoryInfo = new DirectoryInfo(sessionsDirectory);
+            _ = m_MockFileSystem.Setup(fs => fs.GetDirectoryInfo(sessionsDirectory)).Returns(directoryInfo);
+            _ = m_MockFileSystem.Setup(fs => fs.DeleteFile(It.IsAny<string>()))
+                .Callback<string>(path => File.Delete(path));
+
+            var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+            // Act
+            accessor.CleanupOldCdbLogsForTesting(sessionsDirectory, 7);
+
+            // Assert
+            _ = File.Exists(oldFilePath).Should().BeFalse();
+            _ = File.Exists(recentFilePath).Should().BeTrue();
+            m_MockFileSystem.Verify(fs => fs.DeleteFile(oldFilePath), Times.Once);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, true);
+            }
+        }
+    }
+
+    /// <summary>
     /// Verifies that ThrowIfDisposed throws when session is disposed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>

@@ -471,11 +471,75 @@ internal class CdbSession : ICdbSession
         // Ensure the Sessions directory exists
         _ = Directory.CreateDirectory(sessionsDirectory);
 
+        var retentionDays = m_Settings.Get().Logging.RetentionDays;
+        if (retentionDays > 0)
+        {
+            CleanupOldCdbLogs(sessionsDirectory, retentionDays);
+        }
+
         var newFileNameWithoutExtension = $"cdb_{sessionId}";
         var newFileName = Path.ChangeExtension(newFileNameWithoutExtension, ".log");
         var newPath = Path.Combine(sessionsDirectory, newFileName);
 
         return newPath;
+    }
+
+    /// <summary>
+    /// Cleans up CDB log files older than the configured retention period in the specified Sessions directory.
+    /// </summary>
+    /// <param name="sessionsDirectory">The directory containing the CDB log files.</param>
+    /// <param name="retentionDays">The retention period in days.</param>
+    protected void CleanupOldCdbLogs(string sessionsDirectory, int retentionDays)
+    {
+        if (retentionDays <= 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var directoryInfo = m_FileSystem.GetDirectoryInfo(sessionsDirectory);
+            var files = directoryInfo.GetFiles("cdb_*.log");
+
+            if (files.Length == 0)
+            {
+                return;
+            }
+
+            var cutoff = DateTime.Now.AddDays(-retentionDays);
+            var deletedCount = 0;
+
+            foreach (var file in files)
+            {
+                if (file.CreationTime >= cutoff)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    m_FileSystem.DeleteFile(file.FullName);
+                    deletedCount++;
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.Warn(ex, "Failed to delete old CDB log file {CdbLogFile}", file.FullName);
+                }
+            }
+
+            if (deletedCount > 0)
+            {
+                m_Logger.Info(
+                    "Deleted {DeletedCount} CDB log files older than {RetentionDays} days in {SessionsDirectory}",
+                    deletedCount,
+                    retentionDays,
+                    sessionsDirectory);
+            }
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Warn(ex, "Error while cleaning up old CDB log files in {SessionsDirectory}", sessionsDirectory);
+        }
     }
 
     /// <summary>
