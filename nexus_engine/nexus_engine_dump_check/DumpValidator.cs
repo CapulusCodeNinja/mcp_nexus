@@ -1,5 +1,6 @@
 ﻿using Nexus.Config;
 using Nexus.Engine.DumpCheck.Internal;
+using Nexus.Engine.Share.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 
@@ -91,7 +92,7 @@ namespace Nexus.Engine.DumpCheck
         /// dumpchk standard output and error streams as a single string.
         /// </returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="dumpFilePath"/> is null or empty.</exception>
-        public async Task<string> RunDumpChkAsync(string dumpFilePath, CancellationToken cancellationToken = default)
+        public async Task<DumpCheckResult> RunDumpChkAsync(string dumpFilePath, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(dumpFilePath))
             {
@@ -103,7 +104,13 @@ namespace Nexus.Engine.DumpCheck
             if (!validationSettings.DumpChkEnabled)
             {
                 m_Logger.Info("Dumpchk integration is disabled in configuration. Skipping dumpchk for {DumpFilePath}", dumpFilePath);
-                return "dumpchk is disabled in configuration.";
+                return new DumpCheckResult
+                {
+                    IsEnabled = false,
+                    Message = "Dumpchk is disabled in configuration.",
+                    WasExecuted = false,
+                    ExitCode = -1,
+                };
             }
 
             // Validate the dump before invoking dumpchk.

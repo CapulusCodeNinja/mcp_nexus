@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 
 using Nexus.Config;
+using Nexus.Engine.Share.Models;
 using Nexus.External.Apis.ProcessManagement;
 
 using NLog;
@@ -54,7 +55,7 @@ internal sealed class DumpChkProcessRunner
     /// <exception cref="ArgumentException">Thrown when <paramref name="dumpChkPath"/> or <paramref name="dumpFilePath"/> is null or empty.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the process cannot be started.</exception>
     /// <exception cref="TimeoutException">Thrown when dumpchk does not complete within the configured timeout.</exception>
-    public async Task<string> RunAsync(string dumpChkPath, string dumpFilePath, CancellationToken cancellationToken = default)
+    public async Task<DumpCheckResult> RunAsync(string dumpChkPath, string dumpFilePath, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(dumpChkPath))
         {
@@ -131,7 +132,13 @@ internal sealed class DumpChkProcessRunner
             _ = builder.AppendLine(stderr.TrimEnd());
         }
 
-        return builder.ToString().TrimEnd();
+        return new DumpCheckResult
+        {
+            IsEnabled = true,
+            Message = builder.ToString().TrimEnd(),
+            WasExecuted = true,
+            ExitCode = process.ExitCode,
+        };
     }
 
     /// <summary>

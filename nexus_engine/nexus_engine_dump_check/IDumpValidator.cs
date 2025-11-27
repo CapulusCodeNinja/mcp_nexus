@@ -1,3 +1,5 @@
+using Nexus.Engine.Share.Models;
+
 namespace Nexus.Engine.DumpCheck;
 
 /// <summary>
@@ -14,7 +16,7 @@ public interface IDumpValidator
     /// A task that represents the asynchronous operation. The task result contains the combined
     /// dumpchk standard output and error streams as a single string.
     /// </returns>
-    Task<string> RunDumpChkAsync(string dumpFilePath, CancellationToken cancellationToken = default);
+    Task<DumpCheckResult> RunDumpChkAsync(string dumpFilePath, CancellationToken cancellationToken = default);
 }
 
 
