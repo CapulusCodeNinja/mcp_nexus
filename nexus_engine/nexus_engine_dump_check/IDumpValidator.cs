@@ -10,6 +10,17 @@ public interface IDumpValidator
     /// </summary>
     /// <param name="dumpFilePath">The full path to the dump file to validate.</param>
     void Validate(string dumpFilePath);
+
+    /// <summary>
+    /// Runs dumpchk for the specified dump file path when dumpchk integration is enabled.
+    /// </summary>
+    /// <param name="dumpFilePath">The full path to the dump file to analyze.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains the combined
+    /// dumpchk standard output and error streams as a single string.
+    /// </returns>
+    Task<string> RunDumpChkAsync(string dumpFilePath, CancellationToken cancellationToken = default);
 }
 
 

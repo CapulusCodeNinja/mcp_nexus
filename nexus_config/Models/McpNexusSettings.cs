@@ -36,6 +36,11 @@ public class McpNexusSettings
     public SessionManagementSettings SessionManagement { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets the validation configuration.
+    /// </summary>
+    public ValidationSettings Validation { get; set; } = new();
+
+    /// <summary>
     /// Gets or sets the extensions settings.
     /// </summary>
     public ExtensionsSettings Extensions { get; set; } = new();

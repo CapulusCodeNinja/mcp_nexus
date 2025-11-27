@@ -1,0 +1,158 @@
+using System.Diagnostics;
+using System.Text;
+
+using Nexus.Config;
+using Nexus.External.Apis.ProcessManagement;
+
+using NLog;
+
+namespace Nexus.Engine.DumpCheck;
+
+/// <summary>
+/// Executes the dumpchk process for a given dump file and aggregates its
+/// standard output and error streams into a single result string.
+/// </summary>
+internal sealed class DumpChkProcessRunner
+{
+    /// <summary>
+    /// Logger for dumpchk execution operations.
+    /// </summary>
+    private readonly Logger m_Logger;
+
+    /// <summary>
+    /// Shared application settings.
+    /// </summary>
+    private readonly ISettings m_Settings;
+
+    /// <summary>
+    /// Process manager abstraction for starting and monitoring dumpchk.
+    /// </summary>
+    private readonly IProcessManager m_ProcessManager;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DumpChkProcessRunner"/> class.
+    /// </summary>
+    /// <param name="settings">The shared application settings.</param>
+    /// <param name="processManager">The process manager abstraction.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="settings"/> or <paramref name="processManager"/> is <c>null</c>.
+    /// </exception>
+    public DumpChkProcessRunner(ISettings settings, IProcessManager processManager)
+    {
+        m_Settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
+        m_Logger = LogManager.GetCurrentClassLogger();
+    }
+
+    /// <summary>
+    /// Runs dumpchk for the specified dump file path and returns the combined output.
+    /// </summary>
+    /// <param name="dumpChkPath">The resolved path to the dumpchk executable.</param>
+    /// <param name="dumpFilePath">The full path to the dump file to analyze.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the combined output string.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="dumpChkPath"/> or <paramref name="dumpFilePath"/> is null or empty.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the process cannot be started.</exception>
+    /// <exception cref="TimeoutException">Thrown when dumpchk does not complete within the configured timeout.</exception>
+    public async Task<string> RunAsync(string dumpChkPath, string dumpFilePath, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(dumpChkPath))
+        {
+            throw new ArgumentException("Dumpchk path cannot be null or empty", nameof(dumpChkPath));
+        }
+
+        if (string.IsNullOrWhiteSpace(dumpFilePath))
+        {
+            throw new ArgumentException("Dump file path cannot be null or empty", nameof(dumpFilePath));
+        }
+
+        var startInfo = CreateStartInfo(dumpChkPath, dumpFilePath);
+        var process = m_ProcessManager.StartProcess(startInfo) ?? throw new InvalidOperationException("Failed to start dumpchk process");
+
+        m_Logger.Info("Starting dumpchk for dump file: {DumpFilePath}", dumpFilePath);
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+
+        using var registration = cancellationToken.Register(
+            () =>
+            {
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        m_Logger.Warn("Cancellation requested, terminating dumpchk process with PID: {ProcessId}", process.Id);
+                        m_ProcessManager.KillProcess(process);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    m_Logger.Warn(ex, "Error while cancelling dumpchk process");
+                }
+            });
+
+        var timeoutMs = m_Settings.Get().McpNexus.Debugging.OutputReadingTimeoutMs;
+        var exited = await m_ProcessManager.WaitForProcessExitAsync(process, timeoutMs, cancellationToken).ConfigureAwait(false);
+
+        if (!exited)
+        {
+            try
+            {
+                m_Logger.Warn("dumpchk did not exit within timeout ({TimeoutMs} ms), killing process with PID: {ProcessId}", timeoutMs, process.Id);
+                m_ProcessManager.KillProcess(process);
+            }
+            catch (Exception ex)
+            {
+                m_Logger.Warn(ex, "Error while killing dumpchk process after timeout");
+            }
+
+            throw new TimeoutException($"dumpchk did not complete within the configured timeout of {timeoutMs} ms.");
+        }
+
+        var stdout = await stdoutTask.ConfigureAwait(false);
+        var stderr = await stderrTask.ConfigureAwait(false);
+
+        m_Logger.Info("dumpchk finished for dump file: {DumpFilePath} with exit code {ExitCode}", dumpFilePath, process.ExitCode);
+
+        var builder = new StringBuilder();
+
+        if (!string.IsNullOrWhiteSpace(stdout))
+        {
+            _ = builder.AppendLine(stdout.TrimEnd());
+        }
+
+        if (!string.IsNullOrWhiteSpace(stderr))
+        {
+            if (builder.Length > 0)
+            {
+                _ = builder.AppendLine();
+            }
+
+            _ = builder.AppendLine(stderr.TrimEnd());
+        }
+
+        return builder.ToString().TrimEnd();
+    }
+
+    /// <summary>
+    /// Creates the process start information for invoking dumpchk.
+    /// </summary>
+    /// <param name="dumpChkPath">The path to the dumpchk executable.</param>
+    /// <param name="dumpFilePath">The dump file to analyze.</param>
+    /// <returns>A configured <see cref="ProcessStartInfo"/> instance.</returns>
+    private static ProcessStartInfo CreateStartInfo(string dumpChkPath, string dumpFilePath)
+    {
+        return new ProcessStartInfo
+        {
+            FileName = dumpChkPath,
+            Arguments = $"\"{dumpFilePath}\"",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+        };
+    }
+}
+
+

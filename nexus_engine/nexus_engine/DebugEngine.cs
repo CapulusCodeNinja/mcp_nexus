@@ -93,7 +93,7 @@ public class DebugEngine : IDebugEngine
         m_BatchProcessor = batchProcessor;
 
         m_ExtensionScripts = new ExtensionScripts(this, fileSystem, processManager, m_Settings);
-        m_DumpValidator = new DumpValidator(m_FileSystem);
+        m_DumpValidator = new DumpValidator(m_FileSystem, m_Settings, m_ProcessManager);
 
         m_Logger = LogManager.GetCurrentClassLogger();
         m_Logger.Info("DebugEngine initialized with max {MaxSessions} concurrent sessions", m_Settings.Get().McpNexus.SessionManagement.MaxConcurrentSessions);
@@ -166,6 +166,37 @@ public class DebugEngine : IDebugEngine
         catch (Exception ex)
         {
             m_Logger.Error(ex, "Failed to create debug session {SessionId}", sessionId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Runs dumpchk for the specified dump file when dumpchk integration is enabled.
+    /// </summary>
+    /// <param name="dumpFilePath">The full path to the dump file to analyze.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains the combined
+    /// dumpchk standard output and error streams as a single string.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when dumpFilePath is null or empty.</exception>
+    public async Task<string> RunDumpCheckAsync(string dumpFilePath, CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        if (string.IsNullOrWhiteSpace(dumpFilePath))
+        {
+            throw new ArgumentException("Dump file path cannot be null or empty", nameof(dumpFilePath));
+        }
+
+        try
+        {
+            m_Logger.Info("Running dumpchk for dump file {DumpFilePath}", dumpFilePath);
+            return await m_DumpValidator.RunDumpChkAsync(dumpFilePath, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Error(ex, "Failed to run dumpchk for dump file {DumpFilePath}", dumpFilePath);
             throw;
         }
     }

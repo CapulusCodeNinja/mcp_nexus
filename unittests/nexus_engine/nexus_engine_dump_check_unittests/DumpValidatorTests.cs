@@ -1,8 +1,13 @@
+using System.Diagnostics;
+
 using FluentAssertions;
 
 using Moq;
 
+using Nexus.Config;
+using Nexus.Config.Models;
 using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.ProcessManagement;
 
 using Xunit;
 
@@ -15,12 +20,18 @@ public class DumpValidatorTests
 {
     private readonly Mock<IFileSystem> m_FileSystem;
 
+    private readonly Mock<ISettings> m_Settings;
+
+    private readonly Mock<IProcessManager> m_ProcessManager;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DumpValidatorTests"/> class.
     /// </summary>
     public DumpValidatorTests()
     {
         m_FileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
+        m_Settings = new Mock<ISettings>(MockBehavior.Strict);
+        m_ProcessManager = new Mock<IProcessManager>(MockBehavior.Strict);
     }
 
     /// <summary>
@@ -29,7 +40,7 @@ public class DumpValidatorTests
     /// <returns>A configured <see cref="DumpValidator"/> instance.</returns>
     private DumpValidator CreateValidator()
     {
-        return new DumpValidator(m_FileSystem.Object);
+        return new DumpValidator(m_FileSystem.Object, m_Settings.Object, m_ProcessManager.Object);
     }
 
     /// <summary>
@@ -39,10 +50,85 @@ public class DumpValidatorTests
     public void Constructor_NullFileSystem_ThrowsArgumentNullException()
     {
         // Act
-        var act = () => new DumpValidator(null!);
+        var act = () => new DumpValidator(null!, m_Settings.Object, m_ProcessManager.Object);
 
         // Assert
         _ = act.Should().Throw<ArgumentNullException>().WithParameterName("fileSystem");
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="DumpValidator.RunDumpChkAsync(string, CancellationToken)"/> short-circuits
+    /// when dumpchk integration is disabled and does not start any process.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RunDumpChkAsync_DumpChkDisabled_ReturnsDisabledMessageAndDoesNotStartProcess()
+    {
+        // Arrange
+        var sharedConfiguration = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Validation = new ValidationSettings
+                {
+                    DumpChkEnabled = false,
+                },
+            },
+        };
+
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfiguration);
+
+        var dumpPath = @"C:\dumps\valid.dmp";
+        var validator = CreateValidator();
+
+        // Act
+        var result = await validator.RunDumpChkAsync(dumpPath, CancellationToken.None);
+
+        // Assert
+        _ = result.Should().Be("dumpchk is disabled in configuration.");
+        m_ProcessManager.Verify(pm => pm.StartProcess(It.IsAny<ProcessStartInfo>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="DumpValidator.RunDumpChkAsync(string, CancellationToken)"/> throws
+    /// <see cref="InvalidOperationException"/> when dumpchk is enabled but cannot be located.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RunDumpChkAsync_DumpChkEnabledAndNotFound_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var sharedConfiguration = new SharedConfiguration
+        {
+            McpNexus = new McpNexusSettings
+            {
+                Validation = new ValidationSettings
+                {
+                    DumpChkEnabled = true,
+                    DumpChkPath = null,
+                },
+            },
+        };
+
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfiguration);
+
+        var dumpPath = @"C:\dumps\valid.dmp";
+
+        _ = m_FileSystem.Setup(fs => fs.FileExists(It.Is<string>(p => p == dumpPath))).Returns(true);
+        _ = m_FileSystem.Setup(fs => fs.FileExists(It.Is<string>(p => p != dumpPath))).Returns(false);
+        _ = m_FileSystem.Setup(fs => fs.ProbeRead(dumpPath));
+
+        var validator = CreateValidator();
+
+        // Act
+        var act = async () => await validator.RunDumpChkAsync(dumpPath, CancellationToken.None);
+
+        // Assert
+        _ = await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Dumpchk executable not found*");
+
+        m_FileSystem.Verify(fs => fs.FileExists(dumpPath), Times.Once);
+        m_ProcessManager.Verify(pm => pm.StartProcess(It.IsAny<ProcessStartInfo>()), Times.Never);
     }
 
     /// <summary>

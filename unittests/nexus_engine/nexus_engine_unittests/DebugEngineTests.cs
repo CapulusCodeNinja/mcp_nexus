@@ -246,6 +246,53 @@ public class DebugEngineTests : IDisposable
     }
 
     /// <summary>
+    /// Verifies that RunDumpCheckAsync throws when dumpFilePath is null.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RunDumpCheckAsync_WithNullDumpFilePath_ThrowsArgumentException()
+    {
+        // Act & Assert
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => m_Engine.RunDumpCheckAsync(null!, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// Verifies that RunDumpCheckAsync throws when dumpFilePath is empty.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RunDumpCheckAsync_WithEmptyDumpFilePath_ThrowsArgumentException()
+    {
+        // Act & Assert
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => m_Engine.RunDumpCheckAsync(string.Empty, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// Verifies that RunDumpCheckAsync throws when dumpFilePath is whitespace.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RunDumpCheckAsync_WithWhitespaceDumpFilePath_ThrowsArgumentException()
+    {
+        // Act & Assert
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => m_Engine.RunDumpCheckAsync("   ", CancellationToken.None));
+    }
+
+    /// <summary>
+    /// Verifies that RunDumpCheckAsync throws when the engine has been disposed.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task RunDumpCheckAsync_WhenDisposed_ThrowsObjectDisposedException()
+    {
+        // Arrange
+        m_Engine.Dispose();
+
+        // Act & Assert
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => m_Engine.RunDumpCheckAsync(@"C:\test\dump.dmp", CancellationToken.None));
+    }
+
+    /// <summary>
     /// Verifies that IsSessionActive throws when sessionId is null.
     /// </summary>
     [Fact]

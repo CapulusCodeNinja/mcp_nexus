@@ -385,6 +385,38 @@ public class SharedConfigurationTests
     }
 
     /// <summary>
+    /// Tests that ValidationSettings has correct default values.
+    /// </summary>
+    [Fact]
+    public void ValidationSettings_DefaultValues_ShouldBeCorrect()
+    {
+        // Act
+        var settings = new ValidationSettings();
+
+        // Assert
+        _ = settings.DumpChkEnabled.Should().BeFalse();
+        _ = settings.DumpChkPath.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that ValidationSettings can be modified.
+    /// </summary>
+    [Fact]
+    public void ValidationSettings_CanBeModified()
+    {
+        // Act
+        var settings = new ValidationSettings
+        {
+            DumpChkEnabled = true,
+            DumpChkPath = "C:\\WinDbg\\dumpchk.exe",
+        };
+
+        // Assert
+        _ = settings.DumpChkEnabled.Should().BeTrue();
+        _ = settings.DumpChkPath.Should().Be("C:\\WinDbg\\dumpchk.exe");
+    }
+
+    /// <summary>
     /// Tests that SessionManagementSettings can be modified.
     /// </summary>
     [Fact]
