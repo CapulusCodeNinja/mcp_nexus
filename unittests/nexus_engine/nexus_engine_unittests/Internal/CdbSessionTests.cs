@@ -13,6 +13,10 @@ using Nexus.Engine.Preprocessing;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 
+using NLog;
+using NLog.Config;
+using NLog.Targets;
+
 using Xunit;
 
 namespace Nexus.Engine.Tests.Internal;
@@ -594,12 +598,18 @@ public class CdbSessionTests
 
         var oldFilePath = Path.Combine(sessionsDirectory, "cdb_old.log");
         var recentFilePath = Path.Combine(sessionsDirectory, "cdb_recent.log");
+        var oldCompressedFilePath = Path.Combine(sessionsDirectory, "cdb_old.log.gz");
+        var recentCompressedFilePath = Path.Combine(sessionsDirectory, "cdb_recent.log.gz");
 
         File.WriteAllText(oldFilePath, "old");
         File.WriteAllText(recentFilePath, "recent");
+        File.WriteAllText(oldCompressedFilePath, "old_compressed");
+        File.WriteAllText(recentCompressedFilePath, "recent_compressed");
 
         File.SetCreationTime(oldFilePath, DateTime.Now.AddDays(-10));
+        File.SetCreationTime(oldCompressedFilePath, DateTime.Now.AddDays(-10));
         File.SetCreationTime(recentFilePath, DateTime.Now);
+        File.SetCreationTime(recentCompressedFilePath, DateTime.Now);
 
         try
         {
@@ -615,8 +625,11 @@ public class CdbSessionTests
 
             // Assert
             _ = File.Exists(oldFilePath).Should().BeFalse();
+            _ = File.Exists(oldCompressedFilePath).Should().BeFalse();
             _ = File.Exists(recentFilePath).Should().BeTrue();
+            _ = File.Exists(recentCompressedFilePath).Should().BeTrue();
             m_MockFileSystem.Verify(fs => fs.DeleteFile(oldFilePath), Times.Once);
+            m_MockFileSystem.Verify(fs => fs.DeleteFile(oldCompressedFilePath), Times.Once);
         }
         finally
         {
@@ -1372,5 +1385,69 @@ public class CdbSessionTests
 
         // Assert - Session should be disposed after initialization failure
         _ = session.IsInitialized.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Verifies that disposing the session compresses the CDB log file and deletes the original log.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task DisposeAsync_CompressesCdbLog_AndDeletesOriginalLog()
+    {
+        // Arrange
+        var originalConfig = LogManager.Configuration;
+        var tempRoot = Path.Combine(Path.GetTempPath(), "MCPNexusCdbCompressionTests", Guid.NewGuid().ToString("N"));
+        var logsDirectory = Path.Combine(tempRoot, "Logs");
+        _ = Directory.CreateDirectory(logsDirectory);
+
+        try
+        {
+            var config = new LoggingConfiguration();
+            var mainLogPath = Path.Combine(logsDirectory, "main.log");
+            var fileTarget = new FileTarget("mainFile")
+            {
+                FileName = mainLogPath,
+            };
+            config.AddTarget(fileTarget);
+            config.AddRuleForAllLevels(fileTarget);
+            LogManager.Configuration = config;
+
+            var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
+
+            var sessionId = "session-compress";
+            var sessionIdProperty = typeof(CdbSession).GetProperty("SessionId", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+            sessionIdProperty!.SetValue(accessor, sessionId);
+
+            var getLogPathMethod = typeof(CdbSession).GetMethod("GetCdbSessionBasedLogPath", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            var logPath = (string)getLogPathMethod!.Invoke(accessor, new object[] { sessionId })!;
+
+            var logDirectory = Path.GetDirectoryName(logPath);
+            if (!string.IsNullOrEmpty(logDirectory))
+            {
+                _ = Directory.CreateDirectory(logDirectory);
+            }
+
+            const string logContent = "cdb log content";
+            File.WriteAllText(logPath, logContent);
+
+            // Act
+            await accessor.DisposeAsync();
+
+            // Assert
+            var compressedPath = $"{logPath}.gz";
+            _ = File.Exists(logPath).Should().BeFalse();
+            _ = File.Exists(compressedPath).Should().BeTrue();
+            var compressedFileInfo = new FileInfo(compressedPath);
+            _ = compressedFileInfo.Length.Should().BeGreaterThan(0);
+        }
+        finally
+        {
+            LogManager.Configuration = originalConfig;
+
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, true);
+            }
+        }
     }
 }

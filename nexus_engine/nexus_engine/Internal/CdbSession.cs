@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Text;
 
 using Nexus.Config;
@@ -233,6 +234,7 @@ internal class CdbSession : ICdbSession
         {
             await SendQuitCommandAsync();
             await WaitForProcessExitAsync();
+            await CompressCdbLogIfAvailableAsync();
             DisposeResources();
         }
         catch (Exception ex)
@@ -499,7 +501,7 @@ internal class CdbSession : ICdbSession
         try
         {
             var directoryInfo = m_FileSystem.GetDirectoryInfo(sessionsDirectory);
-            var files = directoryInfo.GetFiles("cdb_*.log");
+            var files = directoryInfo.GetFiles("cdb_*.log*");
 
             if (files.Length == 0)
             {
@@ -539,6 +541,50 @@ internal class CdbSession : ICdbSession
         catch (Exception ex)
         {
             m_Logger.Warn(ex, "Error while cleaning up old CDB log files in {SessionsDirectory}", sessionsDirectory);
+        }
+    }
+
+    /// <summary>
+    /// Attempts to compress the current session's CDB log file using GZip in a best-effort manner.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous compression operation.</returns>
+    private async Task CompressCdbLogIfAvailableAsync()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(SessionId))
+            {
+                return;
+            }
+
+            var cdbLogFilePath = GetCdbSessionBasedLogPath(SessionId);
+
+            if (!File.Exists(cdbLogFilePath))
+            {
+                return;
+            }
+
+            var compressedPath = $"{cdbLogFilePath}.gz";
+
+            if (File.Exists(compressedPath))
+            {
+                return;
+            }
+
+            using (var sourceStream = new FileStream(cdbLogFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var destinationStream = new FileStream(compressedPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var gzipStream = new GZipStream(destinationStream, CompressionLevel.Optimal))
+            {
+                await sourceStream.CopyToAsync(gzipStream).ConfigureAwait(false);
+            }
+
+            File.Delete(cdbLogFilePath);
+
+            m_Logger.Info("Compressed CDB log for session {SessionId} to {CompressedPath}", SessionId, compressedPath);
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Info(ex, "Failed to compress CDB log for session {SessionId}. Keeping uncompressed log file.", SessionId);
         }
     }
 
