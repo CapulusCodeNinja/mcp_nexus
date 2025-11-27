@@ -48,6 +48,7 @@ internal class StartupBanner
             DisplayServerConfiguration();
             DisplayTransportConfiguration();
             DisplayDebuggingConfiguration();
+            DisplayValidationConfiguration();
             DisplayServiceConfiguration();
             DisplayLoggingConfiguration();
             DisplayEnvironmentVariables();
@@ -191,6 +192,22 @@ internal class StartupBanner
     }
 
     /// <summary>
+    /// Displays dump check (dumpchk) configuration information.
+    /// </summary>
+    private void DisplayValidationConfiguration()
+    {
+        var validationSettings = m_Settings.Get().McpNexus.Validation;
+        var dumpChkPath = validationSettings.DumpChkPath ?? string.Empty;
+
+        m_Logger.Info("┌─ Dump Check Configuration ─────────────────────────────────────────");
+        m_Logger.Info("│ Dumpchk Enabled:          {DumpChkEnabled}", validationSettings.DumpChkEnabled);
+        m_Logger.Info(
+            "│ Dumpchk Path:             {DumpChkPath}",
+            string.IsNullOrEmpty(dumpChkPath) ? "Auto-detect (Windows Kits debugger installation)" : dumpChkPath);
+        m_Logger.Info(string.Empty);
+    }
+
+    /// <summary>
     /// Displays service configuration information.
     /// </summary>
     private void DisplayServiceConfiguration()
@@ -233,9 +250,37 @@ internal class StartupBanner
         m_Logger.Info("┌─ Environment Variables ────────────────────────────────────────────");
         m_Logger.Info("│ ASPNETCORE_ENVIRONMENT: {AspnetcoreEnvironment}", environment);
         m_Logger.Info("│ ASPNETCORE_URLS:        {AspnetcoreUrls}", Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "Not set");
-        m_Logger.Info("│ PRIVATE_TOKEN:          {PrivateToken}", Environment.GetEnvironmentVariable("PRIVATE_TOKEN") ?? "Not set");
+
+        var privateToken = ObfuscateSecret(Environment.GetEnvironmentVariable("PRIVATE_TOKEN"));
+
+        m_Logger.Info("│ PRIVATE_TOKEN:          {PrivateToken}", privateToken);
         m_Logger.Info("│ CDB Paths in PATH:      {CdbInPath}", hasCdbInPath ? "CDB paths found in PATH" : "No CDB paths found in PATH");
         m_Logger.Info(string.Empty);
+    }
+
+    /// <summary>
+    /// Obfuscates a secret value for safe logging by revealing only the first few characters.
+    /// </summary>
+    /// <param name="value">The secret value to obfuscate.</param>
+    /// <returns>
+    /// A string where only the first 10 characters are visible and the remaining characters
+    /// are replaced with asterisks, or "Not set" when the value is null or empty.
+    /// </returns>
+    private static string ObfuscateSecret(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Not set";
+        }
+
+        const int visibleCharacters = 10;
+        if (value.Length <= visibleCharacters)
+        {
+            return new string('*', value.Length);
+        }
+
+        var prefix = value[..visibleCharacters];
+        return prefix + new string('*', value.Length - visibleCharacters);
     }
 
     /// <summary>
