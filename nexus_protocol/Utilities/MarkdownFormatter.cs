@@ -1,5 +1,7 @@
 using System.Text;
 
+using Nexus.Engine.Share.Models;
+
 namespace Nexus.Protocol.Utilities;
 
 /// <summary>
@@ -335,6 +337,7 @@ internal static class MarkdownFormatter
     /// <param name="sessionId">The session ID.</param>
     /// <param name="dumpFile">The dump file name.</param>
     /// <param name="status">The creation status.</param>
+    /// <param name="dumpCheck">The result of the dump check.</param>
     /// <param name="symbolsPath">Optional symbols path.</param>
     /// <param name="message">Optional status message.</param>
     /// <returns>Formatted session creation result.</returns>
@@ -342,6 +345,7 @@ internal static class MarkdownFormatter
         string sessionId,
         string dumpFile,
         string status,
+        DumpCheckResult dumpCheck,
         string? symbolsPath = null,
         string? message = null)
     {
@@ -364,6 +368,15 @@ internal static class MarkdownFormatter
             _ = status.Equals("Success", StringComparison.OrdinalIgnoreCase)
                 ? markdown.AppendLine(CreateSuccessMessage(message))
                 : markdown.AppendLine(CreateErrorMessage(message));
+        }
+
+        if (dumpCheck.IsEnabled && dumpCheck.WasExecuted)
+        {
+            _ = markdown.AppendLine();
+            _ = markdown.AppendLine("## Dump file validation result (dumpchk.exe)");
+            _ = markdown.AppendLine();
+            _ = markdown.AppendLine(CreateKeyValue("Exitcode", dumpCheck.ExitCode));
+            _ = markdown.AppendLine(CreateKeyValue("Output", dumpCheck.Message, true));
         }
 
         return markdown.ToString();

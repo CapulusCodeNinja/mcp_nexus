@@ -1,5 +1,6 @@
 using FluentAssertions;
 
+using Nexus.Engine.Share.Models;
 using Nexus.Protocol.Utilities;
 
 using Xunit;
@@ -279,7 +280,18 @@ public class MarkdownFormatterTests
     {
         // Act
         var result = MarkdownFormatter.CreateSessionResult(
-            "sess-123", "dump.dmp", "Success", "C:\\symbols", "Session created");
+            "sess-123",
+            "dump.dmp",
+            "Success",
+            new DumpCheckResult
+            {
+                IsEnabled = true,
+                WasExecuted = true,
+                ExitCode = 0,
+                Message = "Dumpchk output",
+            },
+            "C:\\symbols",
+            "Session created");
 
         // Assert
         _ = result.Should().Contain("## Session Creation");
@@ -288,6 +300,9 @@ public class MarkdownFormatterTests
         _ = result.Should().Contain("**Status:** Success");
         _ = result.Should().Contain("**Symbols Path:** `C:\\symbols`");
         _ = result.Should().Contain("✓ Session created");
+        _ = result.Should().Contain("## Dump file validation result (dumpchk.exe)");
+        _ = result.Should().Contain("**Exitcode:** 0");
+        _ = result.Should().Contain("**Output:** `Dumpchk output`");
     }
 
     /// <summary>
@@ -298,7 +313,16 @@ public class MarkdownFormatterTests
     {
         // Act
         var result = MarkdownFormatter.CreateSessionResult(
-            "sess-123", "dump.dmp", "Success");
+            "sess-123",
+            "dump.dmp",
+            "Success",
+            new DumpCheckResult
+            {
+                IsEnabled = false,
+                WasExecuted = false,
+                ExitCode = -1,
+                Message = string.Empty,
+            });
 
         // Assert
         _ = result.Should().Contain("## Session Creation");
@@ -306,6 +330,7 @@ public class MarkdownFormatterTests
         _ = result.Should().Contain("**Dump File:** `dump.dmp`");
         _ = result.Should().Contain("**Status:** Success");
         _ = result.Should().NotContain("**Symbols Path:**");
+        _ = result.Should().NotContain("## Dump file validation result (dumpchk.exe)");
     }
 
     /// <summary>

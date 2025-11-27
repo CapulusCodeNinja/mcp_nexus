@@ -2,6 +2,7 @@ using System.ComponentModel;
 
 using ModelContextProtocol.Server;
 
+using Nexus.Engine.Share.Models;
 using Nexus.External.Apis.FileSystem;
 using Nexus.Protocol.Services;
 using Nexus.Protocol.Utilities;
@@ -51,6 +52,7 @@ internal static class OpenDumpAnalyzeSessionTool
                 createResult.SessionId,
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Success",
+                createResult.DumpCheck,
                 symbolsPath,
                 $"Session {createResult.SessionId} created successfully");
 
@@ -64,6 +66,13 @@ internal static class OpenDumpAnalyzeSessionTool
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Failed",
+                new DumpCheckResult
+                {
+                    IsEnabled = false,
+                    WasExecuted = false,
+                    ExitCode = -1,
+                    Message = string.Empty,
+                },
                 null,
                 ex.Message);
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
@@ -76,6 +85,13 @@ internal static class OpenDumpAnalyzeSessionTool
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Failed",
+                new DumpCheckResult
+                {
+                    IsEnabled = false,
+                    WasExecuted = false,
+                    ExitCode = -1,
+                    Message = string.Empty,
+                },
                 null,
                 ex.Message);
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
@@ -88,6 +104,13 @@ internal static class OpenDumpAnalyzeSessionTool
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Failed",
+                new DumpCheckResult
+                {
+                    IsEnabled = false,
+                    WasExecuted = false,
+                    ExitCode = -1,
+                    Message = string.Empty,
+                },
                 null,
                 $"Cannot open file (access denied): {ex.Message}");
             errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
@@ -100,6 +123,13 @@ internal static class OpenDumpAnalyzeSessionTool
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Failed",
+                new DumpCheckResult
+                {
+                    IsEnabled = false,
+                    WasExecuted = false,
+                    ExitCode = -1,
+                    Message = string.Empty,
+                },
                 null,
                 $"Cannot open file: {ex.Message}");
             errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
@@ -112,6 +142,13 @@ internal static class OpenDumpAnalyzeSessionTool
                 "N/A",
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Failed",
+                new DumpCheckResult
+                {
+                    IsEnabled = false,
+                    WasExecuted = false,
+                    ExitCode = -1,
+                    Message = string.Empty,
+                },
                 null,
                 $"Unexpected error: {ex.Message}");
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();

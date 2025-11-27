@@ -70,7 +70,7 @@ namespace Nexus.Engine.DumpCheck
         /// <exception cref="FileNotFoundException">Thrown when the specified dump file does not exist.</exception>
         /// <exception cref="IOException">Thrown when the dump file cannot be read.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when access to the dump file is denied.</exception>
-        public void Validate(string dumpFilePath)
+        internal void ValidateDumpFilePathAndAccessibility(string dumpFilePath)
         {
             m_Logger.Debug("Check for dump file exists {DumpFilePath}", dumpFilePath);
             if (!m_FileSystem.FileExists(dumpFilePath))
@@ -99,6 +99,9 @@ namespace Nexus.Engine.DumpCheck
                 throw new ArgumentException("Dump file path cannot be null or empty", nameof(dumpFilePath));
             }
 
+            // Validate the dump before invoking dumpchk.
+            ValidateDumpFilePathAndAccessibility(dumpFilePath);
+
             var validationSettings = m_Settings.Get().McpNexus.Validation;
 
             if (!validationSettings.DumpChkEnabled)
@@ -112,9 +115,6 @@ namespace Nexus.Engine.DumpCheck
                     ExitCode = -1,
                 };
             }
-
-            // Validate the dump before invoking dumpchk.
-            Validate(dumpFilePath);
 
             try
             {

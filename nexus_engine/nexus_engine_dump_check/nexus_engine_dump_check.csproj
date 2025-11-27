@@ -12,6 +12,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>nexus_engine_dump_check_unittests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\..\nexus_config\nexus_config.csproj" />
         <ProjectReference Include="..\nexus_engine_share\nexus_engine_share.csproj" />
         <ProjectReference Include="..\..\nexus_external_apis\nexus_external_apis.csproj" />

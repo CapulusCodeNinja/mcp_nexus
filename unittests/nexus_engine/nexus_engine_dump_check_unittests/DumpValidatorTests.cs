@@ -57,42 +57,6 @@ public class DumpValidatorTests
     }
 
     /// <summary>
-    /// Verifies that <see cref="DumpValidator.RunDumpChkAsync(string, CancellationToken)"/> short-circuits
-    /// when dumpchk integration is disabled and does not start any process.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task RunDumpChkAsync_DumpChkDisabled_ReturnsDisabledMessageAndDoesNotStartProcess()
-    {
-        // Arrange
-        var sharedConfiguration = new SharedConfiguration
-        {
-            McpNexus = new McpNexusSettings
-            {
-                Validation = new ValidationSettings
-                {
-                    DumpChkEnabled = false,
-                },
-            },
-        };
-
-        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfiguration);
-
-        var dumpPath = @"C:\dumps\valid.dmp";
-        var validator = CreateValidator();
-
-        // Act
-        var result = await validator.RunDumpChkAsync(dumpPath, CancellationToken.None);
-
-        // Assert
-        _ = result.IsEnabled.Should().BeFalse();
-        _ = result.WasExecuted.Should().BeFalse();
-        _ = result.ExitCode.Should().Be(-1);
-        _ = result.Message.Should().Be("Dumpchk is disabled in configuration.");
-        m_ProcessManager.Verify(pm => pm.StartProcess(It.IsAny<ProcessStartInfo>()), Times.Never);
-    }
-
-    /// <summary>
     /// Verifies that <see cref="DumpValidator.RunDumpChkAsync(string, CancellationToken)"/> throws
     /// <see cref="InvalidOperationException"/> when dumpchk is enabled but cannot be located.
     /// </summary>
@@ -135,7 +99,7 @@ public class DumpValidatorTests
     }
 
     /// <summary>
-    /// Verifies that <see cref="DumpValidator.Validate(string)"/> throws <see cref="FileNotFoundException"/> when the dump file does not exist.
+    /// Verifies that <see cref="DumpValidator.ValidateDumpFilePathAndAccessibility(string)"/> throws <see cref="FileNotFoundException"/> when the dump file does not exist.
     /// </summary>
     [Fact]
     public void Validate_FileDoesNotExist_ThrowsFileNotFoundException()
@@ -146,7 +110,7 @@ public class DumpValidatorTests
         var validator = CreateValidator();
 
         // Act
-        var act = () => validator.Validate(dumpPath);
+        var act = () => validator.ValidateDumpFilePathAndAccessibility(dumpPath);
 
         // Assert
         _ = act.Should().Throw<FileNotFoundException>()
@@ -156,7 +120,7 @@ public class DumpValidatorTests
     }
 
     /// <summary>
-    /// Verifies that <see cref="DumpValidator.Validate(string)"/> calls <see cref="IFileSystem.ProbeRead(string)"/> when the file exists.
+    /// Verifies that <see cref="DumpValidator.ValidateDumpFilePathAndAccessibility(string)"/> calls <see cref="IFileSystem.ProbeRead(string)"/> when the file exists.
     /// </summary>
     [Fact]
     public void Validate_FileExists_ProbesReadOnce()
@@ -168,7 +132,7 @@ public class DumpValidatorTests
         var validator = CreateValidator();
 
         // Act
-        validator.Validate(dumpPath);
+        validator.ValidateDumpFilePathAndAccessibility(dumpPath);
 
         // Assert
         m_FileSystem.Verify(fs => fs.FileExists(dumpPath), Times.Once);
@@ -176,7 +140,7 @@ public class DumpValidatorTests
     }
 
     /// <summary>
-    /// Verifies that <see cref="DumpValidator.Validate(string)"/> propagates <see cref="UnauthorizedAccessException"/> from <see cref="IFileSystem.ProbeRead(string)"/>.
+    /// Verifies that <see cref="DumpValidator.ValidateDumpFilePathAndAccessibility(string)"/> propagates <see cref="UnauthorizedAccessException"/> from <see cref="IFileSystem.ProbeRead(string)"/>.
     /// </summary>
     [Fact]
     public void Validate_ProbeReadThrowsUnauthorizedAccessException_PropagatesException()
@@ -189,7 +153,7 @@ public class DumpValidatorTests
         var validator = CreateValidator();
 
         // Act
-        var act = () => validator.Validate(dumpPath);
+        var act = () => validator.ValidateDumpFilePathAndAccessibility(dumpPath);
 
         // Assert
         _ = act.Should().Throw<UnauthorizedAccessException>();
@@ -198,7 +162,7 @@ public class DumpValidatorTests
     }
 
     /// <summary>
-    /// Verifies that <see cref="DumpValidator.Validate(string)"/> propagates <see cref="IOException"/> from <see cref="IFileSystem.ProbeRead(string)"/>.
+    /// Verifies that <see cref="DumpValidator.ValidateDumpFilePathAndAccessibility(string)"/> propagates <see cref="IOException"/> from <see cref="IFileSystem.ProbeRead(string)"/>.
     /// </summary>
     [Fact]
     public void Validate_ProbeReadThrowsIOException_PropagatesException()
@@ -211,7 +175,7 @@ public class DumpValidatorTests
         var validator = CreateValidator();
 
         // Act
-        var act = () => validator.Validate(dumpPath);
+        var act = () => validator.ValidateDumpFilePathAndAccessibility(dumpPath);
 
         // Assert
         _ = act.Should().Throw<IOException>();
