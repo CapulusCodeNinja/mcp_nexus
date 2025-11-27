@@ -1,4 +1,5 @@
 ﻿using Nexus.Config;
+using Nexus.Engine.DumpCheck.Internal;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 
@@ -101,7 +102,7 @@ namespace Nexus.Engine.DumpCheck
 
             if (!validationSettings.DumpChkEnabled)
             {
-                m_Logger.Info("dumpchk integration is disabled in configuration. Skipping dumpchk for {DumpFilePath}", dumpFilePath);
+                m_Logger.Info("Dumpchk integration is disabled in configuration. Skipping dumpchk for {DumpFilePath}", dumpFilePath);
                 return "dumpchk is disabled in configuration.";
             }
 

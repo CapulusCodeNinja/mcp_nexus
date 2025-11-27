@@ -127,7 +127,7 @@ public class DebugEngine : IDebugEngine
         ThrowIfDisposed();
         ValidateSessionId(dumpFilePath, nameof(dumpFilePath));
 
-        m_DumpValidator.Validate(dumpFilePath);
+        var dumpchkResult = await m_DumpValidator.RunDumpChkAsync(dumpFilePath);
 
         if (m_Sessions.Count >= m_Settings.Get().McpNexus.SessionManagement.MaxConcurrentSessions)
         {

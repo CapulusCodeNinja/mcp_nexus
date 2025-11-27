@@ -3,7 +3,7 @@ using Nexus.External.Apis.FileSystem;
 
 using NLog;
 
-namespace Nexus.Engine.DumpCheck;
+namespace Nexus.Engine.DumpCheck.Internal;
 
 /// <summary>
 /// Resolves the path to the dumpchk executable based on configuration

@@ -6,7 +6,7 @@ using Nexus.External.Apis.ProcessManagement;
 
 using NLog;
 
-namespace Nexus.Engine.DumpCheck;
+namespace Nexus.Engine.DumpCheck.Internal;
 
 /// <summary>
 /// Executes the dumpchk process for a given dump file and aggregates its
