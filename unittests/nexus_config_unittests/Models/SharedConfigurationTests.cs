@@ -316,10 +316,12 @@ public class SharedConfigurationTests
         var settings = new LoggingSettings
         {
             LogLevel = "Debug",
+            RetentionDays = 30,
         };
 
         // Assert
         _ = settings.LogLevel.Should().Be("Debug");
+        _ = settings.RetentionDays.Should().Be(30);
     }
 
     /// <summary>

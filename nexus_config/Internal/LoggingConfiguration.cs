@@ -47,6 +47,7 @@ internal class LoggingConfiguration(ISettings settings)
         var nlogConfig = LogManager.Configuration ?? new NLog.Config.LoggingConfiguration();
 
         // Ensure main file target exists
+        var retentionDays = m_Settings.Get().Logging.RetentionDays;
         if (nlogConfig.FindTargetByName("mainFile") is not NLog.Targets.FileTarget)
         {
             var fileTarget = new NLog.Targets.FileTarget("mainFile")
@@ -55,7 +56,7 @@ internal class LoggingConfiguration(ISettings settings)
                 ArchiveFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "archive", "mcp-nexus-${shortdate}-{##}.log"),
                 ArchiveEvery = NLog.Targets.FileArchivePeriod.Day,
                 ArchiveSuffixFormat = "{#}",
-                MaxArchiveFiles = 356,
+                MaxArchiveFiles = Math.Max(1, retentionDays),
                 KeepFileOpen = true,
                 AutoFlush = true,
                 CreateDirs = true,
