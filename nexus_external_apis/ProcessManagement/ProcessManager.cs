@@ -106,22 +106,27 @@ public class ProcessManager : IProcessManager
     /// <param name="process">The process to wait for.</param>
     /// <param name="timeout">The timeout in milliseconds. Use -1 for infinite timeout.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result is true if the process exited within the timeout, false otherwise.</returns>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result is true if the process
+    /// exited within the timeout window and false if the operation was cancelled or timed out.
+    /// </returns>
     public async Task<bool> WaitForProcessExitAsync(Process process, int timeout = -1, CancellationToken cancellationToken = default)
     {
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
         if (timeout > 0)
         {
-            cts.CancelAfter(timeout);
+            linkedTokenSource.CancelAfter(timeout);
         }
 
         try
         {
-            await process.WaitForExitAsync(cts.Token);
+            await process.WaitForExitAsync(linkedTokenSource.Token);
             return true;
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
+            // Treat both timeout-based and external cancellation uniformly as "did not exit in time".
             return false;
         }
     }
