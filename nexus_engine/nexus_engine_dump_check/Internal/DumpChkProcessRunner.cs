@@ -67,7 +67,13 @@ internal sealed class DumpChkProcessRunner
             throw new ArgumentException("Dump file path cannot be null or empty", nameof(dumpFilePath));
         }
 
-        var startInfo = CreateStartInfo(dumpChkPath, dumpFilePath);
+        var symbolPath = m_Settings.Get().McpNexus.Debugging.SymbolSearchPath;
+        if (!string.IsNullOrWhiteSpace(symbolPath))
+        {
+            m_Logger.Info("Using configured symbol path for dumpchk: {SymbolPath}", symbolPath);
+        }
+
+        var startInfo = CreateStartInfo(dumpChkPath, dumpFilePath, symbolPath);
         var process = m_ProcessManager.StartProcess(startInfo) ?? throw new InvalidOperationException("Failed to start dumpchk process");
 
         m_Logger.Info("Starting dumpchk for dump file: {DumpFilePath}", dumpFilePath);
@@ -146,13 +152,28 @@ internal sealed class DumpChkProcessRunner
     /// </summary>
     /// <param name="dumpChkPath">The path to the dumpchk executable.</param>
     /// <param name="dumpFilePath">The dump file to analyze.</param>
+    /// <param name="symbolPath">The optional symbol path to pass to dumpchk via -y.</param>
     /// <returns>A configured <see cref="ProcessStartInfo"/> instance.</returns>
-    private static ProcessStartInfo CreateStartInfo(string dumpChkPath, string dumpFilePath)
+    private static ProcessStartInfo CreateStartInfo(string dumpChkPath, string dumpFilePath, string? symbolPath)
     {
+        var argumentsBuilder = new StringBuilder();
+
+        if (!string.IsNullOrWhiteSpace(symbolPath))
+        {
+            _ = argumentsBuilder.Append("-y ");
+            _ = argumentsBuilder.Append('"');
+            _ = argumentsBuilder.Append(symbolPath);
+            _ = argumentsBuilder.Append("\" ");
+        }
+
+        _ = argumentsBuilder.Append('"');
+        _ = argumentsBuilder.Append(dumpFilePath);
+        _ = argumentsBuilder.Append('"');
+
         return new ProcessStartInfo
         {
             FileName = dumpChkPath,
-            Arguments = $"\"{dumpFilePath}\"",
+            Arguments = argumentsBuilder.ToString(),
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
