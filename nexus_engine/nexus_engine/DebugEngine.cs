@@ -118,20 +118,19 @@ public class DebugEngine : IDebugEngine
     /// <param name="dumpFilePath">The path to the dump file to analyze.</param>
     /// <param name="symbolPath">Optional symbol path for debugging symbols.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the session ID.</returns>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains the session
+    /// identifier and the dump check result describing how the dump was validated.
+    /// </returns>
     /// <exception cref="ArgumentException">Thrown when dumpFilePath is null or empty.</exception>
     /// <exception cref="FileNotFoundException">Thrown when the dump file does not exist.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the maximum number of concurrent sessions is reached.</exception>
-    public async Task<string> CreateSessionAsync(string dumpFilePath, string? symbolPath = null, CancellationToken cancellationToken = default)
+    public async Task<CreateSessionResult> CreateSessionAsync(string dumpFilePath, string? symbolPath = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         ValidateSessionId(dumpFilePath, nameof(dumpFilePath));
 
-        var dumpchkResult = await m_DumpValidator.RunDumpChkAsync(dumpFilePath);
-        if (dumpchkResult.IsEnabled)
-        {
-            return dumpchkResult.Message;
-        }
+        var dumpCheckResult = await m_DumpValidator.RunDumpChkAsync(dumpFilePath, cancellationToken).ConfigureAwait(false);
 
         if (m_Sessions.Count >= m_Settings.Get().McpNexus.SessionManagement.MaxConcurrentSessions)
         {
@@ -165,7 +164,11 @@ public class DebugEngine : IDebugEngine
             _ = m_SessionCreationTimes.TryAdd(sessionId, creationTime);
 
             m_Logger.Info("Debug session {SessionId} created successfully", sessionId);
-            return sessionId;
+            return new CreateSessionResult
+            {
+                SessionId = sessionId,
+                DumpCheck = dumpCheckResult,
+            };
         }
         catch (Exception ex)
         {

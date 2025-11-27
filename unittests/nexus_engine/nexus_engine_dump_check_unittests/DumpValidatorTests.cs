@@ -85,7 +85,10 @@ public class DumpValidatorTests
         var result = await validator.RunDumpChkAsync(dumpPath, CancellationToken.None);
 
         // Assert
-        _ = result.Should().Be("dumpchk is disabled in configuration.");
+        _ = result.IsEnabled.Should().BeFalse();
+        _ = result.WasExecuted.Should().BeFalse();
+        _ = result.ExitCode.Should().Be(-1);
+        _ = result.Message.Should().Be("Dumpchk is disabled in configuration.");
         m_ProcessManager.Verify(pm => pm.StartProcess(It.IsAny<ProcessStartInfo>()), Times.Never);
     }
 

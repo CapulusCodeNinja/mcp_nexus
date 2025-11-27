@@ -43,16 +43,16 @@ internal static class OpenDumpAnalyzeSessionTool
                 symbolsPath = null;
             }
 
-            var sessionId = await EngineService.Get().CreateSessionAsync(dumpPath, symbolsPath);
+            var createResult = await EngineService.Get().CreateSessionAsync(dumpPath, symbolsPath);
 
-            logger.Info("Successfully created session: {SessionId}", sessionId);
+            logger.Info("Successfully created session: {SessionId}", createResult.SessionId);
 
             var markdown = MarkdownFormatter.CreateSessionResult(
-                sessionId,
+                createResult.SessionId,
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Success",
                 symbolsPath,
-                $"Session {sessionId} created successfully");
+                $"Session {createResult.SessionId} created successfully");
 
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;

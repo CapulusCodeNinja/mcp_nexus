@@ -24,11 +24,14 @@ public interface IDebugEngine : IDisposable
     /// <param name="dumpFilePath">The path to the dump file to analyze.</param>
     /// <param name="symbolPath">Optional symbol path for debugging symbols.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the session ID.</returns>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains the session
+    /// identifier and the dump check result describing how the dump was validated.
+    /// </returns>
     /// <exception cref="ArgumentException">Thrown when dumpFilePath is null or empty.</exception>
     /// <exception cref="FileNotFoundException">Thrown when the dump file does not exist.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the maximum number of concurrent sessions is reached.</exception>
-    Task<string> CreateSessionAsync(string dumpFilePath, string? symbolPath = null, CancellationToken cancellationToken = default);
+    Task<CreateSessionResult> CreateSessionAsync(string dumpFilePath, string? symbolPath = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Closes a debug session and cleans up resources.
