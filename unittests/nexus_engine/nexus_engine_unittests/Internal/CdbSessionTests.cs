@@ -1388,7 +1388,7 @@ public class CdbSessionTests
     }
 
     /// <summary>
-    /// Verifies that disposing the session compresses the CDB log file and deletes the original log.
+    /// Verifies that disposing the session requests GZip compression of the CDB log file and deletes the original log via the file system abstraction.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -1396,14 +1396,11 @@ public class CdbSessionTests
     {
         // Arrange
         var originalConfig = LogManager.Configuration;
-        var tempRoot = Path.Combine(Path.GetTempPath(), "MCPNexusCdbCompressionTests", Guid.NewGuid().ToString("N"));
-        var logsDirectory = Path.Combine(tempRoot, "Logs");
-        _ = Directory.CreateDirectory(logsDirectory);
 
         try
         {
             var config = new LoggingConfiguration();
-            var mainLogPath = Path.Combine(logsDirectory, "main.log");
+            const string mainLogPath = "C:\\logs\\main.log";
             var fileTarget = new FileTarget("mainFile")
             {
                 FileName = mainLogPath,
@@ -1412,7 +1409,10 @@ public class CdbSessionTests
             config.AddRuleForAllLevels(fileTarget);
             LogManager.Configuration = config;
 
-            var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
+            var fileSystem = new Mock<IFileSystem>();
+            var processManager = m_MockProcessManager;
+
+            var accessor = new CdbSessionTestAccessor(m_Settings.Object, fileSystem.Object, processManager.Object);
 
             var sessionId = "session-compress";
             var sessionIdProperty = typeof(CdbSession).GetProperty("SessionId", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
@@ -1420,34 +1420,28 @@ public class CdbSessionTests
 
             var getLogPathMethod = typeof(CdbSession).GetMethod("GetCdbSessionBasedLogPath", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
             var logPath = (string)getLogPathMethod!.Invoke(accessor, new object[] { sessionId })!;
+            var compressedPath = $"{logPath}.gz";
 
-            var logDirectory = Path.GetDirectoryName(logPath);
-            if (!string.IsNullOrEmpty(logDirectory))
-            {
-                _ = Directory.CreateDirectory(logDirectory);
-            }
+            _ = fileSystem.Setup(fs => fs.FileExists(logPath))
+                .Returns(true);
+            _ = fileSystem.Setup(fs => fs.FileExists(compressedPath))
+                .Returns(false);
 
-            const string logContent = "cdb log content";
-            File.WriteAllText(logPath, logContent);
+            _ = fileSystem.Setup(fs => fs.CompressToGZipAsync(logPath, compressedPath, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _ = fileSystem.Setup(fs => fs.DeleteFile(logPath));
 
             // Act
             await accessor.DisposeAsync();
 
             // Assert
-            var compressedPath = $"{logPath}.gz";
-            _ = File.Exists(logPath).Should().BeFalse();
-            _ = File.Exists(compressedPath).Should().BeTrue();
-            var compressedFileInfo = new FileInfo(compressedPath);
-            _ = compressedFileInfo.Length.Should().BeGreaterThan(0);
+            fileSystem.Verify(fs => fs.CompressToGZipAsync(logPath, compressedPath, It.IsAny<CancellationToken>()), Times.Once);
+            fileSystem.Verify(fs => fs.DeleteFile(logPath), Times.Once);
         }
         finally
         {
             LogManager.Configuration = originalConfig;
-
-            if (Directory.Exists(tempRoot))
-            {
-                Directory.Delete(tempRoot, true);
-            }
         }
     }
 }

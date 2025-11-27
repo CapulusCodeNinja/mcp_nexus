@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.IO.Compression;
 using System.Text;
 
 using Nexus.Config;
@@ -559,26 +558,21 @@ internal class CdbSession : ICdbSession
 
             var cdbLogFilePath = GetCdbSessionBasedLogPath(SessionId);
 
-            if (!File.Exists(cdbLogFilePath))
+            if (!m_FileSystem.FileExists(cdbLogFilePath))
             {
                 return;
             }
 
             var compressedPath = $"{cdbLogFilePath}.gz";
 
-            if (File.Exists(compressedPath))
+            if (m_FileSystem.FileExists(compressedPath))
             {
                 return;
             }
 
-            using (var sourceStream = new FileStream(cdbLogFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var destinationStream = new FileStream(compressedPath, FileMode.Create, FileAccess.Write, FileShare.None))
-            using (var gzipStream = new GZipStream(destinationStream, CompressionLevel.Optimal))
-            {
-                await sourceStream.CopyToAsync(gzipStream).ConfigureAwait(false);
-            }
+            await m_FileSystem.CompressToGZipAsync(cdbLogFilePath, compressedPath).ConfigureAwait(false);
 
-            File.Delete(cdbLogFilePath);
+            m_FileSystem.DeleteFile(cdbLogFilePath);
 
             m_Logger.Info("Compressed CDB log for session {SessionId} to {CompressedPath}", SessionId, compressedPath);
         }

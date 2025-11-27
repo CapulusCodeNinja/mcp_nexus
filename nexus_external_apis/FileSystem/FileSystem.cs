@@ -1,3 +1,5 @@
+using System.IO.Compression;
+
 namespace Nexus.External.Apis.FileSystem;
 
 /// <summary>
@@ -206,5 +208,20 @@ public class FileSystem : IFileSystem
         using var stream = File.OpenRead(path);
         Span<byte> buffer = stackalloc byte[1];
         _ = stream.Read(buffer);
+    }
+
+    /// <summary>
+    /// Compresses the specified source file into GZip format at the specified destination path.
+    /// </summary>
+    /// <param name="sourceFilePath">The path of the file to compress.</param>
+    /// <param name="destinationFilePath">The path where the compressed file should be created.</param>
+    /// <param name="cancellationToken">The cancellation token for the operation.</param>
+    /// <returns>A task representing the asynchronous compression operation.</returns>
+    public async Task CompressToGZipAsync(string sourceFilePath, string destinationFilePath, CancellationToken cancellationToken = default)
+    {
+        using var sourceStream = File.OpenRead(sourceFilePath);
+        using var destinationStream = new FileStream(destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
+        using var gzipStream = new GZipStream(destinationStream, CompressionLevel.Optimal);
+        await sourceStream.CopyToAsync(gzipStream, cancellationToken).ConfigureAwait(false);
     }
 }

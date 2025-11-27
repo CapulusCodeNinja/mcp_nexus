@@ -145,4 +145,13 @@ public interface IFileSystem
     /// </summary>
     /// <param name="path">The file path to probe.</param>
     void ProbeRead(string path);
+
+    /// <summary>
+    /// Compresses the specified source file into GZip format at the specified destination path.
+    /// </summary>
+    /// <param name="sourceFilePath">The path of the file to compress.</param>
+    /// <param name="destinationFilePath">The path where the compressed file should be created.</param>
+    /// <param name="cancellationToken">The cancellation token for the operation.</param>
+    /// <returns>A task representing the asynchronous compression operation.</returns>
+    Task CompressToGZipAsync(string sourceFilePath, string destinationFilePath, CancellationToken cancellationToken = default);
 }
