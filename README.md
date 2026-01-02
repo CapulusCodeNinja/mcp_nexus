@@ -146,6 +146,47 @@ dotnet run --project nexus/nexus.csproj
 }
 ```
 
+### Visual Studio Code Integration
+
+#### STDIO Integration
+
+![VSCode Stdio](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/VSCode_stdio.gif?raw=true)
+
+```json
+{
+	"servers": {
+		"mcp_nexus": {
+			"type": "stdio",
+			"command": "dotnet",
+			"args": [
+				"run",
+				"--project",
+				"C:\\Sources\\Github\\CapulusCodeNinja\\mcp_nexus\\nexus\\nexus.csproj",
+				"--",
+				"--stdio"
+			]
+		}
+	}
+}
+```
+
+#### HTTP Integration
+
+![VSCode Http](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/VSCode_http.gif?raw=true)
+
+```json
+{
+	"servers": {
+		"mcp-nexus": {
+			"url": "http://0.0.0.0:5511/",
+			"headers": {
+				"Content-Type": "application/json"
+			}
+		}
+	}
+}
+```
+
 ## 🛠️ Available MCP Tools
 
 ### Core Analysis Tools
