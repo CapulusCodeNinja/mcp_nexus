@@ -24,6 +24,13 @@ internal class LoggingConfiguration(ISettings settings)
         var logLevel = GetLogLevelFromConfiguration();
         ConfigureNLogDynamically(logLevel, isServiceMode);
         ConfigureNLogProvider(logging, logLevel);
+
+        // Prevent any console-based providers from emitting noisy logs that would interfere
+        // with MCP stdio communication. These filters ensure that even if a console logger
+        // is added by hosting infrastructure, the most verbose categories are suppressed.
+        _ = logging.AddFilter("ModelContextProtocol.Server.StdioServerTransport", Microsoft.Extensions.Logging.LogLevel.None);
+        _ = logging.AddFilter("ModelContextProtocol.Server.McpServer", Microsoft.Extensions.Logging.LogLevel.None);
+        _ = logging.AddFilter("Microsoft.Hosting.Lifetime", Microsoft.Extensions.Logging.LogLevel.None);
     }
 
     /// <summary>
@@ -66,19 +73,6 @@ internal class LoggingConfiguration(ISettings settings)
             };
             nlogConfig.AddTarget(fileTarget);
             nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, fileTarget));
-        }
-
-        // Ensure stderr console target exists
-        if (nlogConfig.FindTargetByName("stderr") is not NLog.Targets.ConsoleTarget)
-        {
-            var stderrTarget = new NLog.Targets.ConsoleTarget("stderr")
-            {
-                StdErr = true,
-                Layout = "${longdate} [${level:uppercase=true}] ${message} ${exception:format=ToString}",
-                Encoding = System.Text.Encoding.UTF8,
-            };
-            nlogConfig.AddTarget(stderrTarget);
-            nlogConfig.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Info, NLog.LogLevel.Fatal, stderrTarget));
         }
 
         // Apply service-mode paths (ProgramData vs app dir)
@@ -182,18 +176,22 @@ internal class LoggingConfiguration(ISettings settings)
 
     /// <summary>
     /// Configures the NLog provider for Microsoft.Extensions.Logging.
+    /// Ensures that all framework logging is routed through NLog so that no logs
+    /// are written directly to stdout. This is critical for MCP stdio mode where
+    /// stdout must be reserved exclusively for JSON-RPC messages and all human-readable
+    /// logging must go to file targets (or explicitly configured sinks).
     /// </summary>
     /// <param name="logging">The logging builder to configure.</param>
     /// <param name="logLevel">The log level to set.</param>
     protected virtual void ConfigureNLogProvider(ILoggingBuilder logging, Microsoft.Extensions.Logging.LogLevel logLevel)
     {
-        // Only configure NLog for Microsoft.Extensions.Logging when Trace is enabled
-        if (logLevel != Microsoft.Extensions.Logging.LogLevel.Trace)
-        {
-            return;
-        }
+        ArgumentNullException.ThrowIfNull(logging);
 
+        // Remove default console/debug providers so nothing writes directly to stdout/stderr.
         _ = logging.ClearProviders();
+
+        // Route Microsoft.Extensions.Logging through NLog (using NLog.Web for compatibility
+        // with both generic hosts and ASP.NET Core).
         _ = logging.AddNLogWeb();
         _ = logging.SetMinimumLevel(logLevel);
     }

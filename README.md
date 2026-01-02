@@ -73,7 +73,7 @@ Add to `.cursor/mcp.json`:
   "mcpServers": {
     "mcp-nexus": {
       "command": "dotnet",
-      "args": ["run", "--project", "C:\\path\\to\\mcp_nexus\\nexus\\nexus.csproj"],
+      "args": ["run", "--project", "C:\\path\\to\\mcp_nexus\\nexus\\nexus.csproj", "--", "--stdio"],
       "type": "stdio"
     }
   }
@@ -89,7 +89,7 @@ Add to `claude_desktop_config.json`:
   "mcpServers": {
     "mcp-nexus": {
       "command": "dotnet",
-      "args": ["run", "--project", "C:\\path\\to\\mcp_nexus\\nexus\\nexus.csproj"],
+      "args": ["run", "--project", "C:\\path\\to\\mcp_nexus\\nexus\\nexus.csproj", "--", "--stdio"],
       "cwd": "C:\\path\\to\\mcp_nexus"
     }
   }

@@ -67,12 +67,34 @@ internal class StartupBanner
     /// </summary>
     private void DisplayStartupHeader()
     {
+        var isStdioMode = m_CommandLineContext.IsStdioMode;
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
         var processId = Environment.ProcessId;
         var startTime = DateTime.Now;
-        var host = Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(':').LastOrDefault() ?? "0.0.0.0";
-        var port = Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(':').LastOrDefault() ?? "5511";
-        var transportMode = "http";
+        string host;
+        string port;
+        string transportMode;
+
+        if (isStdioMode)
+        {
+            transportMode = "stdio";
+            host = "stdio";
+            port = "n/a";
+        }
+        else
+        {
+            transportMode = "http";
+
+            // Prefer configuration for host/port; fall back to ASPNETCORE_URLS when available.
+            var sharedConfiguration = m_Settings.Get();
+            var configuredHost = sharedConfiguration.McpNexus.Server.Host;
+            var configuredPort = sharedConfiguration.McpNexus.Server.Port;
+
+            host = configuredHost ?? "0.0.0.0";
+            port = configuredPort > 0
+                ? configuredPort.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : (Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(':').LastOrDefault() ?? "5511");
+        }
 
         m_Logger.Info("╔═══════════════════════════════════════════════════════════════════╗");
         m_Logger.Info("                            MCP NEXUS STARTUP");
