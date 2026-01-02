@@ -4,8 +4,8 @@
 
 ![MCP Nexus Icon](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/mcp_nexus_small.png?raw=true)
 
-![Tests](https://img.shields.io/badge/tests-1249%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-86.9%25%20lines-green)
+![Tests](https://img.shields.io/badge/tests-1247%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-87.1%25%20lines-green)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
@@ -66,50 +66,83 @@ dotnet run --project nexus/nexus.csproj
 
 ### Cursor IDE Integration
 
-Add to `.cursor/mcp.json`:
+#### STDIO Integration
+
+![Cursor Stdio](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Cursor_stdio.gif?raw=true)
 
 ```json
 {
   "mcpServers": {
-    "mcp-nexus": {
+    "mcp_nexus": {
+      "type": "stdio",
       "command": "dotnet",
-      "args": ["run", "--project", "C:\\path\\to\\mcp_nexus\\nexus\\nexus.csproj"],
-      "type": "stdio"
+      "args": [
+        "run",
+        "--project",
+        "C:\\Sources\\Github\\CapulusCodeNinja\\mcp_nexus\\nexus\\nexus.csproj",
+        "--",
+        "--stdio"
+      ]
     }
   }
 }
 ```
 
-### Claude Desktop Integration
+#### HTTP Integration
 
-Add to `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "mcp-nexus": {
-      "command": "dotnet",
-      "args": ["run", "--project", "C:\\path\\to\\mcp_nexus\\nexus\\nexus.csproj"],
-      "cwd": "C:\\path\\to\\mcp_nexus"
-    }
-  }
-}
-```
-
-
-### Integration using HTTP
+![Cursor Http](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Cursor_http.gif?raw=true)
 
 ```json
 {
   "mcpServers": {
     "mcp-nexus": {
-      "type": "http",
       "url": "http://0.0.0.0:5511/",
       "headers": {
         "Content-Type": "application/json"
       }
     }
   }
+}
+```
+
+### Google Antigravity Integration
+
+#### STDIO Integration
+
+![Antigravity Stdio](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Antigravity_stdio.gif?raw=true)
+
+```json
+{
+    "mcpServers": {
+        "mcp_nexus": {
+            "command": "C:\\Program Files\\dotnet\\dotnet.exe",
+            "args": [
+                "run",
+                "--project",
+                "C:\\Sources\\Github\\CapulusCodeNinja\\mcp_nexus\\nexus\\nexus.csproj",
+                "--",
+                "--stdio"
+            ]
+        }
+    },
+    "inputs": []
+}
+```
+
+#### HTTP Integration
+
+![Antigravity Http](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Antigravity_http.gif?raw=true)
+
+```json
+{
+    "mcpServers": {
+        "mcp-nexus": {
+            "serverUrl": "http://0.0.0.0:5511/",
+            "headers": {
+                "Content-Type": "application/json"
+            }
+        }
+    }
 }
 ```
 

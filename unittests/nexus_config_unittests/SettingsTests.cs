@@ -1,5 +1,6 @@
 using FluentAssertions;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Moq;
@@ -181,7 +182,9 @@ public class SettingsTests : IDisposable
         // Arrange
         m_Settings = new Settings();
         m_Settings.LoadConfiguration();
+        var services = new ServiceCollection();
         var mockLoggingBuilder = new Mock<ILoggingBuilder>();
+        _ = mockLoggingBuilder.SetupGet(builder => builder.Services).Returns(services);
         var isServiceMode = false;
 
         // Act
@@ -200,7 +203,9 @@ public class SettingsTests : IDisposable
         // Arrange
         m_Settings = new Settings();
         m_Settings.LoadConfiguration();
+        var services = new ServiceCollection();
         var mockLoggingBuilder = new Mock<ILoggingBuilder>();
+        _ = mockLoggingBuilder.SetupGet(builder => builder.Services).Returns(services);
         var isServiceMode = true;
 
         // Act
@@ -218,7 +223,9 @@ public class SettingsTests : IDisposable
     {
         // Arrange
         m_Settings = new Settings();
+        var services = new ServiceCollection();
         var mockLoggingBuilder = new Mock<ILoggingBuilder>();
+        _ = mockLoggingBuilder.SetupGet(builder => builder.Services).Returns(services);
         var isServiceMode = false;
 
         // Act - should work since constructor creates ConfigurationLoader
