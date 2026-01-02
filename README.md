@@ -64,6 +64,9 @@ dotnet run --project nexus/nexus.csproj
 
 ## 🤖 AI Integration
 
+In this chapter, we provide example configurations for integrating MCP Nexus with popular AI development environments using both STDIO and HTTP protocols.
+In similar fashion, you can adapt these configurations for other MCP-compatible clients.
+
 ### Cursor IDE Integration
 
 #### STDIO Integration
