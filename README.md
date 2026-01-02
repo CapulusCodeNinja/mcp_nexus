@@ -66,50 +66,83 @@ dotnet run --project nexus/nexus.csproj
 
 ### Cursor IDE Integration
 
-Add to `.cursor/mcp.json`:
+#### STDIO Integration
+
+<video src="https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Cursor_stdio.mp4?raw=true"></video>
 
 ```json
 {
   "mcpServers": {
-    "mcp-nexus": {
+    "mcp_nexus": {
+      "type": "stdio",
       "command": "dotnet",
-      "args": ["run", "--project", "C:\\path\\to\\mcp_nexus\\nexus\\nexus.csproj", "--", "--stdio"],
-      "type": "stdio"
+      "args": [
+        "run",
+        "--project",
+        "C:\\Sources\\Github\\CapulusCodeNinja\\mcp_nexus\\nexus\\nexus.csproj",
+        "--",
+        "--stdio"
+      ]
     }
   }
 }
 ```
 
-### Claude Desktop Integration
+#### HTTP Integration
 
-Add to `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "mcp-nexus": {
-      "command": "dotnet",
-      "args": ["run", "--project", "C:\\path\\to\\mcp_nexus\\nexus\\nexus.csproj", "--", "--stdio"],
-      "cwd": "C:\\path\\to\\mcp_nexus"
-    }
-  }
-}
-```
-
-
-### Integration using HTTP
+<video src="https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Cursor_http.mp4?raw=true"></video>
 
 ```json
 {
   "mcpServers": {
     "mcp-nexus": {
-      "type": "http",
       "url": "http://0.0.0.0:5511/",
       "headers": {
         "Content-Type": "application/json"
       }
     }
   }
+}
+```
+
+### Google Antigravity Integration
+
+#### STDIO Integration
+
+<video src="https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Antigravity_stdio.mp4?raw=true"></video>
+
+```json
+{
+    "mcpServers": {
+        "mcp_nexus": {
+            "command": "C:\\Program Files\\dotnet\\dotnet.exe",
+            "args": [
+                "run",
+                "--project",
+                "C:\\Sources\\Github\\CapulusCodeNinja\\mcp_nexus\\nexus\\nexus.csproj",
+                "--",
+                "--stdio"
+            ]
+        }
+    },
+    "inputs": []
+}
+```
+
+#### HTTP Integration
+
+<video src="https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Antigravity_http.mp4?raw=true"></video>
+
+```json
+{
+    "mcpServers": {
+        "mcp-nexus": {
+            "serverUrl": "http://0.0.0.0:5511/",
+            "headers": {
+                "Content-Type": "application/json"
+            }
+        }
+    }
 }
 ```
 
