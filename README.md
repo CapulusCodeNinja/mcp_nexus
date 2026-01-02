@@ -68,7 +68,7 @@ dotnet run --project nexus/nexus.csproj
 
 #### STDIO Integration
 
-https://github.com/CapulusCodeNinja/mcp_nexus/raw/refs/heads/bugfix/1-Compatibility-Issue-with-Google-Antigravity-MCP-Integration/images/integrations/Cursor_stdio.mp4
+![Cursor Stdio](https://github.com/CapulusCodeNinja/mcp_nexus/blob/bugfix/1-Compatibility-Issue-with-Google-Antigravity-MCP-Integration/images/integrations/Cursor_stdio.gif?raw=true)
 
 ```json
 {
@@ -90,7 +90,7 @@ https://github.com/CapulusCodeNinja/mcp_nexus/raw/refs/heads/bugfix/1-Compatibil
 
 #### HTTP Integration
 
-<video src="https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Cursor_http.mp4?raw=true"></video>
+![Cursor Http](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Cursor_http.gif?raw=true)
 
 ```json
 {
@@ -109,7 +109,7 @@ https://github.com/CapulusCodeNinja/mcp_nexus/raw/refs/heads/bugfix/1-Compatibil
 
 #### STDIO Integration
 
-<video src="https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Antigravity_stdio.mp4?raw=true"></video>
+![Antigravity Stdio](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Antigravity_stdio.gif?raw=true)
 
 ```json
 {
@@ -131,7 +131,7 @@ https://github.com/CapulusCodeNinja/mcp_nexus/raw/refs/heads/bugfix/1-Compatibil
 
 #### HTTP Integration
 
-<video src="https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Antigravity_http.mp4?raw=true"></video>
+![Antigravity Http](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Antigravity_http.gif?raw=true)
 
 ```json
 {
