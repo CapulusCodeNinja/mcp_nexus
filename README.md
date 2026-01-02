@@ -4,8 +4,8 @@
 
 ![MCP Nexus Icon](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/mcp_nexus_small.png?raw=true)
 
-![Tests](https://img.shields.io/badge/tests-1249%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-86.9%25%20lines-green)
+![Tests](https://img.shields.io/badge/tests-1247%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-87.1%25%20lines-green)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
