@@ -68,7 +68,7 @@ dotnet run --project nexus/nexus.csproj
 
 #### STDIO Integration
 
-![Cursor Stdio](https://github.com/CapulusCodeNinja/mcp_nexus/blob/bugfix/1-Compatibility-Issue-with-Google-Antigravity-MCP-Integration/images/integrations/Cursor_stdio.gif?raw=true)
+![Cursor Stdio](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/integrations/Cursor_stdio.gif?raw=true)
 
 ```json
 {
