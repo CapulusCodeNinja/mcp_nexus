@@ -199,10 +199,32 @@ public static class ProcessTracker
 
         _ = m_TrackedProcesses.TryAdd(processId, snapshot);
 
-        if (ProcessAdded != null)
+        RaiseProcessAddedAsync();
+    }
+
+    /// <summary>
+    /// Raises the <see cref="ProcessAdded"/> event asynchronously so process creation is never blocked by statistics logging.
+    /// </summary>
+    private static void RaiseProcessAddedAsync()
+    {
+        var handler = ProcessAdded;
+        if (handler == null)
         {
-            ProcessAdded?.Invoke(null, new ProcessAddedEventArgs(GetRunningProcessesSnapshotAndPruneExited()));
+            return;
         }
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                var snapshotList = GetRunningProcessesSnapshotAndPruneExited();
+                handler.Invoke(null, new ProcessAddedEventArgs(snapshotList));
+            }
+            catch
+            {
+                // Swallow to ensure process tracking cannot impact primary functionality.
+            }
+        });
     }
 
     /// <summary>

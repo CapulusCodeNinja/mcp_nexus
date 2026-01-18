@@ -32,6 +32,8 @@ internal class MainHostedService : IHostedService, IDisposable
     private readonly CommandLineContext m_CommandLineContext;
     private readonly IProductInstallation m_ProductInstallation;
 
+    private bool m_IsProcessTrackerSubscribed;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MainHostedService"/> class.
     /// </summary>
@@ -102,7 +104,11 @@ internal class MainHostedService : IHostedService, IDisposable
 
         if (m_CommandLineContext.IsHttpMode || m_CommandLineContext.IsStdioMode)
         {
-            ProcessTracker.ProcessAdded += ProcessTrackerOnProcessAdded;
+            if (!m_IsProcessTrackerSubscribed)
+            {
+                ProcessTracker.ProcessAdded += ProcessTrackerOnProcessAdded;
+                m_IsProcessTrackerSubscribed = true;
+            }
         }
 
         // 2. Handle the appropriate command based on command line context
@@ -278,6 +284,12 @@ internal class MainHostedService : IHostedService, IDisposable
 
         try
         {
+            if (m_IsProcessTrackerSubscribed)
+            {
+                ProcessTracker.ProcessAdded -= ProcessTrackerOnProcessAdded;
+                m_IsProcessTrackerSubscribed = false;
+            }
+
             await Task.CompletedTask;
 
             // Stop the protocol server if it's running
@@ -322,6 +334,12 @@ internal class MainHostedService : IHostedService, IDisposable
 
         try
         {
+            if (m_IsProcessTrackerSubscribed)
+            {
+                ProcessTracker.ProcessAdded -= ProcessTrackerOnProcessAdded;
+                m_IsProcessTrackerSubscribed = false;
+            }
+
             m_ProtocolServer.Dispose();
         }
         catch (Exception ex)
