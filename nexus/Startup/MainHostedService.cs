@@ -102,7 +102,8 @@ internal class MainHostedService : IHostedService, IDisposable
         var startupBanner = new StartupBanner(m_CommandLineContext.IsServiceMode, m_CommandLineContext, m_Settings);
         startupBanner.DisplayBanner();
 
-        if (m_CommandLineContext.IsHttpMode || m_CommandLineContext.IsStdioMode)
+        var processStatisticsEnabled = m_Settings.Get().McpNexus.ProcessStatistics.Enabled;
+        if (processStatisticsEnabled && (m_CommandLineContext.IsHttpMode || m_CommandLineContext.IsStdioMode))
         {
             if (!m_IsProcessTrackerSubscribed)
             {
