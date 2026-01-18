@@ -74,7 +74,7 @@ internal sealed class DumpChkProcessRunner
         }
 
         var startInfo = CreateStartInfo(dumpChkPath, dumpFilePath, symbolPath);
-        var process = m_ProcessManager.StartProcess(startInfo) ?? throw new InvalidOperationException("Failed to start dumpchk process");
+        using var process = m_ProcessManager.StartProcess(startInfo) ?? throw new InvalidOperationException("Failed to start dumpchk process");
 
         m_Logger.Info("Starting dumpchk for dump file: {DumpFilePath}", dumpFilePath);
 

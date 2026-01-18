@@ -7,7 +7,7 @@ namespace Nexus.External.Apis.Native;
 /// Tracks child processes by assigning them to a Windows Job Object so that they are terminated
 /// automatically when the host process exits (job handle is closed).
 /// </summary>
-public static class ProcessTracker
+internal static class ProcessTracker
 {
     /// <summary>
     /// Windows Job Object limit flag that terminates all processes in the job when the job handle is closed.
