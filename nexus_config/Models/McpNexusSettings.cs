@@ -49,4 +49,9 @@ public class McpNexusSettings
     /// Gets or sets the batching settings.
     /// </summary>
     public BatchingSettings Batching { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the process statistics settings.
+    /// </summary>
+    public ProcessStatisticsSettings ProcessStatistics { get; set; } = new();
 }

@@ -4,7 +4,9 @@ using Microsoft.Extensions.Hosting;
 
 using Nexus.CommandLine;
 using Nexus.Config;
+using Nexus.Engine.Share;
 using Nexus.External.Apis.FileSystem;
+using Nexus.External.Apis.Native;
 using Nexus.External.Apis.ProcessManagement;
 using Nexus.External.Apis.Security;
 using Nexus.External.Apis.ServiceManagement;
@@ -29,6 +31,8 @@ internal class MainHostedService : IHostedService, IDisposable
     private readonly IAdministratorChecker m_AdminChecker;
     private readonly CommandLineContext m_CommandLineContext;
     private readonly IProductInstallation m_ProductInstallation;
+
+    private bool m_IsProcessTrackerSubscribed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MainHostedService"/> class.
@@ -97,6 +101,16 @@ internal class MainHostedService : IHostedService, IDisposable
         // 1. Display startup banner FIRST (guaranteed first log output)
         var startupBanner = new StartupBanner(m_CommandLineContext.IsServiceMode, m_CommandLineContext, m_Settings);
         startupBanner.DisplayBanner();
+
+        var processStatisticsEnabled = m_Settings.Get().McpNexus.ProcessStatistics.Enabled;
+        if (processStatisticsEnabled && (m_CommandLineContext.IsHttpMode || m_CommandLineContext.IsStdioMode))
+        {
+            if (!m_IsProcessTrackerSubscribed)
+            {
+                ProcessTracker.ProcessAdded += ProcessTrackerOnProcessAdded;
+                m_IsProcessTrackerSubscribed = true;
+            }
+        }
 
         // 2. Handle the appropriate command based on command line context
         if (m_CommandLineContext.IsHttpMode)
@@ -271,6 +285,12 @@ internal class MainHostedService : IHostedService, IDisposable
 
         try
         {
+            if (m_IsProcessTrackerSubscribed)
+            {
+                ProcessTracker.ProcessAdded -= ProcessTrackerOnProcessAdded;
+                m_IsProcessTrackerSubscribed = false;
+            }
+
             // Stop the protocol server if it's running
             if (m_ProtocolServer is { IsRunning: true })
             {
@@ -286,6 +306,23 @@ internal class MainHostedService : IHostedService, IDisposable
     }
 
     /// <summary>
+    /// Handles process-added notifications from <see cref="ProcessTracker"/> and emits a snapshot to the logs.
+    /// </summary>
+    /// <param name="sender">The sender.</param>
+    /// <param name="e">The event arguments.</param>
+    private void ProcessTrackerOnProcessAdded(object? sender, ProcessAddedEventArgs e)
+    {
+        try
+        {
+            Statistics.EmitProcessStats(m_Logger, e.ProcessSnapshotList);
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Error(ex, "Failed to emit process statistics");
+        }
+    }
+
+    /// <summary>
     /// Disposes the hosted service and releases all resources.
     /// Ensures that the underlying protocol server (and its debug engine)
     /// are disposed when the generic host is torn down.
@@ -296,6 +333,12 @@ internal class MainHostedService : IHostedService, IDisposable
 
         try
         {
+            if (m_IsProcessTrackerSubscribed)
+            {
+                ProcessTracker.ProcessAdded -= ProcessTrackerOnProcessAdded;
+                m_IsProcessTrackerSubscribed = false;
+            }
+
             m_ProtocolServer.Dispose();
         }
         catch (Exception ex)

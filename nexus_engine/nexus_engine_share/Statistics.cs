@@ -1,6 +1,7 @@
 using System.Text;
 
 using Nexus.Engine.Share.Models;
+using Nexus.External.Apis.Native;
 
 using NLog;
 
@@ -304,6 +305,54 @@ public static class Statistics
                     }
                 }
             }
+        }
+
+        _ = sb.Append("    ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════");
+
+        logger.Info(sb.ToString());
+    }
+
+    /// <summary>
+    /// Emits a periodic snapshot of tracked processes at INFO level.
+    /// </summary>
+    /// <param name="logger">Logger to write the statistics to.</param>
+    /// <param name="processes">Collection of tracked processes.</param>
+    public static void EmitProcessStats(Logger logger, IEnumerable<TrackedProcessSnapshot> processes)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(processes);
+
+        var list = processes.ToList();
+        var sorted = list
+            .OrderBy(p => p.StartTime.HasValue ? 0 : 1)
+            .ThenBy(p => p.StartTime)
+            .ThenBy(p => p.ProcessId)
+            .ToList();
+
+        var sb = new StringBuilder();
+        _ = sb.AppendLine();
+        _ = sb.AppendLine("    ╔═ Process Statistics ═════════════════════════════════════════════════════════════════════════════════════════════════════");
+        _ = sb.AppendLine($"    ║ GeneratedAt: {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}");
+        _ = sb.AppendLine($"    ║ TrackedProcesses: {sorted.Count}");
+        _ = sb.AppendLine("    ║ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
+        _ = sb.AppendLine("    ║ StartTime               | PID     | Name                 | CommandLine");
+        _ = sb.AppendLine("    ║ ------------------------|---------|----------------------|--------------------------------------------------------------------------");
+
+        foreach (var p in sorted)
+        {
+            var startTime = p.StartTime.HasValue ? p.StartTime.Value.ToString("yyyy-MM-dd HH:mm:ss.fff") : "N/A";
+            var name = string.IsNullOrWhiteSpace(p.ProcessName) ? "N/A" : p.ProcessName;
+
+            var fileName = string.IsNullOrWhiteSpace(p.FileName) ? string.Empty : p.FileName;
+            var args = string.IsNullOrWhiteSpace(p.Arguments) ? string.Empty : p.Arguments;
+            var commandLine = string.IsNullOrWhiteSpace(fileName) ? args : $"{fileName} {args}".Trim();
+            if (commandLine.Length > 74)
+            {
+                commandLine = $"{commandLine[..71]}...";
+            }
+
+            var nameCell = name.Length <= 20 ? name : name[..20];
+            _ = sb.AppendLine($"    ║ {startTime,-22} | {p.ProcessId,-7} | {nameCell,-20} | {commandLine}");
         }
 
         _ = sb.Append("    ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════");
