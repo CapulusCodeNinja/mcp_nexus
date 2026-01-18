@@ -291,8 +291,6 @@ internal class MainHostedService : IHostedService, IDisposable
                 m_IsProcessTrackerSubscribed = false;
             }
 
-            await Task.CompletedTask;
-
             // Stop the protocol server if it's running
             if (m_ProtocolServer is { IsRunning: true })
             {

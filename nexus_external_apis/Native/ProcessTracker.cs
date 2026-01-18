@@ -208,7 +208,7 @@ public static class ProcessTracker
     private static void RaiseProcessAddedAsync()
     {
         var handler = ProcessAdded;
-        if (handler == null)
+        if (handler is null)
         {
             return;
         }
