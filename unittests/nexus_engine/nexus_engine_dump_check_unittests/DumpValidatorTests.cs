@@ -83,6 +83,7 @@ public class DumpValidatorTests
 
         _ = m_FileSystem.Setup(fs => fs.FileExists(It.Is<string>(p => p == dumpPath))).Returns(true);
         _ = m_FileSystem.Setup(fs => fs.FileExists(It.Is<string>(p => p != dumpPath))).Returns(false);
+        _ = m_FileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(false);
         _ = m_FileSystem.Setup(fs => fs.ProbeRead(dumpPath));
 
         var validator = CreateValidator();

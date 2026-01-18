@@ -336,7 +336,7 @@ public static class Statistics
         _ = sb.AppendLine($"    ║ TrackedProcesses: {sorted.Count}");
         _ = sb.AppendLine("    ║ ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
         _ = sb.AppendLine("    ║ StartTime               | PID     | Name                 | CommandLine");
-        _ = sb.AppendLine("    ║ ------------------------|---------|----------------------|--------------------------------------------------------------------------");
+        _ = sb.AppendLine("    ║ ------------------------|---------|----------------------|---------------------------------------------------------------");
 
         foreach (var p in sorted)
         {
@@ -346,10 +346,6 @@ public static class Statistics
             var fileName = string.IsNullOrWhiteSpace(p.FileName) ? string.Empty : p.FileName;
             var args = string.IsNullOrWhiteSpace(p.Arguments) ? string.Empty : p.Arguments;
             var commandLine = string.IsNullOrWhiteSpace(fileName) ? args : $"{fileName} {args}".Trim();
-            if (commandLine.Length > 74)
-            {
-                commandLine = $"{commandLine[..71]}...";
-            }
 
             var nameCell = name.Length <= 20 ? name : name[..20];
             _ = sb.AppendLine($"    ║ {startTime,-22} | {p.ProcessId,-7} | {nameCell,-20} | {commandLine}");

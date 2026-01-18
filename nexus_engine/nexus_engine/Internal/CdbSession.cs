@@ -1,8 +1,10 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using Nexus.Config;
 using Nexus.Engine.Preprocessing;
+using Nexus.Engine.Share.WindowsDebugging;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 
@@ -385,25 +387,17 @@ internal class CdbSession : ICdbSession
             return Task.FromResult(m_Settings.Get().McpNexus.Debugging.CdbPath)!;
         }
 
-        // Try common CDB locations
-        var commonPaths = new[]
+        try
         {
-            @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe",
-            @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\cdb.exe",
-            @"C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe",
-            @"C:\Program Files\Windows Kits\10\Debuggers\x86\cdb.exe",
-        };
-
-        foreach (var path in commonPaths)
-        {
-            if (m_FileSystem.FileExists(path))
-            {
-                m_Logger.Debug("Found CDB at: {CdbPath}", path);
-                return Task.FromResult(path);
-            }
+            var locator = new WindowsDebuggerToolLocator(m_FileSystem);
+            var resolved = locator.FindToolExecutablePath("cdb.exe", m_Settings.Get().McpNexus.Debugging.CdbPath, RuntimeInformation.OSArchitecture);
+            m_Logger.Debug("Found CDB at: {CdbPath}", resolved);
+            return Task.FromResult(resolved);
         }
-
-        throw new InvalidOperationException("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.");
+        catch (InvalidOperationException ex)
+        {
+            throw new InvalidOperationException("CDB executable not found. Please install Windows SDK or specify CdbPath in configuration.", ex);
+        }
     }
 
     /// <summary>

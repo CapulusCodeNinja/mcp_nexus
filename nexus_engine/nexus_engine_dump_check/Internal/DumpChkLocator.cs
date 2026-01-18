@@ -1,4 +1,7 @@
+using System.Runtime.InteropServices;
+
 using Nexus.Config;
+using Nexus.Engine.Share.WindowsDebugging;
 using Nexus.External.Apis.FileSystem;
 
 using NLog;
@@ -61,23 +64,16 @@ internal sealed class DumpChkLocator
             return Task.FromResult(validationSettings.DumpChkPath);
         }
 
-        var commonPaths = new[]
+        try
         {
-            @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\dumpchk.exe",
-            @"C:\Program Files (x86)\Windows Kits\10\Debuggers\x86\dumpchk.exe",
-            @"C:\Program Files\Windows Kits\10\Debuggers\x64\dumpchk.exe",
-            @"C:\Program Files\Windows Kits\10\Debuggers\x86\dumpchk.exe",
-        };
-
-        foreach (var path in commonPaths)
-        {
-            if (m_FileSystem.FileExists(path))
-            {
-                m_Logger.Debug("Found dumpchk at: {DumpChkPath}", path);
-                return Task.FromResult(path);
-            }
+            var locator = new WindowsDebuggerToolLocator(m_FileSystem);
+            var resolved = locator.FindToolExecutablePath("dumpchk.exe", validationSettings.DumpChkPath, RuntimeInformation.OSArchitecture);
+            m_Logger.Debug("Found dumpchk at: {DumpChkPath}", resolved);
+            return Task.FromResult(resolved);
         }
-
-        throw new InvalidOperationException("Dumpchk executable not found. Please install Windows SDK or specify DumpChkPath in configuration when DumpChkEnabled is true.");
+        catch (InvalidOperationException ex)
+        {
+            throw new InvalidOperationException("Dumpchk executable not found. Please install Windows SDK or specify DumpChkPath in configuration when DumpChkEnabled is true.", ex);
+        }
     }
 }
