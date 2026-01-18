@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Nexus.External.Apis.Native;
@@ -7,7 +8,7 @@ namespace Nexus.External.Apis.Native;
 /// Tracks child processes by assigning them to a Windows Job Object so that they are terminated
 /// automatically when the host process exits (job handle is closed).
 /// </summary>
-internal static class ProcessTracker
+public static class ProcessTracker
 {
     /// <summary>
     /// Windows Job Object limit flag that terminates all processes in the job when the job handle is closed.
@@ -47,6 +48,11 @@ internal static class ProcessTracker
     /// The shared job object handle used to track processes for the lifetime of the application.
     /// </summary>
     private static readonly JobObjectHandle m_JobHandle;
+
+    /// <summary>
+    /// The in-memory list of processes explicitly added to the job by this application.
+    /// </summary>
+    private static readonly ConcurrentDictionary<int, TrackedProcessSnapshot> m_TrackedProcesses = new();
 
     /// <summary>
     /// Initializes static members of the <see cref="ProcessTracker"/> class.
@@ -129,10 +135,152 @@ internal static class ProcessTracker
             {
                 throw new InvalidOperationException($"Failed to assign process to job object. Win32Error={Marshal.GetLastWin32Error()}.");
             }
+
+            TrackProcess(process);
         }
         catch (InvalidOperationException ex)
         {
             throw new InvalidOperationException("Failed to assign process to job object because the process handle is no longer valid (the process may have already exited).", ex);
+        }
+    }
+
+    /// <summary>
+    /// Returns a snapshot of all currently running processes added via <see cref="AddProcess"/> and
+    /// prunes exited processes from the internal list to prevent unbounded growth.
+    /// </summary>
+    /// <returns>A list of tracked process snapshots.</returns>
+    public static IReadOnlyList<TrackedProcessSnapshot> GetRunningProcessesSnapshotAndPruneExited()
+    {
+        var snapshots = new List<TrackedProcessSnapshot>();
+
+        foreach (var kvp in m_TrackedProcesses)
+        {
+            if (!TryGetIsProcessRunning(kvp.Key, out var isRunning) || !isRunning)
+            {
+                _ = m_TrackedProcesses.TryRemove(kvp.Key, out _);
+                continue;
+            }
+
+            // Return a defensive copy so callers cannot mutate internal tracked state.
+            snapshots.Add(new TrackedProcessSnapshot
+            {
+                ProcessId = kvp.Value.ProcessId,
+                StartTime = kvp.Value.StartTime,
+                ProcessName = kvp.Value.ProcessName,
+                FileName = kvp.Value.FileName,
+                Arguments = kvp.Value.Arguments,
+            });
+        }
+
+        return snapshots;
+    }
+
+    /// <summary>
+    /// Tracks process metadata for periodic statistics logging.
+    /// </summary>
+    /// <param name="process">The process to track.</param>
+    private static void TrackProcess(Process process)
+    {
+        var processId = process.Id;
+
+        var snapshot = new TrackedProcessSnapshot
+        {
+            ProcessId = processId,
+            StartTime = TryGetStartTime(process),
+            ProcessName = TryGetProcessName(process),
+            FileName = TryGetStartInfoFileName(process),
+            Arguments = TryGetStartInfoArguments(process),
+        };
+
+        _ = m_TrackedProcesses.TryAdd(processId, snapshot);
+    }
+
+    /// <summary>
+    /// Attempts to get the process start time.
+    /// </summary>
+    /// <param name="process">The process.</param>
+    /// <returns>The start time (local time) if available; otherwise <see langword="null"/>.</returns>
+    private static DateTime? TryGetStartTime(Process process)
+    {
+        try
+        {
+            return process.StartTime;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to get the process name.
+    /// </summary>
+    /// <param name="process">The process.</param>
+    /// <returns>The process name if available; otherwise <see langword="null"/>.</returns>
+    private static string? TryGetProcessName(Process process)
+    {
+        try
+        {
+            return process.ProcessName;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to get the start info file name for the process.
+    /// </summary>
+    /// <param name="process">The process.</param>
+    /// <returns>The start info file name if available; otherwise <see langword="null"/>.</returns>
+    private static string? TryGetStartInfoFileName(Process process)
+    {
+        try
+        {
+            return process.StartInfo?.FileName;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to get the start info arguments for the process.
+    /// </summary>
+    /// <param name="process">The process.</param>
+    /// <returns>The start info arguments if available; otherwise <see langword="null"/>.</returns>
+    private static string? TryGetStartInfoArguments(Process process)
+    {
+        try
+        {
+            return process.StartInfo?.Arguments;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to determine if a process is currently running by process ID.
+    /// </summary>
+    /// <param name="processId">The process identifier.</param>
+    /// <param name="isRunning">True if running; otherwise false.</param>
+    /// <returns>True if the status could be determined; otherwise false.</returns>
+    private static bool TryGetIsProcessRunning(int processId, out bool isRunning)
+    {
+        try
+        {
+            using var proc = Process.GetProcessById(processId);
+            isRunning = !proc.HasExited;
+            return true;
+        }
+        catch
+        {
+            isRunning = false;
+            return false;
         }
     }
 

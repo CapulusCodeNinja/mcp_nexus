@@ -1,4 +1,5 @@
 using Nexus.Engine.Share.Models;
+using Nexus.External.Apis.Native;
 
 using NLog;
 
@@ -831,5 +832,36 @@ public class StatisticsTests
             0,
             commands,
             batchMapping);
+    }
+
+    /// <summary>
+    /// Verifies that EmitProcessStats with sample processes succeeds.
+    /// </summary>
+    [Fact]
+    public void EmitProcessStats_WithProcesses_Succeeds()
+    {
+        // Arrange
+        var processes = new List<TrackedProcessSnapshot>
+        {
+            new()
+            {
+                ProcessId = 1234,
+                StartTime = DateTime.Now.AddMinutes(-2),
+                ProcessName = "cdb",
+                FileName = "cdb.exe",
+                Arguments = "-z C:\\dumps\\test.dmp",
+            },
+            new()
+            {
+                ProcessId = 5678,
+                StartTime = DateTime.Now.AddMinutes(-1),
+                ProcessName = "cmd",
+                FileName = "cmd.exe",
+                Arguments = "/c echo hello",
+            },
+        };
+
+        // Act & Assert (should not throw)
+        Statistics.EmitProcessStats(m_Logger, processes);
     }
 }
