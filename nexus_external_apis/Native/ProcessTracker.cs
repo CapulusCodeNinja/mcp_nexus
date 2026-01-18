@@ -117,10 +117,22 @@ internal static class ProcessTracker
     {
         ArgumentNullException.ThrowIfNull(process);
 
-        var result = AssignProcessToJobObject(m_JobHandle, process.Handle);
-        if (!result)
+        if (process.HasExited)
         {
-            throw new InvalidOperationException($"Failed to assign process to job object. Win32Error={Marshal.GetLastWin32Error()}.");
+            throw new InvalidOperationException("Cannot assign a process that has already exited to the job object.");
+        }
+
+        try
+        {
+            var result = AssignProcessToJobObject(m_JobHandle, process.Handle);
+            if (!result)
+            {
+                throw new InvalidOperationException($"Failed to assign process to job object. Win32Error={Marshal.GetLastWin32Error()}.");
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new InvalidOperationException("Failed to assign process to job object because the process handle is no longer valid (the process may have already exited).", ex);
         }
     }
 
