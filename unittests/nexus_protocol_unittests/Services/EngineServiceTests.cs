@@ -17,6 +17,7 @@ namespace Nexus.Protocol.Unittests.Services;
 /// Unit tests for the <see cref="EngineService"/> class.
 /// Tests initialization, thread-safety, and retrieval of the debug engine singleton.
 /// </summary>
+[Collection("EngineService")]
 public class EngineServiceTests
 {
     private readonly Mock<ISettings> m_Settings;
