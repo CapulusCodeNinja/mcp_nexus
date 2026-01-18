@@ -19,6 +19,9 @@ public sealed class ProcessAddedEventArgs : EventArgs
     /// <summary>
     /// Gets the snapshot for the process that was added.
     /// </summary>
-    public IReadOnlyList<TrackedProcessSnapshot> ProcessSnapshotList { get; }
+    public IReadOnlyList<TrackedProcessSnapshot> ProcessSnapshotList
+    {
+        get;
+    }
 }
 

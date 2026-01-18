@@ -5,7 +5,7 @@
 ![MCP Nexus Icon](https://github.com/CapulusCodeNinja/mcp_nexus/blob/main/images/mcp_nexus_small.png?raw=true)
 
 ![Tests](https://img.shields.io/badge/tests-1247%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-85.7%25%20lines-green)
+![Coverage](https://img.shields.io/badge/coverage-85.4%25%20lines-green)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
@@ -267,8 +267,8 @@ nexus_extensions/           - PowerShell extension system
 ### Test Statistics
 
 - ✅ **1247 total tests** (all passing)
-- 📊 **85.7% line coverage** (target: 75%)
-- 🔀 **76.9% branch coverage** (target: 75%)
+- 📊 **85.4% line coverage** (target: 75%)
+- 🔀 **77.9% branch coverage** (target: 75%)
 - ⚡ **Fast execution** (~12 seconds for full suite)
 - 🎯 **Zero build warnings**
 
