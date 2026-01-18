@@ -4,7 +4,7 @@ using System.Text;
 
 using Nexus.Config;
 using Nexus.Engine.Preprocessing;
-using Nexus.Engine.Share.WindowsDebugging;
+using Nexus.Engine.Share.WindowsKits;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 
@@ -389,7 +389,7 @@ internal class CdbSession : ICdbSession
 
         try
         {
-            var locator = new WindowsDebuggerToolLocator(m_FileSystem);
+            var locator = new WindowsKitsToolLocator(m_FileSystem);
             var resolved = locator.FindToolExecutablePath("cdb.exe", m_Settings.Get().McpNexus.Debugging.CdbPath, RuntimeInformation.OSArchitecture);
             m_Logger.Debug("Found CDB at: {CdbPath}", resolved);
             return Task.FromResult(resolved);

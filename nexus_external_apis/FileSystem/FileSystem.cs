@@ -166,6 +166,16 @@ public class FileSystem : IFileSystem
     }
 
     /// <summary>
+    /// Gets all subdirectories in the specified directory.
+    /// </summary>
+    /// <param name="path">The directory path.</param>
+    /// <returns>An array of full paths to the subdirectories.</returns>
+    public string[] GetDirectories(string path)
+    {
+        return Directory.GetDirectories(path);
+    }
+
+    /// <summary>
     /// Copies a file from source to destination.
     /// </summary>
     /// <param name="sourceFileName">The source file path.</param>

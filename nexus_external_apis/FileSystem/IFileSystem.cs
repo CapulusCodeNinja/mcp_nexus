@@ -116,6 +116,13 @@ public interface IFileSystem
     string[] GetFiles(string path, string searchPattern, SearchOption searchOption);
 
     /// <summary>
+    /// Gets all subdirectories in the specified directory.
+    /// </summary>
+    /// <param name="path">The directory path.</param>
+    /// <returns>An array of full paths to the subdirectories.</returns>
+    string[] GetDirectories(string path);
+
+    /// <summary>
     /// Copies a file from source to destination.
     /// </summary>
     /// <param name="sourceFileName">The source file path.</param>

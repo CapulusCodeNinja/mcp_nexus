@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 
 using Nexus.Config;
-using Nexus.Engine.Share.WindowsDebugging;
+using Nexus.Engine.Share.WindowsKits;
 using Nexus.External.Apis.FileSystem;
 
 using NLog;
@@ -66,7 +66,7 @@ internal sealed class DumpChkLocator
 
         try
         {
-            var locator = new WindowsDebuggerToolLocator(m_FileSystem);
+            var locator = new WindowsKitsToolLocator(m_FileSystem);
             var resolved = locator.FindToolExecutablePath("dumpchk.exe", validationSettings.DumpChkPath, RuntimeInformation.OSArchitecture);
             m_Logger.Debug("Found dumpchk at: {DumpChkPath}", resolved);
             return Task.FromResult(resolved);

@@ -2,19 +2,19 @@ using System.Runtime.InteropServices;
 
 using Nexus.External.Apis.FileSystem;
 
-namespace Nexus.Engine.Share.WindowsDebugging;
+namespace Nexus.Engine.Share.WindowsKits;
 
 /// <summary>
 /// Locates Windows Debugging Tools (for example <c>cdb.exe</c> and <c>dumpchk.exe</c>) by probing
 /// installed Windows Kits debugger directories and selecting the best match for the current OS architecture.
 /// </summary>
-public sealed class WindowsDebuggerToolLocator
+public sealed class WindowsKitsToolLocator
 {
     private readonly IFileSystem m_FileSystem;
     private readonly IReadOnlyList<string> m_WindowsKitsBaseDirectories;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WindowsDebuggerToolLocator"/> class.
+    /// Initializes a new instance of the <see cref="WindowsKitsToolLocator"/> class.
     /// </summary>
     /// <param name="fileSystem">File system abstraction used for probing.</param>
     /// <param name="windowsKitsBaseDirectories">
@@ -22,7 +22,7 @@ public sealed class WindowsDebuggerToolLocator
     /// When not provided, the locator probes both Program Files and Program Files (x86).
     /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="fileSystem"/> is <c>null</c>.</exception>
-    public WindowsDebuggerToolLocator(IFileSystem fileSystem, IEnumerable<string>? windowsKitsBaseDirectories = null)
+    public WindowsKitsToolLocator(IFileSystem fileSystem, IEnumerable<string>? windowsKitsBaseDirectories = null)
     {
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_WindowsKitsBaseDirectories = NormalizeWindowsKitsBaseDirectories(windowsKitsBaseDirectories);
@@ -124,15 +124,9 @@ public sealed class WindowsDebuggerToolLocator
                 continue;
             }
 
-            var kitsBaseDirectory = m_FileSystem.GetDirectoryInfo(kitsBase);
-            if (!kitsBaseDirectory.Exists)
+            foreach (var versionDirectoryPath in m_FileSystem.GetDirectories(kitsBase))
             {
-                continue;
-            }
-
-            foreach (var versionDirectory in kitsBaseDirectory.GetDirectories())
-            {
-                var debuggersDirectory = m_FileSystem.CombinePaths(versionDirectory.FullName, "Debuggers");
+                var debuggersDirectory = m_FileSystem.CombinePaths(versionDirectoryPath, "Debuggers");
                 if (m_FileSystem.DirectoryExists(debuggersDirectory))
                 {
                     debuggerRoots.Add(debuggersDirectory);
@@ -187,15 +181,9 @@ public sealed class WindowsDebuggerToolLocator
                 continue;
             }
 
-            var rootDirectory = m_FileSystem.GetDirectoryInfo(root);
-            if (!rootDirectory.Exists)
+            foreach (var architectureDirectoryPath in m_FileSystem.GetDirectories(root))
             {
-                continue;
-            }
-
-            foreach (var architectureDirectory in rootDirectory.GetDirectories())
-            {
-                var candidate = m_FileSystem.CombinePaths(architectureDirectory.FullName, toolFileName);
+                var candidate = m_FileSystem.CombinePaths(architectureDirectoryPath, toolFileName);
                 if (m_FileSystem.FileExists(candidate))
                 {
                     return candidate;
