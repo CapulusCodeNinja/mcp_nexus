@@ -31,7 +31,6 @@ internal class MainHostedService : IHostedService, IDisposable
     private readonly IAdministratorChecker m_AdminChecker;
     private readonly CommandLineContext m_CommandLineContext;
     private readonly IProductInstallation m_ProductInstallation;
-    private Task? m_ProcessStatisticsTask;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MainHostedService"/> class.
@@ -101,10 +100,9 @@ internal class MainHostedService : IHostedService, IDisposable
         var startupBanner = new StartupBanner(m_CommandLineContext.IsServiceMode, m_CommandLineContext, m_Settings);
         startupBanner.DisplayBanner();
 
-        // Start periodic process statistics loop (server modes only).
-        if (m_CommandLineContext.IsHttpMode || m_CommandLineContext.IsStdioMode || m_CommandLineContext.IsServiceMode)
+        if (m_CommandLineContext.IsHttpMode || m_CommandLineContext.IsStdioMode)
         {
-            m_ProcessStatisticsTask = RunProcessStatisticsLoopAsync(cancellationToken);
+            ProcessTracker.ProcessAdded += ProcessTrackerOnProcessAdded;
         }
 
         // 2. Handle the appropriate command based on command line context
@@ -280,10 +278,7 @@ internal class MainHostedService : IHostedService, IDisposable
 
         try
         {
-            if (m_ProcessStatisticsTask != null)
-            {
-                _ = await Task.WhenAny(m_ProcessStatisticsTask, Task.Delay(TimeSpan.FromSeconds(5), cancellationToken));
-            }
+            await Task.CompletedTask;
 
             // Stop the protocol server if it's running
             if (m_ProtocolServer is { IsRunning: true })
@@ -300,42 +295,19 @@ internal class MainHostedService : IHostedService, IDisposable
     }
 
     /// <summary>
-    /// Runs periodic process statistics logging with an interval controlled by configuration.
+    /// Handles process-added notifications from <see cref="ProcessTracker"/> and emits a snapshot to the logs.
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task representing the background loop.</returns>
-    private async Task RunProcessStatisticsLoopAsync(CancellationToken cancellationToken)
+    /// <param name="sender">The sender.</param>
+    /// <param name="e">The event arguments.</param>
+    private void ProcessTrackerOnProcessAdded(object? sender, ProcessAddedEventArgs e)
     {
         try
         {
-            var config = m_Settings.Get();
-            var statsConfig = config.McpNexus.ProcessStatistics;
-
-            if (!statsConfig.Enabled)
-            {
-                return;
-            }
-
-            var intervalMinutes = statsConfig.IntervalMinutes;
-            if (intervalMinutes <= 0)
-            {
-                intervalMinutes = 30;
-            }
-
-            using var timer = new PeriodicTimer(TimeSpan.FromMinutes(intervalMinutes));
-            while (await timer.WaitForNextTickAsync(cancellationToken))
-            {
-                var snapshots = ProcessTracker.GetRunningProcessesSnapshotAndPruneExited();
-                Statistics.EmitProcessStats(m_Logger, snapshots);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // Normal shutdown.
+            Statistics.EmitProcessStats(m_Logger, e.ProcessSnapshotList);
         }
         catch (Exception ex)
         {
-            m_Logger.Error(ex, "Process statistics loop failed");
+            m_Logger.Error(ex, "Failed to emit process statistics");
         }
     }
 

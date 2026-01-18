@@ -55,6 +55,11 @@ public static class ProcessTracker
     private static readonly ConcurrentDictionary<int, TrackedProcessSnapshot> m_TrackedProcesses = new();
 
     /// <summary>
+    /// Occurs after a process is successfully assigned to the job object and tracked.
+    /// </summary>
+    public static event EventHandler<ProcessAddedEventArgs>? ProcessAdded;
+
+    /// <summary>
     /// Initializes static members of the <see cref="ProcessTracker"/> class.
     /// Initializes the tracker by creating and configuring a Job Object with the
     /// "kill on job close" limit.
@@ -149,7 +154,7 @@ public static class ProcessTracker
     /// prunes exited processes from the internal list to prevent unbounded growth.
     /// </summary>
     /// <returns>A list of tracked process snapshots.</returns>
-    public static IReadOnlyList<TrackedProcessSnapshot> GetRunningProcessesSnapshotAndPruneExited()
+    private static IReadOnlyList<TrackedProcessSnapshot> GetRunningProcessesSnapshotAndPruneExited()
     {
         var snapshots = new List<TrackedProcessSnapshot>();
 
@@ -193,6 +198,11 @@ public static class ProcessTracker
         };
 
         _ = m_TrackedProcesses.TryAdd(processId, snapshot);
+
+        if (ProcessAdded != null)
+        {
+            ProcessAdded?.Invoke(null, new ProcessAddedEventArgs(GetRunningProcessesSnapshotAndPruneExited()));
+        }
     }
 
     /// <summary>
