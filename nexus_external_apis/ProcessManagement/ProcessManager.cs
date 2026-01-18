@@ -1,5 +1,7 @@
 using System.Diagnostics;
 
+using Nexus.External.Apis.Native;
+
 namespace Nexus.External.Apis.ProcessManagement;
 
 /// <summary>
@@ -14,7 +16,9 @@ public class ProcessManager : IProcessManager
     /// <returns>The started process.</returns>
     public Process StartProcess(ProcessStartInfo startInfo)
     {
-        return Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start process");
+        var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start process");
+        ProcessTracker.AddProcess(process);
+        return process;
     }
 
     /// <summary>
