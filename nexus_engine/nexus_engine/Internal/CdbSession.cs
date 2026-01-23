@@ -318,11 +318,14 @@ internal class CdbSession : ICdbSession
     }
 
     /// <summary>
-    /// Kills the CDB process.
+    /// Kills the CDB process and its entire process tree.
     /// </summary>
     protected virtual void KillProcess()
     {
-        m_CdbProcess?.Kill();
+        if (m_CdbProcess != null)
+        {
+            m_ProcessManager.KillProcess(m_CdbProcess);
+        }
     }
 
     /// <summary>

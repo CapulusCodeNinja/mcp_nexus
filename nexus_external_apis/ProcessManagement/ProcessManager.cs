@@ -71,14 +71,15 @@ public class ProcessManager : IProcessManager
     }
 
     /// <summary>
-    /// Kills a process.
+    /// Kills a process and its entire process tree.
     /// </summary>
     /// <param name="process">The process to kill.</param>
     public void KillProcess(Process process)
     {
         if (!process.HasExited)
         {
-            process.Kill();
+            // Kill entire process tree to ensure child processes (like conhost.exe) are also terminated
+            process.Kill(entireProcessTree: true);
         }
     }
 

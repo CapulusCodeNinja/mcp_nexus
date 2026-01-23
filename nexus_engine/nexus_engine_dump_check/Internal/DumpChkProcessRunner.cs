@@ -107,6 +107,23 @@ internal sealed class DumpChkProcessRunner
             {
                 m_Logger.Warn("dumpchk did not exit within timeout ({TimeoutMs} ms), killing process with PID: {ProcessId}", timeoutMs, process.Id);
                 m_ProcessManager.KillProcess(process);
+
+                // Wait briefly for the read tasks to complete after process termination
+                // This ensures proper cleanup of stream handles
+                const int cleanupTimeoutMs = 1000;
+                var completedInTime = await Task.WhenAll(stdoutTask, stderrTask)
+                    .ContinueWith(_ => true, TaskContinuationOptions.OnlyOnRanToCompletion)
+                    .WaitAsync(TimeSpan.FromMilliseconds(cleanupTimeoutMs))
+                    .ConfigureAwait(false);
+
+                if (!completedInTime)
+                {
+                    m_Logger.Debug("Read tasks did not complete within cleanup timeout after process kill");
+                }
+            }
+            catch (TimeoutException)
+            {
+                m_Logger.Debug("Cleanup timeout expired waiting for read tasks to complete");
             }
             catch (Exception ex)
             {

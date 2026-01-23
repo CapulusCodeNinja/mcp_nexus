@@ -435,7 +435,7 @@ internal class Executor
         if (!force && !process.WaitForExit(2000))
         {
             m_Logger.Warn("Extension {ExtensionName} process did not exit gracefully after 1 second - terminating process", metadata.Name);
-            process.Kill();
+            m_ProcessManager.KillProcess(process);
         }
     }
 
