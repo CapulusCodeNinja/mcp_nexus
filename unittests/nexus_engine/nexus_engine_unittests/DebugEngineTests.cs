@@ -5,6 +5,7 @@ using Moq;
 using Nexus.Config;
 using Nexus.Config.Models;
 using Nexus.Engine.Batch;
+using Nexus.Engine.Share;
 using Nexus.Engine.Unittests.Internal;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
@@ -21,6 +22,7 @@ public class DebugEngineTests : IDisposable
 {
     private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IFileSystem> m_MockFileSystem;
+    private readonly Mock<IFileCleanupQueue> m_MockFileCleanupQueue;
     private readonly Mock<IBatchProcessor> m_BatchProcessor;
     private readonly Mock<IProcessManager> m_MockProcessManager;
     private readonly DebugEngine m_Engine;
@@ -43,9 +45,10 @@ public class DebugEngineTests : IDisposable
             },
         });
         m_MockFileSystem = new Mock<IFileSystem>();
+        m_MockFileCleanupQueue = new Mock<IFileCleanupQueue>();
         m_BatchProcessor = new Mock<IBatchProcessor>();
         m_MockProcessManager = new Mock<IProcessManager>();
-        m_Engine = new DebugEngine(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
+        m_Engine = new DebugEngine(m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
     }
 
     /// <summary>
@@ -64,7 +67,7 @@ public class DebugEngineTests : IDisposable
     public void Constructor_WithNullFileSystem_ThrowsArgumentNullException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => new DebugEngine(null!, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object));
+        _ = Assert.Throws<ArgumentNullException>(() => new DebugEngine(null!, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object));
     }
 
     /// <summary>
@@ -74,7 +77,7 @@ public class DebugEngineTests : IDisposable
     public void Constructor_WithNullProcessManager_ThrowsArgumentNullException()
     {
         // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => new DebugEngine(m_MockFileSystem.Object, null!, m_BatchProcessor.Object, m_Settings.Object));
+        _ = Assert.Throws<ArgumentNullException>(() => new DebugEngine(m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, null!, m_BatchProcessor.Object, m_Settings.Object));
     }
 
     /// <summary>
@@ -84,7 +87,7 @@ public class DebugEngineTests : IDisposable
     public void Constructor_WithValidDependencies_Succeeds()
     {
         // Arrange & Act
-        using var engine = new DebugEngine(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
+        using var engine = new DebugEngine(m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
 
         // Assert
         _ = engine.Should().NotBeNull();
@@ -97,7 +100,7 @@ public class DebugEngineTests : IDisposable
     public void CleanupIdleSessions_WhenSessionIdleAndNoActiveCommands_ClosesSession()
     {
         // Arrange
-        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
+        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
 
         // Create a debug session without initializing CDB (so no process is started)
         var sessionId = "test-session-id";
@@ -109,6 +112,7 @@ public class DebugEngineTests : IDisposable
             null,
             m_Settings.Object,
             fileSystem,
+            m_MockFileCleanupQueue.Object,
             processManager,
             m_BatchProcessor.Object);
 
@@ -872,7 +876,7 @@ public class DebugEngineTests : IDisposable
     public void ThrowIfDisposed_WhenDisposed_ThrowsObjectDisposedException()
     {
         // Arrange
-        var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
+        var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
         accessor.Dispose();
 
         // Act & Assert
@@ -886,7 +890,7 @@ public class DebugEngineTests : IDisposable
     public void ThrowIfDisposed_WhenNotDisposed_DoesNotThrow()
     {
         // Arrange
-        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
+        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
 
         // Act & Assert - Should not throw
         accessor.ThrowIfDisposed();
@@ -918,7 +922,7 @@ public class DebugEngineTests : IDisposable
             },
         });
 
-        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
+        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
 
         var debugSession = new DebugSessionTestAccessor(
             sessionId,
@@ -926,6 +930,7 @@ public class DebugEngineTests : IDisposable
             null,
             m_Settings.Object,
             m_MockFileSystem.Object,
+            m_MockFileCleanupQueue.Object,
             m_MockProcessManager.Object,
             m_BatchProcessor.Object);
 
@@ -935,13 +940,11 @@ public class DebugEngineTests : IDisposable
         var sessions = (System.Collections.Concurrent.ConcurrentDictionary<string, Nexus.Engine.Internal.DebugSession>)sessionsField!.GetValue(accessor)!;
         _ = sessions.TryAdd(sessionId, debugSession);
 
-        _ = m_MockFileSystem.Setup(fs => fs.FileExists(dumpFilePath)).Returns(true);
-
         // Act
         await accessor.CloseSessionAsync(sessionId);
 
-        // Assert
-        m_MockFileSystem.Verify(fs => fs.DeleteFile(dumpFilePath), Times.Once);
+        // Assert - file deletion is now enqueued to the async cleanup queue
+        m_MockFileCleanupQueue.Verify(q => q.Enqueue(dumpFilePath), Times.Once);
     }
 
     /// <summary>
@@ -970,7 +973,7 @@ public class DebugEngineTests : IDisposable
             },
         });
 
-        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
+        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
 
         var debugSession = new DebugSessionTestAccessor(
             sessionId,
@@ -978,6 +981,7 @@ public class DebugEngineTests : IDisposable
             null,
             m_Settings.Object,
             m_MockFileSystem.Object,
+            m_MockFileCleanupQueue.Object,
             m_MockProcessManager.Object,
             m_BatchProcessor.Object);
 
@@ -987,25 +991,24 @@ public class DebugEngineTests : IDisposable
         var sessions = (System.Collections.Concurrent.ConcurrentDictionary<string, Nexus.Engine.Internal.DebugSession>)sessionsField!.GetValue(accessor)!;
         _ = sessions.TryAdd(sessionId, debugSession);
 
-        _ = m_MockFileSystem.Setup(fs => fs.FileExists(dumpFilePath)).Returns(true);
-
         // Act
         await accessor.CloseSessionAsync(sessionId);
 
-        // Assert
-        m_MockFileSystem.Verify(fs => fs.DeleteFile(It.IsAny<string>()), Times.Never);
+        // Assert - file should NOT be enqueued when deletion is disabled
+        m_MockFileCleanupQueue.Verify(q => q.Enqueue(It.IsAny<string>()), Times.Never);
     }
 
     /// <summary>
-    /// Verifies that CloseSessionAsync does not throw when dump file deletion fails.
+    /// Verifies that CloseSessionAsync enqueues the dump file for async cleanup even when the queue is used.
+    /// Note: The actual deletion happens asynchronously in the cleanup queue, which handles failures internally.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CloseSessionAsync_WhenDumpDeletionFails_DoesNotThrow()
+    public async Task CloseSessionAsync_WithDeleteEnabled_EnqueuesDumpFileForAsyncCleanup()
     {
         // Arrange
-        const string sessionId = "test-session-id-delete-fails";
-        const string dumpFilePath = @"C:\dummy\dump_fails.dmp";
+        const string sessionId = "test-session-id-async-cleanup";
+        const string dumpFilePath = @"C:\dummy\dump_async.dmp";
 
         _ = m_Settings.Setup(s => s.Get()).Returns(new SharedConfiguration
         {
@@ -1022,7 +1025,7 @@ public class DebugEngineTests : IDisposable
             },
         });
 
-        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
+        using var accessor = new DebugEngineTestAccessor(m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, m_Settings.Object);
 
         var debugSession = new DebugSessionTestAccessor(
             sessionId,
@@ -1030,6 +1033,7 @@ public class DebugEngineTests : IDisposable
             null,
             m_Settings.Object,
             m_MockFileSystem.Object,
+            m_MockFileCleanupQueue.Object,
             m_MockProcessManager.Object,
             m_BatchProcessor.Object);
 
@@ -1039,14 +1043,11 @@ public class DebugEngineTests : IDisposable
         var sessions = (System.Collections.Concurrent.ConcurrentDictionary<string, Nexus.Engine.Internal.DebugSession>)sessionsField!.GetValue(accessor)!;
         _ = sessions.TryAdd(sessionId, debugSession);
 
-        _ = m_MockFileSystem.Setup(fs => fs.FileExists(dumpFilePath)).Returns(true);
-        _ = m_MockFileSystem.Setup(fs => fs.DeleteFile(dumpFilePath)).Throws(new IOException("Access denied"));
-
         // Act
         var exception = await Record.ExceptionAsync(() => accessor.CloseSessionAsync(sessionId));
 
-        // Assert
+        // Assert - Session closes without exception and file is enqueued for async cleanup
         _ = exception.Should().BeNull();
-        m_MockFileSystem.Verify(fs => fs.DeleteFile(dumpFilePath), Times.Once);
+        m_MockFileCleanupQueue.Verify(q => q.Enqueue(dumpFilePath), Times.Once);
     }
 }

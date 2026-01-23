@@ -1,5 +1,6 @@
 using Nexus.Config;
 using Nexus.Engine.Batch;
+using Nexus.Engine.Share;
 using Nexus.External.Apis.FileSystem;
 using Nexus.External.Apis.ProcessManagement;
 
@@ -14,11 +15,12 @@ internal class DebugEngineTestAccessor : DebugEngine
     /// Initializes a new instance of the <see cref="DebugEngineTestAccessor"/> class.
     /// </summary>
     /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="fileCleanupQueue">The file cleanup queue.</param>
     /// <param name="processManager">The process manager abstraction.</param>
     /// <param name="batchProcessor">The batch processing engine.</param>
     /// <param name="settings">The product settings.</param>
-    public DebugEngineTestAccessor(IFileSystem fileSystem, IProcessManager processManager, IBatchProcessor batchProcessor, ISettings settings)
-        : base(fileSystem, processManager, batchProcessor, settings)
+    public DebugEngineTestAccessor(IFileSystem fileSystem, IFileCleanupQueue fileCleanupQueue, IProcessManager processManager, IBatchProcessor batchProcessor, ISettings settings)
+        : base(fileSystem, fileCleanupQueue, processManager, batchProcessor, settings)
     {
     }
 

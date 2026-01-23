@@ -32,6 +32,11 @@ public class DebugEngine : IDebugEngine
     private readonly IFileSystem m_FileSystem;
 
     /// <summary>
+    /// File cleanup queue for asynchronous file deletion with retry logic.
+    /// </summary>
+    private readonly IFileCleanupQueue m_FileCleanupQueue;
+
+    /// <summary>
     /// Process manager abstraction for process operations.
     /// </summary>
     private readonly IProcessManager m_ProcessManager;
@@ -86,8 +91,23 @@ public class DebugEngine : IDebugEngine
     /// <param name="batchProcessor">The batch processing engine.</param>
     /// <param name="settings">The product settings.</param>
     internal DebugEngine(IFileSystem fileSystem, IProcessManager processManager, IBatchProcessor batchProcessor, ISettings settings)
+        : this(fileSystem, new FileCleanupQueue(fileSystem), processManager, batchProcessor, settings)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DebugEngine"/> class with all dependencies specified.
+    /// Used for unit testing to allow injection of mock file cleanup queue.
+    /// </summary>
+    /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="fileCleanupQueue">The file cleanup queue for asynchronous file deletion.</param>
+    /// <param name="processManager">The process manager abstraction.</param>
+    /// <param name="batchProcessor">The batch processing engine.</param>
+    /// <param name="settings">The product settings.</param>
+    internal DebugEngine(IFileSystem fileSystem, IFileCleanupQueue fileCleanupQueue, IProcessManager processManager, IBatchProcessor batchProcessor, ISettings settings)
     {
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+        m_FileCleanupQueue = fileCleanupQueue ?? throw new ArgumentNullException(nameof(fileCleanupQueue));
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
         m_Settings = settings ?? throw new ArgumentNullException(nameof(settings));
         m_BatchProcessor = batchProcessor;
@@ -144,7 +164,7 @@ public class DebugEngine : IDebugEngine
         try
         {
             var preprocessor = new CommandPreprocessor(m_FileSystem, m_ProcessManager, m_Settings);
-            var session = new DebugSession(sessionId, dumpFilePath, symbolPath, m_Settings, m_FileSystem, m_ProcessManager, m_BatchProcessor, preprocessor);
+            var session = new DebugSession(sessionId, dumpFilePath, symbolPath, m_Settings, m_FileSystem, m_FileCleanupQueue, m_ProcessManager, m_BatchProcessor, preprocessor);
 
             // Subscribe to session events
             session.CommandStateChanged += OnSessionCommandStateChanged;
@@ -601,6 +621,9 @@ public class DebugEngine : IDebugEngine
         {
             _ = m_Sessions.TryRemove(session.SessionId, out _);
         }
+
+        // Dispose the file cleanup queue (allows pending deletions to complete)
+        m_FileCleanupQueue.Dispose();
 
         m_Logger.Info("DebugEngine disposed");
     }

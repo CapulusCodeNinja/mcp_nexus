@@ -7,6 +7,7 @@ using Nexus.Config.Models;
 using Nexus.Engine.Batch;
 using Nexus.Engine.Internal;
 using Nexus.Engine.Preprocessing;
+using Nexus.Engine.Share;
 using Nexus.Engine.Share.Events;
 using Nexus.Engine.Share.Models;
 using Nexus.External.Apis.FileSystem;
@@ -24,6 +25,7 @@ public class DebugSessionTests : IDisposable
 {
     private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IFileSystem> m_MockFileSystem;
+    private readonly Mock<IFileCleanupQueue> m_MockFileCleanupQueue;
     private readonly Mock<IBatchProcessor> m_BatchProcessor;
     private readonly Mock<IProcessManager> m_MockProcessManager;
     private const string TestSessionId = "test-session-id";
@@ -48,6 +50,7 @@ public class DebugSessionTests : IDisposable
         };
         _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
         m_MockFileSystem = new Mock<IFileSystem>();
+        m_MockFileCleanupQueue = new Mock<IFileCleanupQueue>();
         m_BatchProcessor = new Mock<IBatchProcessor>();
         m_MockProcessManager = new Mock<IProcessManager>();
     }
@@ -77,7 +80,7 @@ public class DebugSessionTests : IDisposable
     {
         // Act & Assert
         _ = Assert.Throws<ArgumentNullException>(() =>
-            new DebugSession(null!, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor()));
+            new DebugSession(null!, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor()));
     }
 
     /// <summary>
@@ -88,7 +91,7 @@ public class DebugSessionTests : IDisposable
     {
         // Act & Assert
         _ = Assert.Throws<ArgumentNullException>(() =>
-            new DebugSession(TestSessionId, null!, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor()));
+            new DebugSession(TestSessionId, null!, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor()));
     }
 
     /// <summary>
@@ -98,7 +101,7 @@ public class DebugSessionTests : IDisposable
     public void Constructor_WithValidParameters_Succeeds()
     {
         // Act
-        using var session = new DebugSession(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
+        using var session = new DebugSession(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
 
         // Assert
         _ = session.Should().NotBeNull();
@@ -114,7 +117,7 @@ public class DebugSessionTests : IDisposable
     public void Constructor_WithNullSymbolPath_Succeeds()
     {
         // Act
-        using var session = new DebugSession(TestSessionId, TestDumpFilePath, null, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
+        using var session = new DebugSession(TestSessionId, TestDumpFilePath, null, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
 
         // Assert
         _ = session.Should().NotBeNull();
@@ -128,7 +131,7 @@ public class DebugSessionTests : IDisposable
     public void SessionId_ReturnsCorrectValue()
     {
         // Arrange
-        using var session = new DebugSession(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
+        using var session = new DebugSession(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
 
         // Act
         var sessionId = session.SessionId;
@@ -144,7 +147,7 @@ public class DebugSessionTests : IDisposable
     public void State_IsThreadSafe()
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
 
         // Act - Access state from multiple threads
         var states = new System.Collections.Concurrent.ConcurrentBag<SessionState>();
@@ -165,7 +168,7 @@ public class DebugSessionTests : IDisposable
     public void IsActive_WhenStateIsActive_ReturnsTrue()
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
         accessor.SetState(SessionState.Active);
 
         // Act
@@ -182,7 +185,7 @@ public class DebugSessionTests : IDisposable
     public void IsActive_WhenStateIsNotActive_ReturnsFalse()
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
         accessor.SetState(SessionState.Closing);
 
         // Act
@@ -199,7 +202,7 @@ public class DebugSessionTests : IDisposable
     public void CommandStateChanged_CanSubscribe()
     {
         // Arrange
-        using var session = new DebugSession(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
+        using var session = new DebugSession(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
         var eventRaised = false;
         session.CommandStateChanged += (sender, args) => eventRaised = true;
 
@@ -214,7 +217,7 @@ public class DebugSessionTests : IDisposable
     public void SessionStateChanged_CanSubscribe()
     {
         // Arrange
-        using var session = new DebugSession(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
+        using var session = new DebugSession(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
         var eventRaised = false;
         session.SessionStateChanged += (sender, args) => eventRaised = true;
 
@@ -229,7 +232,7 @@ public class DebugSessionTests : IDisposable
     public void Dispose_CalledMultipleTimes_DoesNotThrow()
     {
         // Arrange
-        var session = new DebugSession(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
+        var session = new DebugSession(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object, CreatePreprocessor());
 
         // Act
         session.Dispose();
@@ -245,7 +248,7 @@ public class DebugSessionTests : IDisposable
     public void SetState_ChangesState()
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
 
         // Act
         accessor.SetState(SessionState.Active);
@@ -261,7 +264,7 @@ public class DebugSessionTests : IDisposable
     public void SetState_RaisesSessionStateChangedEvent()
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
         var eventRaised = false;
         SessionStateChangedEventArgs? capturedArgs = null;
         accessor.SessionStateChanged += (sender, args) =>
@@ -288,7 +291,7 @@ public class DebugSessionTests : IDisposable
     public void SetState_WithSameState_DoesNotRaiseEvent()
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
         accessor.SetState(SessionState.Active);
 
         var eventRaised = false;
@@ -308,7 +311,7 @@ public class DebugSessionTests : IDisposable
     public void OnCommandStateChanged_ForwardsEventWithSessionContext()
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
         var eventRaised = false;
         CommandStateChangedEventArgs? capturedArgs = null;
         accessor.CommandStateChanged += (sender, args) =>
@@ -346,7 +349,7 @@ public class DebugSessionTests : IDisposable
     public void ThrowIfDisposed_WhenDisposed_ThrowsObjectDisposedException()
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
         accessor.Dispose();
 
         // Act & Assert
@@ -360,7 +363,7 @@ public class DebugSessionTests : IDisposable
     public void ThrowIfDisposed_WhenNotDisposed_DoesNotThrow()
     {
         // Arrange
-        using var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        using var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
 
         // Act & Assert - Should not throw
         accessor.ThrowIfDisposed();
@@ -373,7 +376,7 @@ public class DebugSessionTests : IDisposable
     public void ThrowIfNotActive_WhenNotActive_ThrowsInvalidOperationException()
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
         accessor.SetState(SessionState.Closing);
 
         // Act & Assert
@@ -389,7 +392,7 @@ public class DebugSessionTests : IDisposable
     public void ThrowIfNotActive_WhenActive_DoesNotThrow()
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
         accessor.SetState(SessionState.Active);
 
         // Act & Assert - Should not throw
@@ -410,7 +413,7 @@ public class DebugSessionTests : IDisposable
     public void SetState_ValidTransitions_Succeed(SessionState fromState, SessionState toState)
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
         accessor.SetState(fromState);
 
         // Act
@@ -434,7 +437,7 @@ public class DebugSessionTests : IDisposable
     public void IsActive_ReflectsStateChanges(SessionState state, bool expectedIsActive)
     {
         // Arrange
-        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
+        var accessor = new DebugSessionTestAccessor(TestSessionId, TestDumpFilePath, TestSymbolPath, m_Settings.Object, m_MockFileSystem.Object, m_MockFileCleanupQueue.Object, m_MockProcessManager.Object, m_BatchProcessor.Object);
 
         // Act
         accessor.SetState(state);

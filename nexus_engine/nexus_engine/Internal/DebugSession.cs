@@ -1,6 +1,7 @@
 using Nexus.Config;
 using Nexus.Engine.Batch;
 using Nexus.Engine.Preprocessing;
+using Nexus.Engine.Share;
 using Nexus.Engine.Share.Events;
 using Nexus.Engine.Share.Models;
 using Nexus.External.Apis.FileSystem;
@@ -18,6 +19,7 @@ internal class DebugSession : IDisposable
     private readonly Logger m_Logger;
     private readonly ISettings m_Settings;
     private readonly IFileSystem m_FileSystem;
+    private readonly IFileCleanupQueue m_FileCleanupQueue;
     private readonly string m_DumpFilePath;
     private readonly string? m_SymbolPath;
     private readonly CdbSession m_CdbSession;
@@ -82,6 +84,7 @@ internal class DebugSession : IDisposable
     /// <param name="symbolPath">Optional symbol path for symbol resolution.</param>
     /// <param name="settings">The product settings.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="fileCleanupQueue">The file cleanup queue for deferred file deletion.</param>
     /// <param name="processManager">The process manager abstraction.</param>
     /// <param name="batchProcessor">The batch processing engine.</param>
     /// <param name="commandPreprocessor">Optional command preprocessor for WSL path conversion and directory creation.</param>
@@ -92,12 +95,14 @@ internal class DebugSession : IDisposable
         string? symbolPath,
         ISettings settings,
         IFileSystem fileSystem,
+        IFileCleanupQueue fileCleanupQueue,
         IProcessManager processManager,
         IBatchProcessor batchProcessor,
         CommandPreprocessor commandPreprocessor)
     {
         m_Settings = settings;
         m_FileSystem = fileSystem;
+        m_FileCleanupQueue = fileCleanupQueue;
         SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
         m_DumpFilePath = dumpFilePath ?? throw new ArgumentNullException(nameof(dumpFilePath));
         m_SymbolPath = symbolPath;
@@ -251,22 +256,8 @@ internal class DebugSession : IDisposable
 
             if (m_Settings.Get().McpNexus.SessionManagement.DeleteDumpFileOnSessionClose && !string.IsNullOrWhiteSpace(m_DumpFilePath))
             {
-                try
-                {
-                    if (m_FileSystem.FileExists(m_DumpFilePath))
-                    {
-                        m_FileSystem.DeleteFile(m_DumpFilePath);
-                        m_Logger.Info("Deleted dump file {DumpFilePath} for session {SessionId}", m_DumpFilePath, SessionId);
-                    }
-                    else
-                    {
-                        m_Logger.Debug("Dump file {DumpFilePath} for session {SessionId} was already missing", m_DumpFilePath, SessionId);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    m_Logger.Warn(ex, "Failed to delete dump file {DumpFilePath} for session {SessionId}", m_DumpFilePath, SessionId);
-                }
+                m_Logger.Info("Enqueueing dump file {DumpFilePath} for cleanup (session {SessionId})", m_DumpFilePath, SessionId);
+                m_FileCleanupQueue.Enqueue(m_DumpFilePath);
             }
 
             SetState(SessionState.Closed);

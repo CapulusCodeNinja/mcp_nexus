@@ -2,6 +2,7 @@ using Nexus.Config;
 using Nexus.Engine.Batch;
 using Nexus.Engine.Internal;
 using Nexus.Engine.Preprocessing;
+using Nexus.Engine.Share;
 using Nexus.Engine.Share.Events;
 using Nexus.Engine.Share.Models;
 using Nexus.External.Apis.FileSystem;
@@ -22,6 +23,7 @@ internal class DebugSessionTestAccessor : DebugSession
     /// <param name="symbolPath">The symbol path.</param>
     /// <param name="settings">The product settings.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="fileCleanupQueue">The file cleanup queue.</param>
     /// <param name="processManager">The process manager abstraction.</param>
     /// <param name="batchProcessor">The batch processing engine.</param>
     public DebugSessionTestAccessor(
@@ -30,9 +32,10 @@ internal class DebugSessionTestAccessor : DebugSession
         string? symbolPath,
         ISettings settings,
         IFileSystem fileSystem,
+        IFileCleanupQueue fileCleanupQueue,
         IProcessManager processManager,
         IBatchProcessor batchProcessor)
-        : base(sessionId, dumpFilePath, symbolPath, settings, fileSystem, processManager, batchProcessor, new CommandPreprocessor(fileSystem, processManager, settings))
+        : base(sessionId, dumpFilePath, symbolPath, settings, fileSystem, fileCleanupQueue, processManager, batchProcessor, new CommandPreprocessor(fileSystem, processManager, settings))
     {
     }
 
