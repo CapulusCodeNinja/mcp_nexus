@@ -22,6 +22,13 @@ public class ValidationSettings
     {
         get; set;
     }
+
+    /// <summary>
+    /// Gets or sets the timeout for dumpchk operations in milliseconds.
+    /// Default is 60 seconds. If dumpchk does not complete within this timeout,
+    /// the validation will be skipped with a warning, but session creation will continue.
+    /// </summary>
+    public int DumpChkTimeoutMs { get; set; } = 60000;
 }
 
 

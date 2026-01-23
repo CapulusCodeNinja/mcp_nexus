@@ -40,6 +40,15 @@ public class DumpCheckResult
     {
         get; set;
     }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the dumpchk process timed out.
+    /// When true, the validation was skipped but session creation can continue safely.
+    /// </summary>
+    public bool TimedOut
+    {
+        get; set;
+    }
 }
 
 

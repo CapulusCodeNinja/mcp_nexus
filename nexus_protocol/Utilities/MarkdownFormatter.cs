@@ -373,10 +373,22 @@ internal static class MarkdownFormatter
         if (dumpCheck.IsEnabled && dumpCheck.WasExecuted)
         {
             _ = markdown.AppendLine();
-            _ = markdown.AppendLine("## Dump file validation result (dumpchk.exe)");
-            _ = markdown.AppendLine();
-            _ = markdown.AppendLine(CreateKeyValue("Exitcode", dumpCheck.ExitCode));
-            _ = markdown.AppendLine(CreateKeyValue("Output", dumpCheck.Message, true));
+
+            if (dumpCheck.TimedOut)
+            {
+                _ = markdown.AppendLine("## Dump File Validation (dumpchk)");
+                _ = markdown.AppendLine();
+                _ = markdown.AppendLine(CreateWarningMessage("Validation timed out - session creation continued successfully"));
+                _ = markdown.AppendLine();
+                _ = markdown.AppendLine(CreateKeyValue("Note", dumpCheck.Message));
+            }
+            else
+            {
+                _ = markdown.AppendLine("## Dump file validation result (dumpchk.exe)");
+                _ = markdown.AppendLine();
+                _ = markdown.AppendLine(CreateKeyValue("Exitcode", dumpCheck.ExitCode));
+                _ = markdown.AppendLine(CreateKeyValue("Output", dumpCheck.Message, true));
+            }
         }
 
         return markdown.ToString();

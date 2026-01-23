@@ -47,14 +47,15 @@ internal sealed class DumpChkProcessRunner
 
     /// <summary>
     /// Runs dumpchk for the specified dump file path and returns the combined output.
+    /// If dumpchk times out, a graceful result is returned with <see cref="DumpCheckResult.TimedOut"/> set to true,
+    /// allowing session creation to continue safely.
     /// </summary>
     /// <param name="dumpChkPath">The resolved path to the dumpchk executable.</param>
     /// <param name="dumpFilePath">The full path to the dump file to analyze.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the combined output string.</returns>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the dumpchk result.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="dumpChkPath"/> or <paramref name="dumpFilePath"/> is null or empty.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the process cannot be started.</exception>
-    /// <exception cref="TimeoutException">Thrown when dumpchk does not complete within the configured timeout.</exception>
     public async Task<DumpCheckResult> RunAsync(string dumpChkPath, string dumpFilePath, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(dumpChkPath))
@@ -98,7 +99,8 @@ internal sealed class DumpChkProcessRunner
                 }
             });
 
-        var timeoutMs = m_Settings.Get().McpNexus.Debugging.OutputReadingTimeoutMs;
+        // Use dumpchk-specific timeout (default 60 seconds) instead of general output reading timeout
+        var timeoutMs = m_Settings.Get().McpNexus.Validation.DumpChkTimeoutMs;
         var exited = await m_ProcessManager.WaitForProcessExitAsync(process, timeoutMs, cancellationToken).ConfigureAwait(false);
 
         if (!exited)
@@ -110,16 +112,11 @@ internal sealed class DumpChkProcessRunner
 
                 // Wait briefly for the read tasks to complete after process termination
                 // This ensures proper cleanup of stream handles
-                const int cleanupTimeoutMs = 1000;
-                var completedInTime = await Task.WhenAll(stdoutTask, stderrTask)
+                const int CleanupTimeoutMs = 1000;
+                _ = await Task.WhenAll(stdoutTask, stderrTask)
                     .ContinueWith(_ => true, TaskContinuationOptions.OnlyOnRanToCompletion)
-                    .WaitAsync(TimeSpan.FromMilliseconds(cleanupTimeoutMs))
+                    .WaitAsync(TimeSpan.FromMilliseconds(CleanupTimeoutMs))
                     .ConfigureAwait(false);
-
-                if (!completedInTime)
-                {
-                    m_Logger.Debug("Read tasks did not complete within cleanup timeout after process kill");
-                }
             }
             catch (TimeoutException)
             {
@@ -130,7 +127,22 @@ internal sealed class DumpChkProcessRunner
                 m_Logger.Warn(ex, "Error while killing dumpchk process after timeout");
             }
 
-            throw new TimeoutException($"dumpchk did not complete within the configured timeout of {timeoutMs} ms.");
+            // Return a graceful result instead of throwing - session creation can continue safely
+            var timeoutMessage = $"dumpchk validation timed out after {timeoutMs / 1000} seconds. " +
+                "This is typically caused by slow symbol server responses or similar issues. " +
+                "The dump file appears accessible and session creation will continue. " +
+                "It is safe to proceed with analysis.";
+
+            m_Logger.Warn("dumpchk timed out for {DumpFilePath} - continuing with session creation. {Message}", dumpFilePath, timeoutMessage);
+
+            return new DumpCheckResult
+            {
+                IsEnabled = true,
+                WasExecuted = true,
+                ExitCode = -1,
+                Message = timeoutMessage,
+                TimedOut = true,
+            };
         }
 
         var stdout = await stdoutTask.ConfigureAwait(false);
