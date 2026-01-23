@@ -28,6 +28,7 @@ internal class CommandQueue : IDisposable
 
     private CdbSession? m_CdbSession;
     private Task? m_ProcessingTask;
+    private CancellationTokenSource? m_LinkedCancellationTokenSource;
     private volatile bool m_Disposed = false;
 
     /// <summary>
@@ -76,8 +77,8 @@ internal class CommandQueue : IDisposable
         m_Logger.Debug("Starting command queue for session {SessionId}", m_SessionId);
 
         // Start the processing task with a linked token so StopAsync can cancel
-        var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, m_CancellationTokenSource.Token);
-        var linkedToken = linked.Token;
+        m_LinkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, m_CancellationTokenSource.Token);
+        var linkedToken = m_LinkedCancellationTokenSource.Token;
         m_ProcessingTask = Task.Run(() => ProcessCommandsAsync(linkedToken), linkedToken);
 
         m_Logger.Debug("Command queue started for session {SessionId}", m_SessionId);
@@ -327,6 +328,7 @@ internal class CommandQueue : IDisposable
             m_BatchProcessor.ClearSessionBatchMappings(m_SessionId);
 
             // Dispose resources
+            m_LinkedCancellationTokenSource?.Dispose();
             m_CancellationTokenSource.Dispose();
         }
         catch (Exception ex)
@@ -355,7 +357,7 @@ internal class CommandQueue : IDisposable
                 try
                 {
                     // Collect available commands for potential batching
-                    var queuedCommandsById = CollectAvailableCommands(command, cancellationToken);
+                    var queuedCommandsById = await CollectAvailableCommandsAsync(command, cancellationToken).ConfigureAwait(false);
 
                     // Process commands (with or without batching)
                     await ProcessCommandsAsync(queuedCommandsById, cancellationToken);
@@ -392,7 +394,7 @@ internal class CommandQueue : IDisposable
     /// <param name="firstCommand">The first command already read from the channel.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Dictionary of commands by ID for O(1) lookups.</returns>
-    private Dictionary<string, QueuedCommand> CollectAvailableCommands(QueuedCommand firstCommand, CancellationToken cancellationToken)
+    private async Task<Dictionary<string, QueuedCommand>> CollectAvailableCommandsAsync(QueuedCommand firstCommand, CancellationToken cancellationToken)
     {
         var commands = new Dictionary<string, QueuedCommand>
         {
@@ -420,17 +422,8 @@ internal class CommandQueue : IDisposable
 
             try
             {
-                while (true)
+                while (await m_CommandChannel.Reader.WaitToReadAsync(cts.Token).ConfigureAwait(false))
                 {
-                    // Wait until there is data to read or timeout/cancellation occurs
-                    var canRead = m_CommandChannel.Reader.WaitToReadAsync(cts.Token).AsTask();
-                    canRead.Wait(cts.Token);
-
-                    if (!canRead.Result)
-                    {
-                        break;
-                    }
-
                     while (m_CommandChannel.Reader.TryRead(out var nextCommand))
                     {
                         commands[nextCommand.Id] = nextCommand;

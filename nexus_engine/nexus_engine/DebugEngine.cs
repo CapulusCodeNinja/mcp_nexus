@@ -690,21 +690,32 @@ public class DebugEngine : IDebugEngine
                     continue;
                 }
 
-                // Close idle session synchronously for determinism
-                try
-                {
-                    m_Logger.Info("Auto-closing idle session {SessionId} after {Minutes} minutes of inactivity", sessionId, sessionTimeout.TotalMinutes);
-                    CloseSessionAsync(sessionId, "IdleTimeout").GetAwaiter().GetResult();
-                }
-                catch (Exception ex)
-                {
-                    m_Logger.Error(ex, "Error auto-closing idle session {SessionId}", sessionId);
-                }
+                // Close idle session using fire-and-forget to avoid blocking the timer thread
+                m_Logger.Info("Auto-closing idle session {SessionId} after {Minutes} minutes of inactivity", sessionId, sessionTimeout.TotalMinutes);
+                _ = CloseIdleSessionAsync(sessionId);
             }
             catch (Exception ex)
             {
                 m_Logger.Warn(ex, "Cleanup check failed for session {SessionId}", sessionId);
             }
+        }
+    }
+
+    /// <summary>
+    /// Closes an idle session asynchronously with proper exception handling.
+    /// This method is fire-and-forget safe to avoid blocking timer callbacks.
+    /// </summary>
+    /// <param name="sessionId">The session ID to close.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task CloseIdleSessionAsync(string sessionId)
+    {
+        try
+        {
+            await CloseSessionAsync(sessionId, "IdleTimeout").ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Error(ex, "Error auto-closing idle session {SessionId}", sessionId);
         }
     }
 

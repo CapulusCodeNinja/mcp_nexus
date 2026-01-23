@@ -74,8 +74,66 @@ internal class Manager : IDisposable
             m_Logger.Warn(ex, "Failed to initialize extensions FileSystemWatcher");
         }
 
-        // Load extensions at startup
-        LoadExtensionsAsync().Wait();
+        // Load extensions at startup (synchronous to avoid deadlocks in constructor)
+        LoadExtensions();
+    }
+
+    /// <summary>
+    /// Synchronously discovers and loads all available extensions from the extensions directory.
+    /// This method is used during construction to avoid async deadlock risks.
+    /// </summary>
+    private void LoadExtensions()
+    {
+        m_Logger.Info("Loading extensions from: {ExtensionsPath}", m_ExtensionsPath);
+
+        if (!m_FileSystem.DirectoryExists(m_ExtensionsPath))
+        {
+            m_Logger.Warn("Extensions directory does not exist: {ExtensionsPath}", m_ExtensionsPath);
+            m_FileSystem.CreateDirectory(m_ExtensionsPath);
+            m_Logger.Info("Created extensions directory: {ExtensionsPath}", m_ExtensionsPath);
+            return;
+        }
+
+        var metadataFiles = m_FileSystem.GetFiles(m_ExtensionsPath, "*.json", SearchOption.AllDirectories);
+        m_Logger.Info("Found {Count} metadata files", metadataFiles.Length);
+
+        // Build a new map to replace atomically
+        var newMap = new Dictionary<string, ExtensionMetadata>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var metadataFile in metadataFiles)
+        {
+            try
+            {
+                var meta = LoadExtensionMetadata(metadataFile);
+                if (meta != null)
+                {
+                    if (!newMap.ContainsKey(meta.Name))
+                    {
+                        newMap[meta.Name] = meta;
+                    }
+                    else
+                    {
+                        m_Logger.Warn("Duplicate extension name '{Name}' encountered; keeping first", meta.Name);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                m_Logger.Error(ex, "Failed to load extension from: {MetadataFile}", metadataFile);
+            }
+        }
+
+        lock (m_Lock)
+        {
+            m_Extensions.Clear();
+            foreach (var kv in newMap)
+            {
+                m_Extensions[kv.Key] = kv.Value;
+            }
+        }
+
+        _ = Interlocked.Increment(ref m_Version);
+        m_Logger.Info("Loaded {Count} extensions successfully", m_Extensions.Count);
     }
 
     /// <summary>
@@ -137,7 +195,20 @@ internal class Manager : IDisposable
     }
 
     /// <summary>
-    /// Loads a single extension from its metadata file.
+    /// Loads a single extension from its metadata file synchronously.
+    /// </summary>
+    /// <param name="metadataFile">The path to the metadata JSON file.</param>
+    /// <returns>The loaded extension metadata, or null if loading failed.</returns>
+    private ExtensionMetadata? LoadExtensionMetadata(string metadataFile)
+    {
+        m_Logger.Debug("Loading extension metadata from: {MetadataFile}", metadataFile);
+
+        var json = File.ReadAllText(metadataFile);
+        return ParseAndValidateMetadata(metadataFile, json);
+    }
+
+    /// <summary>
+    /// Loads a single extension from its metadata file asynchronously.
     /// </summary>
     /// <param name="metadataFile">The path to the metadata JSON file.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
@@ -145,7 +216,18 @@ internal class Manager : IDisposable
     {
         m_Logger.Debug("Loading extension metadata from: {MetadataFile}", metadataFile);
 
-        var json = await File.ReadAllTextAsync(metadataFile);
+        var json = await File.ReadAllTextAsync(metadataFile).ConfigureAwait(false);
+        return ParseAndValidateMetadata(metadataFile, json);
+    }
+
+    /// <summary>
+    /// Parses and validates extension metadata from JSON content.
+    /// </summary>
+    /// <param name="metadataFile">The path to the metadata file (for logging).</param>
+    /// <param name="json">The JSON content to parse.</param>
+    /// <returns>The validated extension metadata, or null if validation failed.</returns>
+    private ExtensionMetadata? ParseAndValidateMetadata(string metadataFile, string json)
+    {
         var metadata = JsonSerializer.Deserialize<ExtensionMetadata>(json, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
