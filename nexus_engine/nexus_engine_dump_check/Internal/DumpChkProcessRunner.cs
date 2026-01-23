@@ -112,10 +112,10 @@ internal sealed class DumpChkProcessRunner
 
                 // Wait briefly for the read tasks to complete after process termination
                 // This ensures proper cleanup of stream handles
-                const int CleanupTimeoutMs = 1000;
+                const int cleanupTimeoutMs = 1000;
                 _ = await Task.WhenAll(stdoutTask, stderrTask)
                     .ContinueWith(_ => true, TaskContinuationOptions.OnlyOnRanToCompletion)
-                    .WaitAsync(TimeSpan.FromMilliseconds(CleanupTimeoutMs))
+                    .WaitAsync(TimeSpan.FromMilliseconds(cleanupTimeoutMs))
                     .ConfigureAwait(false);
             }
             catch (TimeoutException)
