@@ -214,11 +214,11 @@ Features are documented in the pages below:
 This project is licensed under the **Apache License 2.0** - see the [LICENSE](LICENSE) file for details.
 
 The Apache License 2.0 allows you to:
-- Use the software commercially
-- Modify and distribute
-- Sublicense
-- Use patent claims
-- Include copyright notice
+- ✅ Use the software commercially
+- ✅ Modify and distribute
+- ✅ Sublicense
+- ✅ Use patent claims
+- ⚠️ Include copyright notice
 
 ## 🙏 Acknowledgments
 
