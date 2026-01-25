@@ -39,7 +39,7 @@
 
 .PARAMETER Filter
     Test filter expression to run only specific tests.
-    Example: "FullyQualifiedName~nexus_engine"
+    Example: "FullyQualifiedName~winaidbg_engine"
 
 .EXAMPLE
     .\New-CoverageReport.ps1
@@ -62,7 +62,7 @@
     Generates multiple report formats.
 
 .EXAMPLE
-    .\New-CoverageReport.ps1 -Filter "FullyQualifiedName~nexus_engine" -OpenReport:$false
+    .\New-CoverageReport.ps1 -Filter "FullyQualifiedName~winaidbg_engine" -OpenReport:$false
     
     Runs only engine tests, generates report without opening.
 
@@ -264,7 +264,7 @@ try {
     # Build ReportGenerator arguments
     $reportGenArgs = @(
         "-verbosity:Verbose",
-        "-title:Nexus - Unit Tests Coverage Report",
+        "-title:WinAiDbg - Unit Tests Coverage Report",
         "-reports:$coverageFilePaths",
         "-targetdir:$coverageReportDir",
         "-reporttypes:$ReportTypes"

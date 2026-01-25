@@ -5,7 +5,7 @@
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
           <Format>cobertura</Format>
-          <Exclude>[*Tests]*,[*.Tests]*,[*_unittests]*,[System.Text.RegularExpressions.Generated]*,[nexus_external_apis]*</Exclude>
+          <Exclude>[*Tests]*,[*.Tests]*,[*_unittests]*,[System.Text.RegularExpressions.Generated]*,[winaidbg_external_apis]*</Exclude>
           <ExcludeByFile>**/obj/**,**/bin/**,**/*RegexGenerator.g.cs</ExcludeByFile>
           <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
         </Configuration>
