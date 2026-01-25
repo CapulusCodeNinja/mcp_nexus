@@ -102,7 +102,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        _ = tools.Should().Contain(t => t.Name == "winaidbg_cancel_command");
+        _ = tools.Should().Contain(t => t.Name == "winaidbg_cancel_dump_analyze_command");
     }
 
     /// <summary>

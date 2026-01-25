@@ -198,7 +198,7 @@ In similar fashion, you can adapt these configurations for other MCP-compatible 
 - **`winaidbg_enqueue_async_dump_analyze_command`** - Execute WinDBG commands asynchronously
 - **`winaidbg_get_dump_analyze_commands_status`** - Get status of all commands (bulk polling)
 - **`winaidbg_read_dump_analyze_command_result`** - Read individual command results
-- **`winaidbg_cancel_command`** - Cancel a running command
+- **`winaidbg_cancel_dump_analyze_command`** - Cancel a running command
 - **`winaidbg_close_dump_analyze_session`** - Close session and cleanup resources
 
 ### MCP Resources
@@ -246,12 +246,11 @@ AI: I'll analyze that crash dump for you.
 ```
 winaidbg/                      - Main application (entry point, hosting)
 winaidbg_config/               - Configuration and logging
-winaidbg_engine/               - Debug engine (CDB sessions, command queue)
-winaidbg_engine_batch/         - Command batching system
+winaidbg_engine/               - Debug engine + subcomponents (CDB sessions, queue, batching, extensions)
 winaidbg_protocol/             - MCP protocol layer (tools, resources)
 winaidbg_setup/                - Service installation and management
 winaidbg_external_apis/        - Shared utilities (file system, process, etc.)
-winaidbg_extensions/           - PowerShell extension system
+winaidbg_web/                  - Static admin UI and docs
 ```
 
 ### Key Design Patterns

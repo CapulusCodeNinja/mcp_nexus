@@ -13,12 +13,17 @@ The project follows a strict modular architecture with clear separation of conce
 ```
 winaidbg/                      - Main application (entry point, hosting, CLI)
 winaidbg_config/               - Configuration and logging infrastructure
-winaidbg_engine/               - Core debug engine (CDB sessions, command queue)
-winaidbg_engine_batch/         - Command batching system (self-contained)
+winaidbg_engine/               - Core debug engine + subcomponents (see below)
+  winaidbg_engine/             - Core engine (CDB sessions, command queue)
+  winaidbg_engine_batch/       - Command batching system (self-contained)
+  winaidbg_engine_dump_check/  - Dump validation (dumpchk integration)
+  winaidbg_engine_extensions/  - PowerShell-based extension system
+  winaidbg_engine_share/       - Shared engine primitives (IDs, models, utilities)
 winaidbg_protocol/             - MCP protocol layer (tools, resources, HTTP/Stdio)
 winaidbg_setup/                - Service installation and management
-winaidbg_external_apis/            - Shared utilities (file system, process, registry, service)
-winaidbg_extensions/           - Extension system (PowerShell workflow support)
+winaidbg_external_apis/        - Shared utilities (file system, process, registry, service)
+winaidbg_web/                  - Static admin UI and docs
+unittests/                     - Unit tests (mirrors production structure)
 ```
 
 ### Library Responsibilities
@@ -32,7 +37,7 @@ winaidbg_extensions/           - Extension system (PowerShell workflow support)
 #### `winaidbg_engine` - Debug Engine
 **Purpose**: Core debugging functionality with CDB session and command queue management.
 
-#### `winaidbg_engine_batch` - Command Batching (NEW)
+#### `winaidbg_engine/winaidbg_engine_batch` - Command Batching (NEW)
 **Purpose**: Self-contained command batching system for improved throughput.
 
 #### `winaidbg_protocol` - MCP Protocol Layer
@@ -44,7 +49,7 @@ winaidbg_extensions/           - Extension system (PowerShell workflow support)
 #### `winaidbg_external_apis` - Shared Utilities
 **Purpose**: Cross-cutting utilities for file system, process management, registry, and service operations.
 
-#### `winaidbg_extensions` - Extension System
+#### `winaidbg_engine/winaidbg_engine_extensions` - Extension System
 **Purpose**: PowerShell-based extension system for complex debugging workflows.
 
 ### Key Design Patterns
@@ -77,8 +82,8 @@ winaidbg_extensions/           - Extension system (PowerShell workflow support)
 ### 🔥 IMMEDIATE REQUIREMENTS (Check These FIRST!)
 
 1. **✅ ALL TESTS MUST PASS**: Run `dotnet test` - ALL tests must be green before any submission. NO EXCEPTIONS.
-2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `mcp-win-ai-dbg.csproj` (e.g., 1.0.6.12 → 1.0.6.13). MANDATORY.
-   - The following version fields MUST exist and MUST have the same value: `Version`, `AssemblyVersion`, and `FileVersion`. Update all three together. NO EXCEPTIONS.
+2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `Directory.Build.props` (e.g., 1.1.6.12 → 1.1.6.13 via `VersionSuffix`). MANDATORY.
+   - The following version fields MUST exist and MUST have the same value: `Version`, `AssemblyVersion`, and `FileVersion`. Keep all three identical. NO EXCEPTIONS.
 3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges AND Test Statistics section. MANDATORY.
 4. **✅ MINIMUM COVERAGE THRESHOLDS MUST BE MAINTAINED**: ABSOLUTE REQUIREMENT.
    - **Line Coverage**: Must NEVER fall below **75%**. NO EXCEPTIONS.
@@ -125,7 +130,7 @@ winaidbg_extensions/           - Extension system (PowerShell workflow support)
 
 #### Versioning and Scope
 * **Version Increment:** Only the **build version component** (the last digit/identifier) in the project's versioning scheme must be incremented for this change. (Assuming a **Major.Minor.Patch.Build** semantic versioning standard.) NO EXCEPTIONS.
-* **Version Field Equality:** In `mcp-win-ai-dbg.csproj`, the `Version`, `AssemblyVersion`, and `FileVersion` values MUST be identical at all times. When bumping the version, update all three fields to the same value. ABSOLUTE REQUIREMENT.
+* **Version Field Equality:** In `Directory.Build.props`, the `Version`, `AssemblyVersion`, and `FileVersion` values MUST be identical at all times. When bumping the version, keep all three fields the same value. ABSOLUTE REQUIREMENT.
 
 ### 🎯 COMMON VIOLATIONS TO AVOID
 
@@ -150,7 +155,7 @@ winaidbg_extensions/           - Extension system (PowerShell workflow support)
 
 **✅ ALWAYS DO (ALL MANDATORY - NO EXCEPTIONS):**
 - Run `dotnet test` and verify all tests pass - ABSOLUTE REQUIREMENT
-- Update version in `mcp-win-ai-dbg.csproj` - MANDATORY
+- Update version in `Directory.Build.props` - MANDATORY
 - Update test count and Test Statistics section in README.md - NO EXCEPTIONS
 - **Run coverage and verify ≥75% line coverage and ≥75% branch coverage** - ABSOLUTE REQUIREMENT
 - Remove any unused code or files - ABSOLUTE REQUIREMENT
@@ -203,7 +208,7 @@ public ReturnType MethodName(ParameterType paramName)
 
 ### Code Organization
 - **One class per file**: Each class in its own file - ABSOLUTE REQUIREMENT
-- **Namespace structure**: Library-specific namespaces (e.g., `winaidbg.engine.*`, `winaidbg.protocol.*`, `winaidbg.engine.batch.*`) - MANDATORY
+- **Namespace structure**: Library-specific namespaces (e.g., `WinAiDbg.Engine.*`, `WinAiDbg.Protocol.*`, `WinAiDbg.Engine.Batch.*`) - MANDATORY
 - **Using statements**: Grouped by system, third-party, then project namespaces - NO EXCEPTIONS
 - **Member variable placement**: **ALL member variables (fields, properties, constants) MUST be declared at the TOP of the class definition, before any methods or constructors** - ABSOLUTE REQUIREMENT
 - **Method ordering**: Constructors, public methods, private methods, dispose pattern - MANDATORY

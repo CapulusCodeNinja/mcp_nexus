@@ -279,7 +279,7 @@ public class ProtocolToolsTests
     public async Task CancelCommand_WithInvalidSessionId_ReturnsResponse()
     {
         // Act
-        var result = await CancelCommandTool.nexus_cancel_dump_analyze_command("invalid-session-999", "cmd-123");
+        var result = await CancelCommandTool.winaidbg_cancel_dump_analyze_command("invalid-session-999", "cmd-123");
 
         // Assert
         _ = result.Should().NotBeNull();
@@ -296,7 +296,7 @@ public class ProtocolToolsTests
     public async Task CancelCommand_WithInvalidCommandId_ReturnsResponse()
     {
         // Act
-        var result = await CancelCommandTool.nexus_cancel_dump_analyze_command("session-123", "invalid-cmd-999");
+        var result = await CancelCommandTool.winaidbg_cancel_dump_analyze_command("session-123", "invalid-cmd-999");
 
         // Assert
         _ = result.Should().NotBeNull();
@@ -312,7 +312,7 @@ public class ProtocolToolsTests
     public async Task CancelCommand_ReturnsValidMarkdown()
     {
         // Act
-        var result = await CancelCommandTool.nexus_cancel_dump_analyze_command("test-session", "test-command");
+        var result = await CancelCommandTool.winaidbg_cancel_dump_analyze_command("test-session", "test-command");
 
         // Assert
         _ = result.Should().NotBeNull();

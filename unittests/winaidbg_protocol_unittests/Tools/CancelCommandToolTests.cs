@@ -46,7 +46,7 @@ public class CancelCommandToolTests
     }
 
     /// <summary>
-    /// Verifies that nexus_cancel_dump_analyze_command returns a result when command does not exist.
+    /// Verifies that winaidbg_cancel_dump_analyze_command returns a result when command does not exist.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -58,7 +58,7 @@ public class CancelCommandToolTests
         try
         {
             // Act
-            var result = await CancelCommandTool.nexus_cancel_dump_analyze_command("session-123", "cmd-999");
+            var result = await CancelCommandTool.winaidbg_cancel_dump_analyze_command("session-123", "cmd-999");
 
             // Assert
             _ = result.Should().NotBeNull();
@@ -74,7 +74,7 @@ public class CancelCommandToolTests
     }
 
     /// <summary>
-    /// Verifies that nexus_cancel_dump_analyze_command handles empty session ID.
+    /// Verifies that winaidbg_cancel_dump_analyze_command handles empty session ID.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -86,7 +86,7 @@ public class CancelCommandToolTests
         try
         {
             // Act
-            var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(string.Empty, "cmd-456");
+            var result = await CancelCommandTool.winaidbg_cancel_dump_analyze_command(string.Empty, "cmd-456");
 
             // Assert
             _ = result.Should().NotBeNull();
@@ -101,7 +101,7 @@ public class CancelCommandToolTests
     }
 
     /// <summary>
-    /// Verifies that nexus_cancel_dump_analyze_command handles empty command ID.
+    /// Verifies that winaidbg_cancel_dump_analyze_command handles empty command ID.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -113,7 +113,7 @@ public class CancelCommandToolTests
         try
         {
             // Act
-            var result = await CancelCommandTool.nexus_cancel_dump_analyze_command("session-123", string.Empty);
+            var result = await CancelCommandTool.winaidbg_cancel_dump_analyze_command("session-123", string.Empty);
 
             // Assert
             _ = result.Should().NotBeNull();
@@ -128,7 +128,7 @@ public class CancelCommandToolTests
     }
 
     /// <summary>
-    /// Verifies that nexus_cancel_dump_analyze_command handles null session ID.
+    /// Verifies that winaidbg_cancel_dump_analyze_command handles null session ID.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -140,7 +140,7 @@ public class CancelCommandToolTests
         try
         {
             // Act
-            var result = await CancelCommandTool.nexus_cancel_dump_analyze_command(string.Empty, "cmd-456");
+            var result = await CancelCommandTool.winaidbg_cancel_dump_analyze_command(string.Empty, "cmd-456");
 
             // Assert
             _ = result.Should().NotBeNull();
@@ -155,7 +155,7 @@ public class CancelCommandToolTests
     }
 
     /// <summary>
-    /// Verifies that nexus_cancel_dump_analyze_command returns formatted result with usage guide.
+    /// Verifies that winaidbg_cancel_dump_analyze_command returns formatted result with usage guide.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -167,7 +167,7 @@ public class CancelCommandToolTests
         try
         {
             // Act
-            var result = await CancelCommandTool.nexus_cancel_dump_analyze_command("session-123", "cmd-999");
+            var result = await CancelCommandTool.winaidbg_cancel_dump_analyze_command("session-123", "cmd-999");
 
             // Assert
             _ = result.Should().NotBeNull();

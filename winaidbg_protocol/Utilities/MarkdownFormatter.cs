@@ -90,7 +90,7 @@ internal static class MarkdownFormatter
         _ = md.AppendLine();
         _ = md.AppendLine("#### Tooling - Cancel Command");
         _ = md.AppendLine();
-        _ = md.AppendLine("- **Tool name**: `nexus_cancel_dump_analyze_command`");
+        _ = md.AppendLine("- **Tool name**: `winaidbg_cancel_dump_analyze_command`");
         _ = md.AppendLine("- **Action**: Cancel a queued or executing command in a session");
         _ = md.AppendLine("- **Input**:");
         _ = md.AppendLine("    * **sessionId**: string (required)");

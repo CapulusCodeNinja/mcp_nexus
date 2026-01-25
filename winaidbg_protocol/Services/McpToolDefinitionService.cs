@@ -268,7 +268,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     {
         return new McpToolSchema
         {
-            Name = "winaidbg_cancel_command",
+            Name = "winaidbg_cancel_dump_analyze_command",
             Description = "Cancels a queued or executing command.",
             InputSchema = new
             {
