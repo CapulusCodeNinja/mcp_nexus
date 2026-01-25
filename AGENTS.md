@@ -71,6 +71,12 @@ unittests/                     - Unit tests (mirrors production structure)
   - `ModelContextProtocol.AspNetCore` - ASP.NET Core integration
 - **WinDBG/CDB**: Windows debugging tools integration
 
+## Documentation as Source of Truth
+
+- The `documentation/` folder contains user-facing reference material for **configuration**, **integrations**, and **features**.
+- AI agents should treat these docs as a primary source of product behavior **only when they match the current implementation**.
+- **When code/config changes affect behavior**, agents must update the relevant `documentation/**/*.md` files in the same change so the docs stay accurate and current.
+
 ## 🚨 CRITICAL: MANDATORY GROUND RULES - READ FIRST! 🚨
 
 **⚠️ THESE RULES ARE NON-NEGOTIABLE AND MUST BE FOLLOWED FOR EVERY CODE CHANGE ⚠️**

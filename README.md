@@ -64,131 +64,14 @@ dotnet run --project winaidbg/winaidbg.csproj
 
 ## AI Integration
 
-In this chapter, we provide example configurations for integrating WinAiDbg with popular AI development environments using both STDIO and HTTP protocols.
+This section is an index of supported AI development environments.
+Open the relevant integration page below for the **environment-specific setup and usage instructions** (configuration files, transport selection for STDIO vs HTTP, and run/debug tips).
+
+- [Cursor IDE](documentation/integrations/CursorIDE/Integration.md)
+- [Google Antigravity](documentation/integrations/GoogleAntigravity/Integration.md)
+- [Visual Studio Code](documentation/integrations/VisualStudioCode/Integration.md)
+
 In similar fashion, you can adapt these configurations for other MCP-compatible clients.
-
-### Cursor IDE Integration
-
-#### STDIO Integration
-
-![Cursor Stdio](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/integrations/Cursor_stdio.gif?raw=true)
-
-```json
-{
-  "mcpServers": {
-    "winaidbg": {
-      "type": "stdio",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "C:\\Sources\\Github\\CapulusCodeNinja\\mcp-win-ai-dbg\\winaidbg\\winaidbg.csproj",
-        "--",
-        "--stdio"
-      ]
-    }
-  }
-}
-```
-
-#### HTTP Integration
-
-![Cursor Http](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/integrations/Cursor_http.gif?raw=true)
-
-```json
-{
-  "mcpServers": {
-    "winaidbg": {
-      "url": "http://0.0.0.0:5511/",
-      "headers": {
-        "Content-Type": "application/json"
-      }
-    }
-  }
-}
-```
-
-### Google Antigravity Integration
-
-#### STDIO Integration
-
-![Antigravity Stdio](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/integrations/Antigravity_stdio.gif?raw=true)
-
-```json
-{
-    "mcpServers": {
-        "winaidbg": {
-            "command": "C:\\Program Files\\dotnet\\dotnet.exe",
-            "args": [
-                "run",
-                "--project",
-                "C:\\Sources\\Github\\CapulusCodeNinja\\mcp-win-ai-dbg\\winaidbg\\winaidbg.csproj",
-                "--",
-                "--stdio"
-            ]
-        }
-    },
-    "inputs": []
-}
-```
-
-#### HTTP Integration
-
-![Antigravity Http](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/integrations/Antigravity_http.gif?raw=true)
-
-```json
-{
-    "mcpServers": {
-        "winaidbg": {
-            "serverUrl": "http://0.0.0.0:5511/",
-            "headers": {
-                "Content-Type": "application/json"
-            }
-        }
-    }
-}
-```
-
-### Visual Studio Code Integration
-
-#### STDIO Integration
-
-![VSCode Stdio](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/integrations/VSCode_stdio.gif?raw=true)
-
-```json
-{
-	"servers": {
-		"winaidbg": {
-			"type": "stdio",
-			"command": "dotnet",
-			"args": [
-				"run",
-				"--project",
-				"C:\\Sources\\Github\\CapulusCodeNinja\\mcp-win-ai-dbg\\winaidbg\\winaidbg.csproj",
-				"--",
-				"--stdio"
-			]
-		}
-	}
-}
-```
-
-#### HTTP Integration
-
-![VSCode Http](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/integrations/VSCode_http.gif?raw=true)
-
-```json
-{
-	"servers": {
-		"winaidbg": {
-			"url": "http://0.0.0.0:5511/",
-			"headers": {
-				"Content-Type": "application/json"
-			}
-		}
-	}
-}
-```
 
 ## Available MCP Tools
 
@@ -273,92 +156,32 @@ winaidbg_web/                  - Static admin UI and docs
 
 ## Configuration
 
-### Command Batching
+Configuration is documented in these section pages:
 
-WinAiDbg intelligently batches commands for improved throughput:
-
-```json
-{
-  "WinAiDbg": {
-    "DebugEngine": {
-      "Batching": {
-        "Enabled": true,
-        "MinBatchSize": 2,
-        "MaxBatchSize": 5,
-        "ExcludedCommands": [
-          "!analyze", "!dump", "!heap", "!memusage"
-        ]
-      }
-    }
-  }
-}
-```
-
-### Session Management
-
-```json
-{
-  "WinAiDbg": {
-    "SessionManagement": {
-      "MaxConcurrentSessions": 10,
-      "SessionTimeoutMinutes": 30,
-      "CleanupIntervalSeconds": 300,
-      "DefaultCommandTimeoutMinutes": 10,
-      "DeleteDumpFileOnSessionClose": false
-    }
-  }
-}
-```
-
-### Logging
-
-```json
-{
-  "Logging": {
-    "LogLevel": "Information"
-  }
-}
-```
-
-**Supported levels**: Trace, Debug, Information, Warning, Error, Critical
+- **Logging**: [Logging.md](documentation/configuration/Logging.md)
+- **WinAiDbg.Server**: [Server.md](documentation/configuration/Server.md)
+- **WinAiDbg.Transport**: [Transport.md](documentation/configuration/Transport.md)
+- **WinAiDbg.Debugging**: [Debugging.md](documentation/configuration/Debugging.md)
+- **WinAiDbg.Validation**: [Validation.md](documentation/configuration/Validation.md)
+- **WinAiDbg.AutomatedRecovery**: [AutomatedRecovery.md](documentation/configuration/AutomatedRecovery.md)
+- **WinAiDbg.Service**: [Service.md](documentation/configuration/Service.md)
+- **WinAiDbg.SessionManagement**: [SessionManagement.md](documentation/configuration/SessionManagement.md)
+- **WinAiDbg.Extensions**: [Extensions.md](documentation/configuration/Extensions.md)
+- **WinAiDbg.Batching**: [CommandBatching.md](documentation/configuration/CommandBatching.md)
+- **WinAiDbg.ProcessStatistics**: [ProcessStatistics.md](documentation/configuration/ProcessStatistics.md)
+- **IpRateLimiting**: [IpRateLimiting.md](documentation/configuration/IpRateLimiting.md)
 
 ## Advanced Features
 
-### Extension System
+Advanced features are documented in the pages below:
 
-Create custom analysis workflows with PowerShell:
-
-```powershell
-# extensions/my-analysis/my-analysis.ps1
-Import-Module WinAiDbgExtensions
-
-$result1 = Invoke-WinAiDbgCommand -Command "!analyze -v"
-$result2 = Invoke-WinAiDbgCommand -Command "kL"
-
-# Process results and return structured data
-return @{
-    CrashType = "Access Violation"
-    RootCause = "Null pointer dereference"
-    Recommendations = @("Add null checks", "Review error handling")
-}
-```
-
-### Real-time Notifications
-
-Receive live updates during analysis:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "notifications/commandStatus",
-  "params": {
-    "commandId": "cmd-abc123",
-    "sessionId": "session-xyz789",
-    "state": "Executing",
-    "timestamp": "2025-01-15T10:30:00Z"
-  }
-}
-```
+- **Extension system**: [ExtensionSystem.md](documentation/features/ExtensionSystem.md)
+- **Real-time notifications**: [RealTimeNotifications.md](documentation/features/RealTimeNotifications.md)
+- **Advanced crash analysis**: [AdvancedCrashAnalysis.md](documentation/features/AdvancedCrashAnalysis.md)
+- **AI-native design**: [AiNativeDesign.md](documentation/features/AiNativeDesign.md)
+- **Command batching**: [CommandBatching.md](documentation/features/CommandBatching.md)
+- **Session management**: [SessionManagement.md](documentation/features/SessionManagement.md)
+- **Structured results**: [StructuredResults.md](documentation/features/StructuredResults.md)
 
 ## Service Mode
 
