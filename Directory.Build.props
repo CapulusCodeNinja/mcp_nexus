@@ -38,8 +38,8 @@
 
     <PropertyGroup Label="Default Versioning">
         <!-- Default version for all projects (can be overridden per project) -->
-        <VersionPrefix>1.1.6</VersionPrefix>
-        <VersionSuffix>12</VersionSuffix>
+        <VersionPrefix>1.2.0</VersionPrefix>
+        <VersionSuffix>1</VersionSuffix>
 
         <!-- Calculated version -->
         <Version Condition="'$(Version)' == ''">$(VersionPrefix).$(VersionSuffix)</Version>
