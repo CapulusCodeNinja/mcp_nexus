@@ -2,12 +2,12 @@ using FluentAssertions;
 
 using Moq;
 
+using NLog;
+
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.Security;
 using WinAiDbg.External.Apis.ServiceManagement;
 using WinAiDbg.Setup.Validation;
-
-using NLog;
 
 using Xunit;
 

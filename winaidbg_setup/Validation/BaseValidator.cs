@@ -1,10 +1,10 @@
 using System.Runtime.Versioning;
 
+using NLog;
+
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.Security;
 using WinAiDbg.External.Apis.ServiceManagement;
-
-using NLog;
 
 namespace WinAiDbg.Setup.Validation
 {
@@ -134,12 +134,12 @@ namespace WinAiDbg.Setup.Validation
                 var pathParts = normalizedPath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
 
                 // Find "WinAiDbg" in the path (case-insensitive)
-                var WinAiDbgIndex = Array.FindIndex(pathParts, part => part.Equals("WinAiDbg", StringComparison.OrdinalIgnoreCase));
+                var winAiDbgIndex = Array.FindIndex(pathParts, part => part.Equals("WinAiDbg", StringComparison.OrdinalIgnoreCase));
 
-                if (WinAiDbgIndex > 0)
+                if (winAiDbgIndex > 0)
                 {
                     // Found WinAiDbg in the path, return everything up to that point
-                    var parentParts = pathParts.Take(WinAiDbgIndex).ToArray();
+                    var parentParts = pathParts.Take(winAiDbgIndex).ToArray();
                     if (parentParts.Length > 0)
                     {
                         // Reconstruct the path with proper separators

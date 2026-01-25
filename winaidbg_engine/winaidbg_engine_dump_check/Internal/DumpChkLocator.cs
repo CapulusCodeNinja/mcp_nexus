@@ -1,10 +1,10 @@
 using System.Runtime.InteropServices;
 
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.Engine.Share.WindowsKits;
 using WinAiDbg.External.Apis.FileSystem;
-
-using NLog;
 
 namespace WinAiDbg.Engine.DumpCheck.Internal;
 

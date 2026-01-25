@@ -1,10 +1,10 @@
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.Engine.DumpCheck.Internal;
 using WinAiDbg.Engine.Share.Models;
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.ProcessManagement;
-
-using NLog;
 
 namespace WinAiDbg.Engine.DumpCheck
 {

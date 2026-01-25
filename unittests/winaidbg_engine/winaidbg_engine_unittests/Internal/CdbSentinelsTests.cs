@@ -70,15 +70,15 @@ public class CdbSentinelsTests
     }
 
     /// <summary>
-    /// Verifies that all sentinel values start with the MCP_NEXUS_ prefix.
+    /// Verifies that all sentinel values start with the WinAiDbg prefix.
     /// </summary>
     [Fact]
     public void AllSentinels_ShouldContainWinAiDbgPrefix()
     {
         // Act & Assert
-        _ = WinAiDbg.Engine.Internal.CdbSentinels.StartMarker.Should().StartWith("MCP_NEXUS_");
-        _ = WinAiDbg.Engine.Internal.CdbSentinels.EndMarker.Should().StartWith("MCP_NEXUS_");
-        _ = WinAiDbg.Engine.Internal.CdbSentinels.CommandSeparator.Should().StartWith("MCP_NEXUS_");
+        _ = WinAiDbg.Engine.Internal.CdbSentinels.StartMarker.Should().StartWith("winaidbg_");
+        _ = WinAiDbg.Engine.Internal.CdbSentinels.EndMarker.Should().StartWith("winaidbg_");
+        _ = WinAiDbg.Engine.Internal.CdbSentinels.CommandSeparator.Should().StartWith("winaidbg_");
     }
 
     /// <summary>

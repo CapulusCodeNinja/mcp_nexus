@@ -1,7 +1,7 @@
+using NLog;
+
 using WinAiDbg.Protocol.Models;
 using WinAiDbg.Protocol.Notifications;
-
-using NLog;
 
 namespace WinAiDbg.Protocol.Services;
 

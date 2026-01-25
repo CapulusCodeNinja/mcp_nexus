@@ -1,10 +1,10 @@
 using System.Text.Json;
 
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.Engine.Extensions.Models;
 using WinAiDbg.External.Apis.FileSystem;
-
-using NLog;
 
 namespace WinAiDbg.Engine.Extensions.Core;
 

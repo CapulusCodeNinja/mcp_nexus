@@ -1,11 +1,11 @@
 using System.Runtime.Versioning;
 
+using NLog;
+
 using WinAiDbg.Config.Models;
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.Security;
 using WinAiDbg.External.Apis.ServiceManagement;
-
-using NLog;
 
 namespace WinAiDbg.Setup.Validation
 {

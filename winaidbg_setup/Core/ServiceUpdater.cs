@@ -1,14 +1,14 @@
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 
+using NLog;
+
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.ProcessManagement;
 using WinAiDbg.External.Apis.ServiceManagement;
 using WinAiDbg.Setup.Interfaces;
 using WinAiDbg.Setup.Models;
 using WinAiDbg.Setup.Utilities;
-
-using NLog;
 
 namespace WinAiDbg.Setup.Core;
 

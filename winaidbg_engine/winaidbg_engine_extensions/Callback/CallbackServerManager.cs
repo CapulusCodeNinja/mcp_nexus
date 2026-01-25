@@ -2,11 +2,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.Engine.Extensions.Security;
 using WinAiDbg.Engine.Share;
-
-using NLog;
 
 namespace WinAiDbg.Engine.Extensions.Callback;
 

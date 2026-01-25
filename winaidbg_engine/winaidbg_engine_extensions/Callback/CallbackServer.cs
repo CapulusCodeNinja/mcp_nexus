@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
+using NLog;
+
 using WinAiDbg.Engine.Extensions.Security;
 using WinAiDbg.Engine.Share;
 using WinAiDbg.Engine.Share.Models;
-
-using NLog;
 
 namespace WinAiDbg.Engine.Extensions.Callback;
 

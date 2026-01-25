@@ -1,10 +1,10 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
+using NLog;
+
 using WinAiDbg.CommandLine;
 using WinAiDbg.Config;
-
-using NLog;
 
 namespace WinAiDbg.Startup;
 

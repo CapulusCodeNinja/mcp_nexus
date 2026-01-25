@@ -1,9 +1,9 @@
 using System.Runtime.Versioning;
 
+using NLog;
+
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.Setup.Utilities;
-
-using NLog;
 
 namespace WinAiDbg.Setup.Management
 {

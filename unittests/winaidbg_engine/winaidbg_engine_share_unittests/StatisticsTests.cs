@@ -1,7 +1,7 @@
+using NLog;
+
 using WinAiDbg.Engine.Share.Models;
 using WinAiDbg.External.Apis.Native;
-
-using NLog;
 
 using Xunit;
 

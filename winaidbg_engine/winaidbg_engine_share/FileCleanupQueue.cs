@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 
-using WinAiDbg.External.Apis.FileSystem;
-
 using NLog;
+
+using WinAiDbg.External.Apis.FileSystem;
 
 namespace WinAiDbg.Engine.Share;
 
@@ -22,26 +22,26 @@ public class FileCleanupQueue : IFileCleanupQueue
     /// </summary>
     private const int RetryDelayMs = 5000;
 
-    /// <summary>
-    /// Interval between processing attempts when queue is not empty.
-    /// </summary>
-    private const int ProcessingIntervalMs = 1000;
-
     private readonly Logger m_Logger = LogManager.GetCurrentClassLogger();
     private readonly IFileSystem m_FileSystem;
+    private readonly TimeSpan m_RetryDelay;
     private readonly ConcurrentQueue<CleanupItem> m_Queue = new();
     private readonly CancellationTokenSource m_Cts = new();
     private readonly Task m_ProcessingTask;
+    private readonly SemaphoreSlim m_QueueSignal = new(0);
     private bool m_Disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FileCleanupQueue"/> class.
     /// </summary>
     /// <param name="fileSystem">The file system abstraction for file operations.</param>
-    public FileCleanupQueue(IFileSystem fileSystem)
+    /// <param name="startBackgroundProcessing">True to start background processing immediately.</param>
+    /// <param name="retryDelay">Optional retry delay override (defaults to 5 seconds).</param>
+    public FileCleanupQueue(IFileSystem fileSystem, bool startBackgroundProcessing = true, TimeSpan? retryDelay = null)
     {
         m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
-        m_ProcessingTask = Task.Run(ProcessQueueAsync);
+        m_RetryDelay = retryDelay ?? TimeSpan.FromMilliseconds(RetryDelayMs);
+        m_ProcessingTask = startBackgroundProcessing ? Task.Run(ProcessQueueAsync) : Task.CompletedTask;
     }
 
     /// <inheritdoc/>
@@ -54,6 +54,7 @@ public class FileCleanupQueue : IFileCleanupQueue
 
         m_Logger.Debug("Enqueuing file for cleanup: {FilePath}", filePath);
         m_Queue.Enqueue(new CleanupItem(filePath, 0));
+        _ = m_QueueSignal.Release();
     }
 
     /// <summary>
@@ -90,6 +91,7 @@ public class FileCleanupQueue : IFileCleanupQueue
                 // Task was cancelled, expected
             }
 
+            m_QueueSignal.Dispose();
             m_Cts.Dispose();
         }
 
@@ -108,15 +110,13 @@ public class FileCleanupQueue : IFileCleanupQueue
         {
             try
             {
-                if (m_Queue.TryDequeue(out var item))
+                if (!m_Queue.TryDequeue(out var item))
                 {
-                    await ProcessItemAsync(item);
+                    await m_QueueSignal.WaitAsync(m_Cts.Token);
+                    continue;
                 }
-                else
-                {
-                    // Queue is empty, wait before checking again
-                    await Task.Delay(ProcessingIntervalMs, m_Cts.Token);
-                }
+
+                await ProcessItemAsync(item);
             }
             catch (OperationCanceledException)
             {
@@ -184,10 +184,28 @@ public class FileCleanupQueue : IFileCleanupQueue
         m_Logger.Debug("File deletion failed ({Reason}), re-queuing for retry {RetryCount}/{MaxRetries}: {FilePath}", reason, newRetryCount, MaxRetries, item.FilePath);
 
         // Wait before re-queuing to give the system time to release file handles
-        await Task.Delay(RetryDelayMs, m_Cts.Token);
+        await Task.Delay(m_RetryDelay, m_Cts.Token);
 
         // Re-queue at the end with incremented retry count
         m_Queue.Enqueue(new CleanupItem(item.FilePath, newRetryCount));
+        _ = m_QueueSignal.Release();
+    }
+
+    /// <summary>
+    /// Processes the next queued item synchronously for unit testing.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous processing operation, with a value indicating whether an item was processed.
+    /// </returns>
+    internal async Task<bool> ProcessNextItemForTestingAsync()
+    {
+        if (m_Queue.TryDequeue(out var item))
+        {
+            await ProcessItemAsync(item);
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>

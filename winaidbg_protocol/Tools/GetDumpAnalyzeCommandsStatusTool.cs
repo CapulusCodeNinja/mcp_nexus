@@ -2,10 +2,10 @@ using System.ComponentModel;
 
 using ModelContextProtocol.Server;
 
+using NLog;
+
 using WinAiDbg.Protocol.Services;
 using WinAiDbg.Protocol.Utilities;
-
-using NLog;
 
 namespace WinAiDbg.Protocol.Tools;
 

@@ -117,10 +117,10 @@ public sealed class ProcessOutputAggregatorTests
         // Wait for process to complete
         await process.WaitForExitAsync(CancellationToken.None);
 
-        // Give channel time to process
-        await Task.Delay(100);
-
         // Assert
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        _ = await aggregator.Reader.WaitToReadAsync(cts.Token);
+
         var lines = new List<ProcessOutputLine>();
         while (aggregator.Reader.TryRead(out var line))
         {
@@ -218,9 +218,11 @@ public sealed class ProcessOutputAggregatorTests
         await process1.WaitForExitAsync(CancellationToken.None);
         await process2.WaitForExitAsync(CancellationToken.None);
 
-        await Task.Delay(100);
-
         // Assert
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        _ = await aggregator1.Reader.WaitToReadAsync(cts.Token);
+        _ = await aggregator2.Reader.WaitToReadAsync(cts.Token);
+
         var lines1 = new List<ProcessOutputLine>();
         while (aggregator1.Reader.TryRead(out var line))
         {

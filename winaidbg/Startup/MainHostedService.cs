@@ -2,6 +2,8 @@ using System.Runtime.Versioning;
 
 using Microsoft.Extensions.Hosting;
 
+using NLog;
+
 using WinAiDbg.CommandLine;
 using WinAiDbg.Config;
 using WinAiDbg.Engine.Share;
@@ -12,8 +14,6 @@ using WinAiDbg.External.Apis.Security;
 using WinAiDbg.External.Apis.ServiceManagement;
 using WinAiDbg.Protocol;
 using WinAiDbg.Setup;
-
-using NLog;
 
 namespace WinAiDbg.Startup;
 

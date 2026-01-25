@@ -3,6 +3,8 @@ using System.Runtime.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using NLog;
+
 using WinAiDbg.CommandLine;
 using WinAiDbg.Config;
 using WinAiDbg.External.Apis.FileSystem;
@@ -11,8 +13,6 @@ using WinAiDbg.External.Apis.Security;
 using WinAiDbg.External.Apis.ServiceManagement;
 using WinAiDbg.Logging;
 using WinAiDbg.Startup;
-
-using NLog;
 
 namespace WinAiDbg;
 

@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.Engine.Batch.Internal;
-
-using NLog;
 
 namespace WinAiDbg.Engine.Batch;
 

@@ -222,8 +222,7 @@ public class TokenValidatorTests : IDisposable
     public void CleanupExpiredTokens_RemovesExpiredTokens()
     {
         // Arrange
-        var token = m_Validator.GenerateToken("session-1", "cmd-1", validityMinutes: 0);
-        Thread.Sleep(10); // Wait for token to expire
+        var token = m_Validator.GenerateToken("session-1", "cmd-1", validityMinutes: -1);
 
         // Act
         m_Validator.CleanupExpiredTokens();

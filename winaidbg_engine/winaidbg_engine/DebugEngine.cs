@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.Engine.Batch;
 using WinAiDbg.Engine.DumpCheck;
@@ -11,8 +13,6 @@ using WinAiDbg.Engine.Share.Events;
 using WinAiDbg.Engine.Share.Models;
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.ProcessManagement;
-
-using NLog;
 
 namespace WinAiDbg.Engine;
 

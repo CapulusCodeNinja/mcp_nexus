@@ -2,13 +2,13 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.Engine.Preprocessing;
 using WinAiDbg.Engine.Share.WindowsKits;
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.ProcessManagement;
-
-using NLog;
 
 namespace WinAiDbg.Engine.Internal;
 

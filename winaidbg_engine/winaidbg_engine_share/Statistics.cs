@@ -1,9 +1,9 @@
 using System.Text;
 
+using NLog;
+
 using WinAiDbg.Engine.Share.Models;
 using WinAiDbg.External.Apis.Native;
-
-using NLog;
 
 namespace WinAiDbg.Engine.Share;
 

@@ -3,13 +3,13 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.Engine.Extensions.Models;
 using WinAiDbg.Engine.Extensions.Security;
 using WinAiDbg.Engine.Share.Models;
 using WinAiDbg.External.Apis.ProcessManagement;
-
-using NLog;
 
 namespace WinAiDbg.Engine.Extensions.Core;
 

@@ -1,13 +1,13 @@
 using System.Collections.Concurrent;
 using System.Threading.Channels;
 
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.Engine.Batch;
 using WinAiDbg.Engine.Share;
 using WinAiDbg.Engine.Share.Events;
 using WinAiDbg.Engine.Share.Models;
-
-using NLog;
 
 namespace WinAiDbg.Engine.Internal;
 

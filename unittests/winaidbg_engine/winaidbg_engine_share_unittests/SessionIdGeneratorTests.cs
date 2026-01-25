@@ -121,12 +121,6 @@ public class SessionIdGeneratorTests
         {
             var sessionId = new SessionIdGeneratorAccessor().GenerateSessionId();
             _ = sessionIds.Add(sessionId);
-
-            // Small delay to ensure different timestamps
-            if (i % 10 == 0)
-            {
-                Thread.Sleep(1);
-            }
         }
 
         // Assert - Should have many unique IDs
@@ -192,11 +186,10 @@ public class SessionIdGeneratorTests
         // Arrange
         var sessionIds = new List<string>();
 
-        // Act - Generate IDs with small delays
+        // Act - Generate IDs rapidly
         for (var i = 0; i < 10; i++)
         {
             sessionIds.Add(new SessionIdGeneratorAccessor().GenerateSessionId());
-            Thread.Sleep(2); // Ensure different timestamps
         }
 
         // Assert - IDs should be in ascending order (or very close)

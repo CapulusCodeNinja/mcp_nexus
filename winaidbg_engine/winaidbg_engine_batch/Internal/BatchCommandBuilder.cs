@@ -1,7 +1,7 @@
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.Engine.Share;
-
-using NLog;
 
 namespace WinAiDbg.Engine.Batch.Internal;
 

@@ -1,11 +1,11 @@
 using System.Diagnostics;
 using System.Text;
 
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.Engine.Share.Models;
 using WinAiDbg.External.Apis.ProcessManagement;
-
-using NLog;
 
 namespace WinAiDbg.Engine.DumpCheck.Internal;
 

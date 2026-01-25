@@ -2,10 +2,10 @@ using FluentAssertions;
 
 using Moq;
 
+using NLog;
+
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.Setup.Management;
-
-using NLog;
 
 using Xunit;
 

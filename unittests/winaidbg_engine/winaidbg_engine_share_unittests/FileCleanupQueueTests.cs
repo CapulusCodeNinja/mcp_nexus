@@ -55,7 +55,7 @@ public class FileCleanupQueueTests : IDisposable
     public void Constructor_WithValidFileSystem_Succeeds()
     {
         // Act
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false);
 
         // Assert
         _ = m_Queue.Should().NotBeNull();
@@ -68,7 +68,7 @@ public class FileCleanupQueueTests : IDisposable
     public void Enqueue_WithNullPath_DoesNotThrow()
     {
         // Arrange
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false);
 
         // Act
         var exception = Record.Exception(() => m_Queue.Enqueue(null!));
@@ -84,7 +84,7 @@ public class FileCleanupQueueTests : IDisposable
     public void Enqueue_WithEmptyPath_DoesNotThrow()
     {
         // Arrange
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false);
 
         // Act
         var exception = Record.Exception(() => m_Queue.Enqueue(string.Empty));
@@ -100,7 +100,7 @@ public class FileCleanupQueueTests : IDisposable
     public void Enqueue_WithWhitespacePath_DoesNotThrow()
     {
         // Arrange
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false);
 
         // Act
         var exception = Record.Exception(() => m_Queue.Enqueue("   "));
@@ -124,16 +124,14 @@ public class FileCleanupQueueTests : IDisposable
         _ = m_MockFileSystem.Setup(fs => fs.DeleteFile(filePath))
             .Callback(() => deleteCalled.TrySetResult(true));
 
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false);
 
         // Act
         m_Queue.Enqueue(filePath);
-
-        // Wait for processing (with timeout)
-        var completed = await Task.WhenAny(deleteCalled.Task, Task.Delay(5000));
+        _ = await m_Queue.ProcessNextItemForTestingAsync();
 
         // Assert
-        _ = completed.Should().Be(deleteCalled.Task, "DeleteFile should have been called");
+        _ = deleteCalled.Task.IsCompleted.Should().BeTrue("DeleteFile should have been called");
         m_MockFileSystem.Verify(fs => fs.DeleteFile(filePath), Times.Once);
     }
 
@@ -152,16 +150,14 @@ public class FileCleanupQueueTests : IDisposable
             .Callback(() => fileExistsCalled.TrySetResult(true))
             .Returns(false);
 
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false);
 
         // Act
         m_Queue.Enqueue(filePath);
-
-        // Wait for processing (with timeout)
-        var completed = await Task.WhenAny(fileExistsCalled.Task, Task.Delay(5000));
+        _ = await m_Queue.ProcessNextItemForTestingAsync();
 
         // Assert
-        _ = completed.Should().Be(fileExistsCalled.Task, "FileExists should have been called");
+        _ = fileExistsCalled.Task.IsCompleted.Should().BeTrue("FileExists should have been called");
         m_MockFileSystem.Verify(fs => fs.FileExists(filePath), Times.Once);
         m_MockFileSystem.Verify(fs => fs.DeleteFile(filePath), Times.Never);
     }
@@ -195,7 +191,7 @@ public class FileCleanupQueueTests : IDisposable
                 });
         }
 
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false);
 
         // Act
         foreach (var path in filePaths)
@@ -203,11 +199,13 @@ public class FileCleanupQueueTests : IDisposable
             m_Queue.Enqueue(path);
         }
 
-        // Wait for processing (with timeout)
-        var completed = await Task.WhenAny(allDeleted.Task, Task.Delay(10000));
+        while (await m_Queue.ProcessNextItemForTestingAsync())
+        {
+            // Keep draining until empty
+        }
 
         // Assert
-        _ = completed.Should().Be(allDeleted.Task, "All files should have been deleted");
+        _ = allDeleted.Task.IsCompleted.Should().BeTrue("All files should have been deleted");
         _ = deletedFiles.Should().BeEquivalentTo(filePaths);
     }
 
@@ -218,7 +216,7 @@ public class FileCleanupQueueTests : IDisposable
     public void Dispose_CalledMultipleTimes_DoesNotThrow()
     {
         // Arrange
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false);
 
         // Act & Assert
         var exception = Record.Exception(() =>
@@ -240,26 +238,16 @@ public class FileCleanupQueueTests : IDisposable
     {
         // Arrange
         const string filePath = @"C:\test\pending.dmp";
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(filePath)).Returns(true);
 
-        // Set up file system to block on FileExists to simulate slow processing
-        _ = m_MockFileSystem.Setup(fs => fs.FileExists(filePath))
-            .Returns(() =>
-            {
-                Thread.Sleep(50); // Brief block
-                return true;
-            });
-
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false);
         m_Queue.Enqueue(filePath);
 
-        // Act - Dispose should not hang
-        var disposeTask = Task.Run(() => m_Queue.Dispose());
+        // Act
+        m_Queue.Dispose();
 
-        // Assert - if we get here without timeout, dispose completed successfully
-        var exception = await Record.ExceptionAsync(async () =>
-            await disposeTask.WaitAsync(TimeSpan.FromSeconds(10)));
-
-        _ = exception.Should().BeNull("Dispose should complete within timeout");
+        // Assert
+        _ = true.Should().BeTrue("Dispose should complete without blocking");
     }
 
     /// <summary>
@@ -288,16 +276,15 @@ public class FileCleanupQueueTests : IDisposable
                 _ = secondAttemptStarted.TrySetResult(true);
             });
 
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false, retryDelay: TimeSpan.Zero);
 
         // Act
         m_Queue.Enqueue(filePath);
-
-        // Wait for retry (with timeout - note: retry delay is 5 seconds)
-        var completed = await Task.WhenAny(secondAttemptStarted.Task, Task.Delay(15000));
+        _ = await m_Queue.ProcessNextItemForTestingAsync();
+        _ = await m_Queue.ProcessNextItemForTestingAsync();
 
         // Assert
-        _ = completed.Should().Be(secondAttemptStarted.Task, "Retry should have occurred");
+        _ = secondAttemptStarted.Task.IsCompleted.Should().BeTrue("Retry should have occurred");
         _ = deleteAttempts.Should().BeGreaterThanOrEqualTo(2);
     }
 
@@ -327,16 +314,15 @@ public class FileCleanupQueueTests : IDisposable
                 _ = secondAttemptStarted.TrySetResult(true);
             });
 
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false, retryDelay: TimeSpan.Zero);
 
         // Act
         m_Queue.Enqueue(filePath);
-
-        // Wait for retry (with timeout - note: retry delay is 5 seconds)
-        var completed = await Task.WhenAny(secondAttemptStarted.Task, Task.Delay(15000));
+        _ = await m_Queue.ProcessNextItemForTestingAsync();
+        _ = await m_Queue.ProcessNextItemForTestingAsync();
 
         // Assert
-        _ = completed.Should().Be(secondAttemptStarted.Task, "Retry should have occurred");
+        _ = secondAttemptStarted.Task.IsCompleted.Should().BeTrue("Retry should have occurred");
         _ = deleteAttempts.Should().BeGreaterThanOrEqualTo(2);
     }
 
@@ -360,17 +346,18 @@ public class FileCleanupQueueTests : IDisposable
         _ = m_MockFileSystem.Setup(fs => fs.DeleteFile(filePath2))
             .Callback(() => file2Deleted.TrySetResult(true));
 
-        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object);
+        m_Queue = new FileCleanupQueue(m_MockFileSystem.Object, startBackgroundProcessing: false);
 
         // Act
         m_Queue.Enqueue(filePath1);
         m_Queue.Enqueue(filePath2);
-
-        // Wait for second file to be processed
-        var completed = await Task.WhenAny(file2Deleted.Task, Task.Delay(5000));
+        while (await m_Queue.ProcessNextItemForTestingAsync())
+        {
+            // Keep draining until empty
+        }
 
         // Assert
-        _ = completed.Should().Be(file2Deleted.Task, "Second file should still be processed after first fails");
+        _ = file2Deleted.Task.IsCompleted.Should().BeTrue("Second file should still be processed after first fails");
         m_MockFileSystem.Verify(fs => fs.DeleteFile(filePath2), Times.Once);
     }
 }

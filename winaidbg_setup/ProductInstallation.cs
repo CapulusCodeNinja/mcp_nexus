@@ -1,5 +1,7 @@
 using System.Runtime.Versioning;
 
+using NLog;
+
 using WinAiDbg.Config;
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.ProcessManagement;
@@ -9,8 +11,6 @@ using WinAiDbg.Setup.Core;
 using WinAiDbg.Setup.Management;
 using WinAiDbg.Setup.Models;
 using WinAiDbg.Setup.Validation;
-
-using NLog;
 
 namespace WinAiDbg.Setup
 {

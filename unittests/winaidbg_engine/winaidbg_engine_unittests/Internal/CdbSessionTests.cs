@@ -6,16 +6,16 @@ using FluentAssertions;
 
 using Moq;
 
+using NLog;
+using NLog.Config;
+using NLog.Targets;
+
 using WinAiDbg.Config;
 using WinAiDbg.Config.Models;
 using WinAiDbg.Engine.Internal;
 using WinAiDbg.Engine.Preprocessing;
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.ProcessManagement;
-
-using NLog;
-using NLog.Config;
-using NLog.Targets;
 
 using Xunit;
 

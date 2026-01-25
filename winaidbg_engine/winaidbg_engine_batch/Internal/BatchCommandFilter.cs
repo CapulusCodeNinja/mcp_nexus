@@ -1,6 +1,6 @@
-using WinAiDbg.Config;
-
 using NLog;
+
+using WinAiDbg.Config;
 
 namespace WinAiDbg.Engine.Batch.Internal;
 
