@@ -50,6 +50,9 @@ WinAiDbg is a platform that provides structured access to Windows debugging tool
 
 ### Installation
 
+For local development (or a one-off manual run), clone the repo, build it, and run WinAiDbg as a normal console process.
+This approach is typically the best fit for **STDIO-based integrations**, where the client starts WinAiDbg and communicates over stdin/stdout.
+
 ```bash
 # Clone the repository
 git clone https://github.com/CapulusCodeNinja/mcp-win-ai-dbg.git
@@ -58,8 +61,28 @@ cd mcp-win-ai-dbg
 # Build the project
 dotnet build
 
-# Run the server
+# Run the server (interactive / foreground)
 dotnet run --project winaidbg/winaidbg.csproj
+```
+
+### Service Mode
+
+Use Service Mode when you want WinAiDbg to run **in the background** (always-on) and be managed by the Windows Service Control Manager.
+This is the recommended setup for production/long-running environments.
+This approach is typically the best fit for **HTTP-based integrations**, where clients connect to a long-running WinAiDbg instance over the network.
+
+```bash
+# Install WinAiDbg as a Windows Service
+dotnet run --project winaidbg/winaidbg.csproj -- service install
+
+# Start the service
+net start WinAiDbg
+
+# Stop the service
+net stop WinAiDbg
+
+# Uninstall the Windows Service
+dotnet run --project winaidbg/winaidbg.csproj -- service uninstall
 ```
 
 ## AI Integration
@@ -182,24 +205,6 @@ Advanced features are documented in the pages below:
 - **Command batching**: [CommandBatching.md](documentation/features/CommandBatching.md)
 - **Session management**: [SessionManagement.md](documentation/features/SessionManagement.md)
 - **Structured results**: [StructuredResults.md](documentation/features/StructuredResults.md)
-
-## Service Mode
-
-Run as a Windows Service for production environments:
-
-```bash
-# Install as service
-dotnet run --project winaidbg/winaidbg.csproj -- service install
-
-# Start service
-net start WinAiDbg
-
-# Stop service
-net stop WinAiDbg
-
-# Uninstall service
-dotnet run --project winaidbg/winaidbg.csproj -- service uninstall
-```
 
 ## License
 

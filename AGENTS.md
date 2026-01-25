@@ -73,7 +73,7 @@ unittests/                     - Unit tests (mirrors production structure)
 
 ## Documentation as Source of Truth
 
-- The `documentation/` folder contains user-facing reference material for **configuration**, **integrations**, and **features**.
+- The `documentation/` folder contains user-facing reference material for **configuration**, **integrations**, **features**, etc.
 - AI agents should treat these docs as a primary source of product behavior **only when they match the current implementation**.
 - **When code/config changes affect behavior**, agents must update the relevant `documentation/**/*.md` files in the same change so the docs stay accurate and current.
 
