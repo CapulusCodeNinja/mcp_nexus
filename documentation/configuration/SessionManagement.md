@@ -1,8 +1,8 @@
-### Session Management Configuration
+### 🛡️ Session Management Configuration
 
 WinAiDbg manages debugger sessions (opening a dump, running commands, and cleaning up resources). These settings control concurrency, timeouts, and cleanup behavior.
 
-#### Settings
+#### ⚙️ Settings
 
 These settings live under:
 
@@ -24,7 +24,7 @@ These settings live under:
 - **`MemoryCleanupThresholdMB`**: Present in configuration defaults, but not referenced by the current session cleanup logic (no code references found).
 - **`DeleteDumpFileOnSessionClose`**: If `true`, WinAiDbg will delete the dump file when the session closes. Keep this `false` if you want to preserve dumps for later re-analysis.
 
-#### Example
+#### 🧩 Example
 
 ```json
 {
@@ -42,7 +42,7 @@ These settings live under:
 }
 ```
 
-#### Notes
+#### 📝 Notes
 
 - If you expect heavy parallel usage, increase `MaxConcurrentSessions` based on available CPU/RAM and debugger tool limits.
 - If you run WinAiDbg as a long-lived service, keep `CleanupIntervalSeconds` reasonably small so abandoned sessions don’t accumulate.

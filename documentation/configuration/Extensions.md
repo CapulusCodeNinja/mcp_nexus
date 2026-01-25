@@ -1,8 +1,8 @@
-### Extensions Configuration
+### 🧩 Extensions Configuration
 
 Controls the PowerShell-based extension system.
 
-#### Settings
+#### ⚙️ Settings
 
 ```json
 {

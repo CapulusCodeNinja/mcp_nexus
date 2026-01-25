@@ -1,8 +1,8 @@
-### Automated Recovery Configuration
+### 🛠️ Automated Recovery Configuration
 
 WinAiDbg includes automated recovery behavior to handle slow/complex commands and to perform periodic health checks.
 
-#### Settings
+#### ⚙️ Settings
 
 ```json
 {
@@ -26,7 +26,7 @@ WinAiDbg includes automated recovery behavior to handle slow/complex commands an
 - **`MaxRecoveryAttempts`**: Maximum retries/recovery attempts before giving up.
 - **`RecoveryDelaySeconds`**: Delay between recovery attempts.
 
-#### Notes
+#### 📝 Notes
 
 - In the current codebase, only `DefaultCommandTimeoutMinutes` is referenced (via `GetDefaultCommandTimeout()`).
 - The other fields are configuration-only today (no code references found).

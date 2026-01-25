@@ -1,8 +1,8 @@
-### Server Configuration
+### 🌐 Server Configuration
 
 Controls the host and port WinAiDbg binds to when running in HTTP mode.
 
-#### Settings
+#### ⚙️ Settings
 
 ```json
 {
@@ -20,6 +20,6 @@ Controls the host and port WinAiDbg binds to when running in HTTP mode.
   - Use `127.0.0.1` to listen only locally.
 - **`Port`**: The TCP port for the HTTP server.
 
-#### Notes
+#### 📝 Notes
 
 - If you change `Port`, update any client integrations that hard-code the URL (see the integration pages under `documentation/integrations/`).

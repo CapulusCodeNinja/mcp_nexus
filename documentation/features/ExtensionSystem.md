@@ -1,4 +1,4 @@
-### Extension System
+### 🧩 Extension System
 
 WinAiDbg supports a PowerShell-based extension system so you can bundle multi-step debugging workflows into reusable scripts.
 This is useful when you want to:
@@ -7,7 +7,7 @@ This is useful when you want to:
 - Post-process results into a structured summary
 - Share repeatable analysis recipes across a team
 
-#### Example
+#### 🧩 Example
 
 Extensions are discovered by scanning the configured extensions directory for JSON metadata files (for example `metadata.json`). Metadata must include at least `name` and `scriptFile`, and the referenced script must exist.
 
@@ -36,7 +36,7 @@ $result2 = Invoke-WinAiDbgCommand -Command "kL"
 Write-Output $result1
 ```
 
-#### Notes
+#### 📝 Notes
 
 - Extensions are intended to be deterministic workflows: keep them focused and avoid interactive prompts.
 - Extension scripts included in this repo live under `winaidbg_engine/winaidbg_engine_extensions/ExtensionScripts/` and provide working examples.

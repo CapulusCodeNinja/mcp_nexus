@@ -1,8 +1,8 @@
-### Service Configuration
+### 🛡️ Service Configuration
 
 Controls paths and naming used when WinAiDbg is installed and managed as a Windows Service.
 
-#### Settings
+#### ⚙️ Settings
 
 ```json
 {

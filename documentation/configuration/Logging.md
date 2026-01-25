@@ -1,8 +1,8 @@
-### Logging Configuration
+### 🧾 Logging Configuration
 
 This section controls WinAiDbg logging behavior.
 
-#### Settings
+#### ⚙️ Settings
 
 ```json
 {
@@ -18,7 +18,7 @@ This section controls WinAiDbg logging behavior.
 
 **Supported levels**: Trace, Debug, Information, Warning, Error, Critical
 
-#### Notes
+#### 📝 Notes
 
 - Use `Debug` or `Trace` when troubleshooting (these levels can be noisy).
 - Use `Information` for normal day-to-day operation.

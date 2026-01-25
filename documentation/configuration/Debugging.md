@@ -1,8 +1,8 @@
-### Debugging Configuration
+### 🧰 Debugging Configuration
 
 Controls how WinAiDbg launches and communicates with the Windows debugger (CDB/WinDBG engine), along with timeouts and symbol settings.
 
-#### Settings
+#### ⚙️ Settings
 
 ```json
 {
@@ -30,6 +30,6 @@ Controls how WinAiDbg launches and communicates with the Windows debugger (CDB/W
 - **`OutputReadingTimeoutMs`**: Present in configuration defaults, but not referenced by the current debugger session implementation (no code references found).
 - **`EnableCommandPreprocessing`**: Enables internal preprocessing/normalization of commands before execution.
 
-#### Notes
+#### 📝 Notes
 
 - `CdbPath` resolution uses the Windows Kits tool locator logic (probing known SDK install locations and configured paths) when not explicitly set.

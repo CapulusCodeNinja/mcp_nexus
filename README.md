@@ -11,37 +11,37 @@
 
 WinAiDbg is a comprehensive Model Context Protocol (MCP) server that provides AI systems with advanced Windows crash dump analysis capabilities. It combines the power of Microsoft's debugging tools (WinDBG/CDB) with intelligent analysis workflows, making professional-grade crash investigation accessible to AI assistants.
 
-## What is WinAiDbg?
+## 🎯 What is WinAiDbg?
 
 WinAiDbg is a platform that provides structured access to Windows debugging tools through the Model Context Protocol. It makes crash dump analysis more accessible by providing standardized tools and real-time progress tracking.
 
 ### The Problem We Solve
 
 **Traditional Crash Analysis Challenges:**
-- **Complexity**: Requires deep knowledge of Windows internals and debugging tools
-- **Time-consuming**: Manual analysis can take hours or days
-- **Expertise Required**: Need specialized debugging skills and experience
-- **Inconsistent Results**: Different analysts may reach different conclusions
-- **Tool Complexity**: WinDBG/CDB have steep learning curves
+- 🔍 **Complexity**: Requires deep knowledge of Windows internals and debugging tools
+- ⏱️ **Time-consuming**: Manual analysis can take hours or days
+- 🧠 **Expertise Required**: Need specialized debugging skills and experience
+- 📊 **Inconsistent Results**: Different analysts may reach different conclusions
+- 🔧 **Tool Complexity**: WinDBG/CDB have steep learning curves
 
 **WinAiDbg Solution:**
-- **Structured Access**: Provides standardized tools for debugging operations
-- **Real-time Updates**: Live progress tracking and notifications
-- **Consistent Results**: Provides structured output formats
-- **MCP Integration**: Works with AI clients through Model Context Protocol
-- **Professional Tools**: Built on Microsoft's industry-standard debugging infrastructure
+- 🔧 **Structured Access**: Provides standardized tools for debugging operations
+- ⚡ **Real-time Updates**: Live progress tracking and notifications
+- 📚 **Consistent Results**: Provides structured output formats
+- 🔄 **MCP Integration**: Works with AI clients through Model Context Protocol
+- 🛠️ **Professional Tools**: Built on Microsoft's industry-standard debugging infrastructure
 
-## Key Features
+## ✨ Key Features
 
-- **Advanced Crash Analysis**: Leverage WinDBG/CDB for comprehensive dump analysis
-- **AI-Native Design**: Built specifically for AI agent integration via MCP
-- **Command Batching**: Intelligent command grouping for improved throughput
-- **Real-time Notifications**: Live updates during analysis operations
-- **Session Management**: Robust session lifecycle with automatic cleanup
-- **Extensible Architecture**: PowerShell-based extension system for custom workflows
-- **Structured Results**: Parse debugging output into AI-friendly formats
+- 🔍 **Advanced Crash Analysis**: Leverage WinDBG/CDB for comprehensive dump analysis
+- 🤖 **AI-Native Design**: Built specifically for AI agent integration via MCP
+- ⚡ **Command Batching**: Intelligent command grouping for improved throughput
+- 🔄 **Real-time Notifications**: Live updates during analysis operations
+- 🛡️ **Session Management**: Robust session lifecycle with automatic cleanup
+- 🎯 **Extensible Architecture**: PowerShell-based extension system for custom workflows
+- 📊 **Structured Results**: Parse debugging output into AI-friendly formats
 
-## Quick Start
+## 🎯 Quick Start
 
 ### Prerequisites
 
@@ -51,6 +51,7 @@ WinAiDbg is a platform that provides structured access to Windows debugging tool
 ### Installation
 
 For local development (or a one-off manual run), clone the repo, build it, and run WinAiDbg as a normal console process.
+
 This approach is typically the best fit for **STDIO-based integrations**, where the client starts WinAiDbg and communicates over stdin/stdout.
 
 ```bash
@@ -65,10 +66,12 @@ dotnet build
 dotnet run --project winaidbg/winaidbg.csproj
 ```
 
-### Service Mode
+### 🛡️ Service Mode
 
 Use Service Mode when you want WinAiDbg to run **in the background** (always-on) and be managed by the Windows Service Control Manager.
+
 This is the recommended setup for production/long-running environments.
+
 This approach is typically the best fit for **HTTP-based integrations**, where clients connect to a long-running WinAiDbg instance over the network.
 
 ```bash
@@ -85,7 +88,7 @@ net stop WinAiDbg
 dotnet run --project winaidbg/winaidbg.csproj -- service uninstall
 ```
 
-## AI Integration
+## 🤖 AI Integration
 
 This section is an index of supported AI development environments.
 Open the relevant integration page below for the **environment-specific setup and usage instructions** (configuration files, transport selection for STDIO vs HTTP, and run/debug tips).
@@ -96,7 +99,7 @@ Open the relevant integration page below for the **environment-specific setup an
 
 In similar fashion, you can adapt these configurations for other MCP-compatible clients.
 
-## Available MCP Tools
+## 🛠️ Available MCP Tools
 
 ### Core Analysis Tools
 
@@ -115,7 +118,7 @@ In similar fashion, you can adapt these configurations for other MCP-compatible 
 - **`usage`** - Complete usage guide with examples
 - **`health`** - System health and metrics
 
-## Example Workflow
+## 📊 Example Workflow
 
 **Typical AI-driven crash analysis workflow:**
 
@@ -145,7 +148,7 @@ AI: I'll analyze that crash dump for you.
     Recommendation: Add null check before buffer access.
 ```
 
-## Architecture
+## 🏗️ Architecture
 
 ### Modular Structure
 
@@ -167,7 +170,7 @@ winaidbg_web/                  - Static admin UI and docs
 - **Batching**: Transparent command grouping for improved performance
 - **Event-Driven**: Real-time notifications for command state changes
 
-## Testing & Quality
+## 🧪 Testing & Quality
 
 ### Test Statistics
 
@@ -177,7 +180,7 @@ winaidbg_web/                  - Static admin UI and docs
 - **Fast execution** (~16 seconds for full suite)
 - **Zero build warnings**
 
-## Configuration
+## ⚙️ Configuration
 
 Configuration is documented in these section pages:
 
@@ -194,9 +197,9 @@ Configuration is documented in these section pages:
 - **WinAiDbg.ProcessStatistics**: [ProcessStatistics.md](documentation/configuration/ProcessStatistics.md)
 - **IpRateLimiting**: [IpRateLimiting.md](documentation/configuration/IpRateLimiting.md)
 
-## Advanced Features
+## 🚀 Features
 
-Advanced features are documented in the pages below:
+Features are documented in the pages below:
 
 - **Extension system**: [ExtensionSystem.md](documentation/features/ExtensionSystem.md)
 - **Real-time notifications**: [RealTimeNotifications.md](documentation/features/RealTimeNotifications.md)
@@ -206,7 +209,7 @@ Advanced features are documented in the pages below:
 - **Session management**: [SessionManagement.md](documentation/features/SessionManagement.md)
 - **Structured results**: [StructuredResults.md](documentation/features/StructuredResults.md)
 
-## License
+## 📄 License
 
 This project is licensed under the **Apache License 2.0** - see the [LICENSE](LICENSE) file for details.
 
@@ -217,7 +220,7 @@ The Apache License 2.0 allows you to:
 - Use patent claims
 - Include copyright notice
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
 - [C# SDK for MCP](https://github.com/modelcontextprotocol/csharp-sdk) - MCP implementation

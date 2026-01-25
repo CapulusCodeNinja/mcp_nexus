@@ -1,8 +1,8 @@
-### Validation Configuration
+### ✅ Validation Configuration
 
 Controls optional dump validation via `dumpchk`.
 
-#### Settings
+#### ⚙️ Settings
 
 ```json
 {
@@ -20,6 +20,6 @@ Controls optional dump validation via `dumpchk`.
 - **`DumpChkPath`**: Optional explicit path to `dumpchk.exe`. If `null`, WinAiDbg will attempt to locate it.
 - **`DumpChkTimeoutMs`**: Timeout for the validation step in milliseconds.
 
-#### Notes
+#### 📝 Notes
 
 - Validation is typically used as a fast pre-flight check before starting a full analysis session.

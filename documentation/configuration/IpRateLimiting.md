@@ -1,10 +1,10 @@
-### IP Rate Limiting Configuration
+### 🚦 IP Rate Limiting Configuration
 
 Defines rate limiting settings in configuration.
 
 Note: in the current codebase, these settings are loaded into configuration models, but the HTTP server does not reference them directly. If rate limiting is required, it must be wired into the HTTP pipeline.
 
-#### Settings
+#### ⚙️ Settings
 
 ```json
 {

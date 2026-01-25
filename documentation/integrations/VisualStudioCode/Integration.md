@@ -1,4 +1,4 @@
-### Visual Studio Code Integration
+### 🧩 Visual Studio Code Integration
 
 This page shows how to connect **WinAiDbg** to **Visual Studio Code** via MCP.
 The GIFs are quick visual walkthroughs; the JSON blocks below are the copy/paste configuration you’ll actually use.
@@ -8,7 +8,7 @@ The GIFs are quick visual walkthroughs; the JSON blocks below are the copy/paste
 - Make sure the **Windows Debugging Tools** (WinDBG/CDB) are installed and available on the machine that will run WinAiDbg.
 - Update any file paths in the snippets to match where you cloned this repo.
 
-#### STDIO Integration
+#### 🔌 STDIO Integration
 
 Use **STDIO** when you want VS Code to start WinAiDbg for you (typical for local development).
 
@@ -32,7 +32,7 @@ Use **STDIO** when you want VS Code to start WinAiDbg for you (typical for local
 }
 ```
 
-#### HTTP Integration
+#### 🌐 HTTP Integration
 
 Use **HTTP** when WinAiDbg is already running as a separate process/service and VS Code should connect to it over the network.
 If you change the host/port in your WinAiDbg configuration, update the `url` here to match.

@@ -1,8 +1,8 @@
-### Process Statistics Configuration
+### 📈 Process Statistics Configuration
 
 Controls whether WinAiDbg subscribes to process tracking and emits process snapshots to the logs.
 
-#### Settings
+#### ⚙️ Settings
 
 ```json
 {
