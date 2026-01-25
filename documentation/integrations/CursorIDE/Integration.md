@@ -12,7 +12,7 @@ The GIFs are quick visual walkthroughs; the JSON blocks below are the copy/paste
 
 Use **STDIO** when you want Cursor to start WinAiDbg for you (typical for local development).
 
-![Cursor Stdio](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/integrations/Cursor_stdio.gif?raw=true)
+![Cursor Stdio](Cursor_stdio.gif)
 
 ```json
 {
@@ -38,7 +38,7 @@ Use **HTTP** when WinAiDbg is already running as a separate process/service and 
 If you change the host/port in your WinAiDbg configuration, update the `url` here to match.
 Note: `0.0.0.0` is a server bind address (listen on all interfaces). For a local client connection, use `localhost` (or `127.0.0.1`).
 
-![Cursor Http](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/integrations/Cursor_http.gif?raw=true)
+![Cursor Http](Cursor_http.gif)
 
 ```json
 {

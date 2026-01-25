@@ -12,7 +12,7 @@ The GIFs are quick visual walkthroughs; the JSON blocks below are the copy/paste
 
 Use **STDIO** when you want VS Code to start WinAiDbg for you (typical for local development).
 
-![VSCode Stdio](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/integrations/VSCode_stdio.gif?raw=true)
+![VSCode Stdio](VSCode_stdio.gif)
 
 ```json
 {
@@ -38,7 +38,7 @@ Use **HTTP** when WinAiDbg is already running as a separate process/service and 
 If you change the host/port in your WinAiDbg configuration, update the `url` here to match.
 Note: `0.0.0.0` is a server bind address (listen on all interfaces). For a local client connection, use `localhost` (or `127.0.0.1`).
 
-![VSCode Http](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/integrations/VSCode_http.gif?raw=true)
+![VSCode Http](VSCode_http.gif)
 
 ```json
 {
