@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>winaidbg_engine</AssemblyName>
+    <RootNamespace>WinAiDbg.Engine</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="$(MicrosoftExtensionsLoggingAbstractionsVersion)" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftExtensionsDependencyInjectionAbstractionsVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
+    <PackageReference Include="System.Threading.Channels" Version="$(SystemThreadingChannelsVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>winaidbg_engine_unittests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\winaidbg_engine_dump_check\winaidbg_engine_dump_check.csproj" />
+    <ProjectReference Include="..\winaidbg_engine_extensions\winaidbg_engine_extensions.csproj" />
+    <ProjectReference Include="..\..\winaidbg_external_apis\winaidbg_external_apis.csproj" />
+    <ProjectReference Include="..\..\winaidbg_config\winaidbg_config.csproj" />
+    <ProjectReference Include="..\winaidbg_engine_batch\winaidbg_engine_batch.csproj" />
+    <ProjectReference Include="..\winaidbg_engine_share\winaidbg_engine_share.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="$(StyleCopAnalyzersVersion)" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

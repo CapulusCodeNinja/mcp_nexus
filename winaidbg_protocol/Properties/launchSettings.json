@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "winaidbg_protocol": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:57163;http://localhost:57164"
+    }
+  }
+}

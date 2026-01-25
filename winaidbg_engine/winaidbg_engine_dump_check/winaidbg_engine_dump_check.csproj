@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>WinAiDbg.Engine.DumpCheck</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="StyleCop.Analyzers" Version="$(StyleCopAnalyzersVersion)" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>winaidbg_engine_dump_check_unittests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\winaidbg_config\winaidbg_config.csproj" />
+        <ProjectReference Include="..\winaidbg_engine_share\winaidbg_engine_share.csproj" />
+        <ProjectReference Include="..\..\winaidbg_external_apis\winaidbg_external_apis.csproj" />
+    </ItemGroup>
+</Project>

@@ -1,0 +1,169 @@
+using System.Runtime.Versioning;
+
+using WinAiDbg.External.Apis.FileSystem;
+using WinAiDbg.External.Apis.Security;
+using WinAiDbg.External.Apis.ServiceManagement;
+
+using NLog;
+
+namespace WinAiDbg.Setup.Validation
+{
+    /// <summary>
+    /// Base class for validation operations with common functionality.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    internal abstract class BaseValidator
+    {
+        /// <summary>
+        /// Logger used for validation diagnostics and user-facing messages.
+        /// </summary>
+        private readonly Logger m_Logger;
+
+        /// <summary>
+        /// Gets the file system abstraction used for validation.
+        /// </summary>
+        protected IFileSystem FileSystem
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Gets the Windows service controller abstraction used for validation.
+        /// </summary>
+        protected IServiceController ServiceController
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Gets the administrator checker abstraction used for validation.
+        /// </summary>
+        protected IAdministratorChecker AdministratorChecker
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BaseValidator"/> class.
+        /// </summary>
+        /// <param name="fileSystem">File system abstraction.</param>
+        /// <param name="serviceController">Service controller abstraction.</param>
+        /// <param name="administratorChecker">Administrator checker abstraction.</param>
+        protected BaseValidator(IFileSystem fileSystem, IServiceController serviceController, IAdministratorChecker administratorChecker)
+        {
+            m_Logger = LogManager.GetCurrentClassLogger();
+            FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+            ServiceController = serviceController ?? throw new ArgumentNullException(nameof(serviceController));
+            AdministratorChecker = administratorChecker ?? throw new ArgumentNullException(nameof(administratorChecker));
+        }
+
+        /// <summary>
+        /// Validates that the current process has administrator privileges.
+        /// </summary>
+        /// <returns>True if running as administrator, false otherwise.</returns>
+        protected bool ValidateAdministratorPrivileges()
+        {
+            var isAdmin = AdministratorChecker.IsRunningAsAdministrator();
+            if (!isAdmin)
+            {
+                m_Logger.Error("Administrator privileges required to install to Program Files");
+                m_Logger.Error("Please run this command as Administrator (Run as Administrator)");
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Validates target directory permissions.
+        /// </summary>
+        /// <param name="directoryPath">Target directory path.</param>
+        /// <param name="directoryName">Name of the directory for logging purposes.</param>
+        /// <returns>True if permissions are valid, false otherwise.</returns>
+        protected bool ValidateDirectoryPermissions(string directoryPath, string directoryName)
+        {
+            try
+            {
+                // For directories that are inside the installation directory (like backups),
+                // we need to check if we can create the installation directory itself
+                var installationParentDir = GetInstallationParentDirectory(directoryPath);
+                if (!string.IsNullOrEmpty(installationParentDir))
+                {
+                    // Check if the installation's parent directory exists and is writable
+                    if (!FileSystem.DirectoryExists(installationParentDir))
+                    {
+                        m_Logger.Error("{DirectoryName} installation parent directory does not exist: {InstallationParentDirectory}", directoryName, installationParentDir);
+                        m_Logger.Error("Please ensure the installation parent directory exists and you have write permissions");
+                        return false;
+                    }
+
+                    m_Logger.Debug("Installation parent directory validation passed for {DirectoryName}: {InstallationParentDirectory}", directoryName, installationParentDir);
+                }
+            }
+            catch (Exception ex)
+            {
+                m_Logger.Error(ex, "Failed to validate {DirectoryName} directory path", directoryName);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the installation parent directory for validation purposes.
+        /// For directories inside the installation directory, returns the installation's parent.
+        /// </summary>
+        /// <param name="directoryPath">The directory path to analyze.</param>
+        /// <returns>The parent directory that should exist for validation.</returns>
+        private string GetInstallationParentDirectory(string directoryPath)
+        {
+            if (string.IsNullOrWhiteSpace(directoryPath))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                // Normalize the path to handle trailing slashes, mixed separators, etc.
+                var normalizedPath = Path.GetFullPath(directoryPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+
+                // Split the normalized path into parts
+                var pathParts = normalizedPath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
+
+                // Find "WinAiDbg" in the path (case-insensitive)
+                var WinAiDbgIndex = Array.FindIndex(pathParts, part => part.Equals("WinAiDbg", StringComparison.OrdinalIgnoreCase));
+
+                if (WinAiDbgIndex > 0)
+                {
+                    // Found WinAiDbg in the path, return everything up to that point
+                    var parentParts = pathParts.Take(WinAiDbgIndex).ToArray();
+                    if (parentParts.Length > 0)
+                    {
+                        // Reconstruct the path with proper separators
+                        var result = string.Join(Path.DirectorySeparatorChar.ToString(), parentParts);
+
+                        // Ensure we have a drive letter or UNC path
+                        if (normalizedPath.Length > 0 && (char.IsLetter(normalizedPath[0]) || normalizedPath.StartsWith("\\\\")))
+                        {
+                            return result;
+                        }
+                    }
+                }
+
+                // Fallback: use the immediate parent directory
+                var fallbackParent = Path.GetDirectoryName(normalizedPath);
+                return fallbackParent ?? string.Empty;
+            }
+            catch (Exception ex)
+            {
+                m_Logger.Warn(ex, "Failed to parse directory path: {DirectoryPath}", directoryPath);
+
+                // Fallback to immediate parent
+                return Path.GetDirectoryName(directoryPath) ?? string.Empty;
+            }
+        }
+    }
+}

@@ -1,8 +1,8 @@
-# MCP Nexus - AI Agent Instructions
+# WinAiDbg - AI Agent Instructions
 
 ## Project Overview
 
-MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Windows crash dump analysis and debugging. Built with a modular architecture, it provides a comprehensive suite of tools for analyzing memory dumps using WinDBG/CDB debugger integration, with advanced features including session management, command queuing, command batching, and extension support.
+WinAiDbg is a sophisticated Model Context Protocol (MCP) server designed for Windows crash dump analysis and debugging. Built with a modular architecture, it provides a comprehensive suite of tools for analyzing memory dumps using WinDBG/CDB debugger integration, with advanced features including session management, command queuing, command batching, and extension support.
 
 ## Modular Architecture
 
@@ -11,40 +11,40 @@ MCP Nexus is a sophisticated Model Context Protocol (MCP) server designed for Wi
 The project follows a strict modular architecture with clear separation of concerns:
 
 ```
-nexus/                      - Main application (entry point, hosting, CLI)
-nexus_config/               - Configuration and logging infrastructure
-nexus_engine/               - Core debug engine (CDB sessions, command queue)
-nexus_engine_batch/         - Command batching system (self-contained)
-nexus_protocol/             - MCP protocol layer (tools, resources, HTTP/Stdio)
-nexus_setup/                - Service installation and management
-nexus_external_apis/            - Shared utilities (file system, process, registry, service)
-nexus_extensions/           - Extension system (PowerShell workflow support)
+winaidbg/                      - Main application (entry point, hosting, CLI)
+winaidbg_config/               - Configuration and logging infrastructure
+winaidbg_engine/               - Core debug engine (CDB sessions, command queue)
+winaidbg_engine_batch/         - Command batching system (self-contained)
+winaidbg_protocol/             - MCP protocol layer (tools, resources, HTTP/Stdio)
+winaidbg_setup/                - Service installation and management
+winaidbg_external_apis/            - Shared utilities (file system, process, registry, service)
+winaidbg_extensions/           - Extension system (PowerShell workflow support)
 ```
 
 ### Library Responsibilities
 
-#### `nexus` - Main Application
+#### `winaidbg` - Main Application
 **Purpose**: Application entry point, hosting, and server mode management.
 
-#### `nexus_config` - Configuration & Logging
+#### `winaidbg_config` - Configuration & Logging
 **Purpose**: Centralized configuration loading and logging infrastructure.
 
-#### `nexus_engine` - Debug Engine
+#### `winaidbg_engine` - Debug Engine
 **Purpose**: Core debugging functionality with CDB session and command queue management.
 
-#### `nexus_engine_batch` - Command Batching (NEW)
+#### `winaidbg_engine_batch` - Command Batching (NEW)
 **Purpose**: Self-contained command batching system for improved throughput.
 
-#### `nexus_protocol` - MCP Protocol Layer
+#### `winaidbg_protocol` - MCP Protocol Layer
 **Purpose**: MCP protocol implementation with tools, resources, and transport (HTTP/Stdio).
 
-#### `nexus_setup` - Service Management
+#### `winaidbg_setup` - Service Management
 **Purpose**: Windows Service installation, update, and management.
 
-#### `nexus_external_apis` - Shared Utilities
+#### `winaidbg_external_apis` - Shared Utilities
 **Purpose**: Cross-cutting utilities for file system, process management, registry, and service operations.
 
-#### `nexus_extensions` - Extension System
+#### `winaidbg_extensions` - Extension System
 **Purpose**: PowerShell-based extension system for complex debugging workflows.
 
 ### Key Design Patterns
@@ -77,7 +77,7 @@ nexus_extensions/           - Extension system (PowerShell workflow support)
 ### 🔥 IMMEDIATE REQUIREMENTS (Check These FIRST!)
 
 1. **✅ ALL TESTS MUST PASS**: Run `dotnet test` - ALL tests must be green before any submission. NO EXCEPTIONS.
-2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `mcp_nexus.csproj` (e.g., 1.0.6.12 → 1.0.6.13). MANDATORY.
+2. **✅ VERSION MUST BE UPDATED**: Increment the build version in `mcp-win-ai-dbg.csproj` (e.g., 1.0.6.12 → 1.0.6.13). MANDATORY.
    - The following version fields MUST exist and MUST have the same value: `Version`, `AssemblyVersion`, and `FileVersion`. Update all three together. NO EXCEPTIONS.
 3. **✅ README.md MUST BE UPDATED**: Update test count and coverage in README.md badges AND Test Statistics section. MANDATORY.
 4. **✅ MINIMUM COVERAGE THRESHOLDS MUST BE MAINTAINED**: ABSOLUTE REQUIREMENT.
@@ -125,7 +125,7 @@ nexus_extensions/           - Extension system (PowerShell workflow support)
 
 #### Versioning and Scope
 * **Version Increment:** Only the **build version component** (the last digit/identifier) in the project's versioning scheme must be incremented for this change. (Assuming a **Major.Minor.Patch.Build** semantic versioning standard.) NO EXCEPTIONS.
-* **Version Field Equality:** In `mcp_nexus.csproj`, the `Version`, `AssemblyVersion`, and `FileVersion` values MUST be identical at all times. When bumping the version, update all three fields to the same value. ABSOLUTE REQUIREMENT.
+* **Version Field Equality:** In `mcp-win-ai-dbg.csproj`, the `Version`, `AssemblyVersion`, and `FileVersion` values MUST be identical at all times. When bumping the version, update all three fields to the same value. ABSOLUTE REQUIREMENT.
 
 ### 🎯 COMMON VIOLATIONS TO AVOID
 
@@ -150,7 +150,7 @@ nexus_extensions/           - Extension system (PowerShell workflow support)
 
 **✅ ALWAYS DO (ALL MANDATORY - NO EXCEPTIONS):**
 - Run `dotnet test` and verify all tests pass - ABSOLUTE REQUIREMENT
-- Update version in `mcp_nexus.csproj` - MANDATORY
+- Update version in `mcp-win-ai-dbg.csproj` - MANDATORY
 - Update test count and Test Statistics section in README.md - NO EXCEPTIONS
 - **Run coverage and verify ≥75% line coverage and ≥75% branch coverage** - ABSOLUTE REQUIREMENT
 - Remove any unused code or files - ABSOLUTE REQUIREMENT
@@ -203,7 +203,7 @@ public ReturnType MethodName(ParameterType paramName)
 
 ### Code Organization
 - **One class per file**: Each class in its own file - ABSOLUTE REQUIREMENT
-- **Namespace structure**: Library-specific namespaces (e.g., `nexus.engine.*`, `nexus.protocol.*`, `nexus.engine.batch.*`) - MANDATORY
+- **Namespace structure**: Library-specific namespaces (e.g., `winaidbg.engine.*`, `winaidbg.protocol.*`, `winaidbg.engine.batch.*`) - MANDATORY
 - **Using statements**: Grouped by system, third-party, then project namespaces - NO EXCEPTIONS
 - **Member variable placement**: **ALL member variables (fields, properties, constants) MUST be declared at the TOP of the class definition, before any methods or constructors** - ABSOLUTE REQUIREMENT
 - **Method ordering**: Constructors, public methods, private methods, dispose pattern - MANDATORY

@@ -8,7 +8,7 @@
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <TargetFramework>net8.0</TargetFramework>
-        <ApplicationIcon>$(MSBuildThisFileDirectory)/images/mcp_nexus.ico</ApplicationIcon>
+        <ApplicationIcon>$(MSBuildThisFileDirectory)/images/winaidbg.ico</ApplicationIcon>
     </PropertyGroup>
 
     <PropertyGroup Label="Shared Build Output">
@@ -18,7 +18,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Include="$(MSBuildThisFileDirectory)/images/mcp_nexus.ico" />
+        <Content Include="$(MSBuildThisFileDirectory)/images/winaidbg.ico" />
     </ItemGroup>
 
     <PropertyGroup Label="Code Quality">
