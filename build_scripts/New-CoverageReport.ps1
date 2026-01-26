@@ -1,3 +1,4 @@
+#Requires -Version 6.0
 <#
 .SYNOPSIS
     Generates a comprehensive HTML code coverage report for the entire solution.

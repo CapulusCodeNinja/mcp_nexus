@@ -133,7 +133,7 @@ public class ExtensionScripts : IExtensionScripts, IAsyncDisposable
         m_Engine = engine ?? throw new ArgumentNullException(nameof(engine));
         m_CallbackServerManager = callbackServerManager ?? throw new ArgumentNullException(nameof(callbackServerManager));
         m_Manager = new Manager(fileSystem, m_Settings);
-        m_Executor = new Executor(m_Manager, tokenValidator, processManager, m_Settings);
+        m_Executor = new Executor(m_Manager, tokenValidator, fileSystem, processManager, m_Settings);
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
         m_CommandCache = new ConcurrentDictionary<string, CommandInfo>();
         m_SessionCommands = new ConcurrentDictionary<string, ConcurrentBag<string>>();

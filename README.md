@@ -4,8 +4,8 @@
 
 ![WinAiDbg Icon](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/winaidbg_small.png?raw=true)
 
-![Tests](https://img.shields.io/badge/tests-1265%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-85.7%25%20lines-green)
+![Tests](https://img.shields.io/badge/tests-1272%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-86.9%25%20lines-green)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
@@ -113,7 +113,7 @@ In similar fashion, you can adapt these configurations for other MCP-compatible 
 ### MCP Resources
 
 - **`sessions`** - List all active debugging sessions
-- **`commands`** - List commands with filtering by session/state
+- **`commands`** - List commands across all active sessions
 
 ## 📊 Example Workflow
 
@@ -171,10 +171,10 @@ winaidbg_web/                  - Static admin UI and docs
 
 ### Test Statistics
 
-- **1265 total tests** (all passing)
-- **85.7% line coverage** (target: 75%)
-- **75.6% branch coverage** (target: 75%)
-- **Fast execution** (~16 seconds for full suite)
+- **1272 total tests** (all passing)
+- **86.9% line coverage** (target: 75%)
+- **76.9% branch coverage** (target: 75%)
+- **Fast execution** (~25 seconds for full suite)
 - **Zero build warnings**
 
 ## ⚙️ Configuration
