@@ -1,3 +1,4 @@
+#Requires -Version 6.0
 <#
 .SYNOPSIS
     Builds the entire solution in both Release and Debug configurations.
