@@ -23,6 +23,53 @@ public class SessionsResourceTests
     private readonly IServiceProvider m_ServiceProvider;
 
     /// <summary>
+    /// Extracts Markdown table rows (excluding header and separator rows).
+    /// </summary>
+    /// <param name="markdown">Markdown content containing the table.</param>
+    /// <param name="headerLine">The expected header line.</param>
+    /// <returns>Array of table rows, each row is an array of trimmed cell values.</returns>
+    private static string[][] ExtractTableRows(string markdown, string headerLine)
+    {
+        _ = markdown.Should().Contain(headerLine);
+
+        var lines = markdown.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+        var headerIndex = Array.FindIndex(lines, l => l.Trim().Equals(headerLine, StringComparison.Ordinal));
+        _ = headerIndex.Should().BeGreaterThanOrEqualTo(0);
+
+        // Table format:
+        // headerIndex: | ... |
+        // headerIndex+1: | --- | --- |
+        // headerIndex+2..: data rows
+        var dataStartIndex = headerIndex + 2;
+        _ = dataStartIndex.Should().BeLessThan(lines.Length);
+
+        var rows = new List<string[]>();
+        for (var i = dataStartIndex; i < lines.Length; i++)
+        {
+            var line = lines[i].Trim();
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                break;
+            }
+
+            if (!line.StartsWith('|') || !line.EndsWith('|'))
+            {
+                break;
+            }
+
+            var cells = line
+                .Trim('|')
+                .Split('|')
+                .Select(c => c.Trim())
+                .ToArray();
+
+            rows.Add(cells);
+        }
+
+        return rows.ToArray();
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SessionsResourceTests"/> class.
     /// </summary>
     public SessionsResourceTests()
@@ -71,6 +118,31 @@ public class SessionsResourceTests
         _ = result.Should().Contain("sess-1");
         _ = result.Should().Contain("sess-2");
         _ = result.Should().Contain("| Session ID | State | Active |");
+
+        var rows = ExtractTableRows(result, "| Session ID | State | Active |");
+        _ = rows.Length.Should().Be(2);
+        _ = rows[0].Length.Should().Be(3);
+        _ = rows[1].Length.Should().Be(3);
+    }
+
+    /// <summary>
+    /// Verifies that Sessions renders Unknown state when GetSessionState returns null.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Sessions_WhenSessionStateIsNull_RendersUnknown()
+    {
+        _ = m_MockDebugEngine.Setup(e => e.GetActiveSessions()).Returns(new[] { "sess-unknown" });
+        _ = m_MockDebugEngine.Setup(e => e.GetSessionState("sess-unknown")).Returns((WinAiDbg.Engine.Share.Models.SessionState?)null);
+        _ = m_MockDebugEngine.Setup(e => e.IsSessionActive("sess-unknown")).Returns(true);
+
+        var result = await SessionsResource.Sessions(m_ServiceProvider);
+
+        var rows = ExtractTableRows(result, "| Session ID | State | Active |");
+        _ = rows.Length.Should().Be(1);
+        _ = rows[0][0].Should().Be("sess-unknown");
+        _ = rows[0][1].Should().Be("Unknown");
+        _ = rows[0][2].Should().Be("Yes");
     }
 
     /// <summary>

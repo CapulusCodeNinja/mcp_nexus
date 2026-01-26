@@ -23,6 +23,49 @@ public class CommandsResourceTests
     private readonly IServiceProvider m_ServiceProvider;
 
     /// <summary>
+    /// Extracts Markdown table rows (excluding header and separator rows).
+    /// </summary>
+    /// <param name="markdown">Markdown content containing the table.</param>
+    /// <param name="headerLine">The expected header line.</param>
+    /// <returns>Array of table rows, each row is an array of trimmed cell values.</returns>
+    private static string[][] ExtractTableRows(string markdown, string headerLine)
+    {
+        _ = markdown.Should().Contain(headerLine);
+
+        var lines = markdown.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+        var headerIndex = Array.FindIndex(lines, l => l.Trim().Equals(headerLine, StringComparison.Ordinal));
+        _ = headerIndex.Should().BeGreaterThanOrEqualTo(0);
+
+        var dataStartIndex = headerIndex + 2;
+        _ = dataStartIndex.Should().BeLessThan(lines.Length);
+
+        var rows = new List<string[]>();
+        for (var i = dataStartIndex; i < lines.Length; i++)
+        {
+            var line = lines[i].Trim();
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                break;
+            }
+
+            if (!line.StartsWith('|') || !line.EndsWith('|'))
+            {
+                break;
+            }
+
+            var cells = line
+                .Trim('|')
+                .Split('|')
+                .Select(c => c.Trim())
+                .ToArray();
+
+            rows.Add(cells);
+        }
+
+        return rows.ToArray();
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CommandsResourceTests"/> class.
     /// </summary>
     public CommandsResourceTests()
@@ -77,6 +120,73 @@ public class CommandsResourceTests
         _ = result.Should().Contain(commandId);
         _ = result.Should().Contain("Queued");
         _ = result.Should().Contain("| Session ID | Command ID | Command | State | Success | Queued |");
+
+        var rows = ExtractTableRows(result, "| Session ID | Command ID | Command | State | Success | Queued |");
+        _ = rows.Length.Should().Be(1);
+        _ = rows[0].Length.Should().Be(6);
+        _ = rows[0][0].Should().Be(sessionId);
+        _ = rows[0][1].Should().Be(commandId);
+        _ = rows[0][3].Should().Be("Queued");
+    }
+
+    /// <summary>
+    /// Verifies that Commands are ordered by queued time ascending.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Commands_WhenMultipleCommandsExist_AreOrderedByQueuedTime()
+    {
+        var sessA = "sess-a";
+        var sessB = "sess-b";
+        var t1 = DateTime.Now.AddSeconds(-10);
+        var t2 = DateTime.Now.AddSeconds(-5);
+
+        var cmdA = WinAiDbg.Engine.Share.Models.CommandInfo.Enqueued(sessA, $"cmd-{sessA}-1", "k", t2, 1);
+        var cmdB = WinAiDbg.Engine.Share.Models.CommandInfo.Enqueued(sessB, $"cmd-{sessB}-1", "!analyze -v", t1, 2);
+
+        _ = m_MockDebugEngine.Setup(e => e.GetActiveSessions()).Returns(new[] { sessA, sessB });
+        _ = m_MockDebugEngine.Setup(e => e.GetAllCommandInfos(sessA)).Returns(new Dictionary<string, WinAiDbg.Engine.Share.Models.CommandInfo> { { cmdA.CommandId, cmdA } });
+        _ = m_MockDebugEngine.Setup(e => e.GetAllCommandInfos(sessB)).Returns(new Dictionary<string, WinAiDbg.Engine.Share.Models.CommandInfo> { { cmdB.CommandId, cmdB } });
+
+        var result = await CommandsResource.Commands(m_ServiceProvider);
+
+        var rows = ExtractTableRows(result, "| Session ID | Command ID | Command | State | Success | Queued |");
+        _ = rows.Length.Should().Be(2);
+
+        // Row[0] should be the earlier queuedTime (t1) => sessB/cmdB.
+        _ = rows[0][0].Should().Be(sessB);
+        _ = rows[0][1].Should().Be(cmdB.CommandId);
+        _ = rows[1][0].Should().Be(sessA);
+        _ = rows[1][1].Should().Be(cmdA.CommandId);
+    }
+
+    /// <summary>
+    /// Verifies that long command text is truncated in the Markdown table.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Commands_WhenCommandIsVeryLong_TruncatesCommandText()
+    {
+        var sessionId = "sess-1";
+        var commandId = $"cmd-{sessionId}-1";
+        var now = DateTime.Now;
+        var longCommand = new string('x', 200);
+        var cmdInfo = WinAiDbg.Engine.Share.Models.CommandInfo.Enqueued(sessionId, commandId, longCommand, now, 1234);
+
+        _ = m_MockDebugEngine.Setup(e => e.GetActiveSessions()).Returns(new[] { sessionId });
+        _ = m_MockDebugEngine
+            .Setup(e => e.GetAllCommandInfos(sessionId))
+            .Returns(new Dictionary<string, WinAiDbg.Engine.Share.Models.CommandInfo> { { commandId, cmdInfo } });
+
+        var result = await CommandsResource.Commands(m_ServiceProvider);
+
+        var rows = ExtractTableRows(result, "| Session ID | Command ID | Command | State | Success | Queued |");
+        _ = rows.Length.Should().Be(1);
+
+        var renderedCommand = rows[0][2];
+        _ = renderedCommand.Length.Should().BeLessThanOrEqualTo(60);
+        _ = renderedCommand.Should().EndWith("...");
+        _ = result.Should().NotContain(longCommand);
     }
 
     /// <summary>
