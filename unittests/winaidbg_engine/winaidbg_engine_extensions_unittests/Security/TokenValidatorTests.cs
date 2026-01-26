@@ -4,7 +4,7 @@ using WinAiDbg.Engine.Extensions.Security;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Extensions.Tests.Security;
+namespace WinAiDbg.Engine.Extensions.Unittests.Security;
 
 /// <summary>
 /// Unit tests for the <see cref="TokenValidator"/> class.

@@ -3,7 +3,7 @@ using WinAiDbg.Engine.Batch;
 using WinAiDbg.Engine.Internal;
 using WinAiDbg.Engine.Share.Models;
 
-namespace WinAiDbg.Engine.Tests.Internal;
+namespace WinAiDbg.Engine.Unittests.Internal;
 
 /// <summary>
 /// Test accessor for CommandQueue that exposes protected methods for unit testing.

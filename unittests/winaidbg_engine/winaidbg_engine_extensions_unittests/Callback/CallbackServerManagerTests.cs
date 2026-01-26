@@ -10,7 +10,7 @@ using WinAiDbg.Engine.Share;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Extensions.Tests.Callback;
+namespace WinAiDbg.Engine.Extensions.Unittests.Callback;
 
 /// <summary>
 /// Unit tests for the <see cref="CallbackServerManager"/> class.

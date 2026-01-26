@@ -4,7 +4,7 @@ using WinAiDbg.CommandLine;
 
 using Xunit;
 
-namespace WinAiDbg.Tests.CommandLine;
+namespace WinAiDbg.Unittests.CommandLine;
 
 /// <summary>
 /// Unit tests for the <see cref="CommandLineContext"/> class.

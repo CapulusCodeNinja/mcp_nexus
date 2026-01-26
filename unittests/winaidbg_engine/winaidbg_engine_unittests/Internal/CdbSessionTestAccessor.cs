@@ -6,7 +6,7 @@ using WinAiDbg.Engine.Preprocessing;
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.ProcessManagement;
 
-namespace WinAiDbg.Engine.Tests.Internal;
+namespace WinAiDbg.Engine.Unittests.Internal;
 
 /// <summary>
 /// Test accessor for CdbSession that exposes protected methods for unit testing.

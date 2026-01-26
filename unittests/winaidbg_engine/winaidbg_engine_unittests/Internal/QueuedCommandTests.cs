@@ -5,7 +5,7 @@ using WinAiDbg.Engine.Share.Models;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Tests.Internal;
+namespace WinAiDbg.Engine.Unittests.Internal;
 
 /// <summary>
 /// Unit tests for the <see cref="QueuedCommand"/> class.

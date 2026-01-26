@@ -11,7 +11,7 @@ using WinAiDbg.External.Apis.ProcessManagement;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Extensions.Tests;
+namespace WinAiDbg.Engine.Extensions.Unittests;
 
 /// <summary>
 /// Unit tests for the <see cref="ExtensionScripts"/> class.

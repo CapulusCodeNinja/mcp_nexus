@@ -8,7 +8,6 @@ using WinAiDbg.Engine.Batch;
 using WinAiDbg.Engine.Internal;
 using WinAiDbg.Engine.Share.Events;
 using WinAiDbg.Engine.Share.Models;
-using WinAiDbg.Engine.Tests.Internal;
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.ProcessManagement;
 

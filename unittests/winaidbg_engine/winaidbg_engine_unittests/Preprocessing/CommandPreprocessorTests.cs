@@ -10,7 +10,7 @@ using WinAiDbg.External.Apis.ProcessManagement;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Tests.Preprocessing;
+namespace WinAiDbg.Engine.Unittests.Preprocessing;
 
 /// <summary>
 /// Unit tests for the <see cref="CommandPreprocessor"/> class.

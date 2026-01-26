@@ -4,7 +4,7 @@ using WinAiDbg.Protocol.Utilities;
 
 using Xunit;
 
-namespace WinAiDbg.Protocol.Tests.Tools;
+namespace WinAiDbg.Protocol.Unittests.Tools;
 
 /// <summary>
 /// Tests for output wrapping decision for extension vs non-extension commands.

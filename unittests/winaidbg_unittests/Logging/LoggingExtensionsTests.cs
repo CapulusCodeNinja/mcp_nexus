@@ -9,7 +9,7 @@ using WinAiDbg.Logging;
 
 using Xunit;
 
-namespace WinAiDbg.Tests.Logging;
+namespace WinAiDbg.Unittests.Logging;
 
 /// <summary>
 /// Unit tests for the LoggingExtensions class.

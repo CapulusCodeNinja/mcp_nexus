@@ -2,7 +2,7 @@ using FluentAssertions;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.DumpCheck.Tests;
+namespace WinAiDbg.Engine.DumpCheck.Unittests;
 
 /// <summary>
 /// Placeholder tests for the dump check engine project.

@@ -15,7 +15,7 @@ using WinAiDbg.Engine.Share.Models;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Extensions.Tests.Callback;
+namespace WinAiDbg.Engine.Extensions.Unittests.Callback;
 
 /// <summary>
 /// Unit tests for the <see cref="CallbackServer"/> class.

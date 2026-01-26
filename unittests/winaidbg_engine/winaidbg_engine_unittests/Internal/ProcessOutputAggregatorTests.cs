@@ -6,7 +6,7 @@ using WinAiDbg.Engine.Internal;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Tests.Internal;
+namespace WinAiDbg.Engine.Unittests.Internal;
 
 /// <summary>
 /// Tests for <see cref="ProcessOutputAggregator"/>.

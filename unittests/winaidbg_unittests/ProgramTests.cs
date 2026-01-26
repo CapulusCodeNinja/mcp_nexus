@@ -16,7 +16,7 @@ using WinAiDbg.Startup;
 
 using Xunit;
 
-namespace WinAiDbg.Tests;
+namespace WinAiDbg.Unittests;
 
 /// <summary>
 /// Unit tests for the <see cref="Program"/> class.

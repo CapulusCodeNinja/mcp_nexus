@@ -11,7 +11,7 @@ using WinAiDbg.External.Apis.ProcessManagement;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.DumpCheck.Tests;
+namespace WinAiDbg.Engine.DumpCheck.Unittests;
 
 /// <summary>
 /// Unit tests for the <see cref="DumpValidator"/> class.

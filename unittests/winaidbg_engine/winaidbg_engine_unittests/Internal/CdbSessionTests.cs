@@ -19,7 +19,7 @@ using WinAiDbg.External.Apis.ProcessManagement;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Tests.Internal;
+namespace WinAiDbg.Engine.Unittests.Internal;
 
 /// <summary>
 /// Unit tests for the <see cref="CdbSession"/> class.
@@ -1405,7 +1405,7 @@ public class CdbSessionTests
                 Path.GetTempPath(),
                 "WinAiDbgTests");
             var mainLogPath = Path.Combine(
-                testRootDirectory.FullName,
+                testRootDirectory,
                 "DisposeAsync_CompressesCdbLog_AndDeletesOriginalLog",
                 Guid.NewGuid().ToString("N"),
                 "main.log");

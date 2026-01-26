@@ -9,7 +9,7 @@ using WinAiDbg.External.Apis.FileSystem;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Extensions.Tests.Core;
+namespace WinAiDbg.Engine.Extensions.Unittests.Core;
 
 /// <summary>
 /// Unit tests for the <see cref="Manager"/> class.

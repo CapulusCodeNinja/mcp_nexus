@@ -13,7 +13,7 @@ using WinAiDbg.Startup;
 
 using Xunit;
 
-namespace WinAiDbg.Tests.Startup;
+namespace WinAiDbg.Unittests.Startup;
 
 /// <summary>
 /// Unit tests for the <see cref="MainHostedService"/> class.

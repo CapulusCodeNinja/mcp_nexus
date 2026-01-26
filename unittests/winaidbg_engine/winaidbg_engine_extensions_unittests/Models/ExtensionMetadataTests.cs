@@ -4,7 +4,7 @@ using WinAiDbg.Engine.Extensions.Models;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Extensions.Tests.Models;
+namespace WinAiDbg.Engine.Extensions.Unittests.Models;
 
 /// <summary>
 /// Unit tests for the <see cref="ExtensionMetadata"/> class.
