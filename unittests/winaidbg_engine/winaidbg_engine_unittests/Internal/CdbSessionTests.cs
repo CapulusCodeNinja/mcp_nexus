@@ -482,21 +482,22 @@ public class CdbSessionTests
     }
 
     /// <summary>
-    /// Verifies that CreateCommandWithSentinels wraps command correctly.
+    /// Verifies that CreateSentinelWrappedLines returns a 3-line framing.
     /// </summary>
     [Fact]
-    public void CreateCommandWithSentinels_ValidCommand_ReturnsWrappedCommand()
+    public void CreateSentinelWrappedLines_ValidCommand_ReturnsThreeLinesInOrder()
     {
         // Arrange
         var command = "!analyze -v";
 
         // Act
-        var result = CdbSessionTestAccessor.CreateCommandWithSentinels(command);
+        var lines = CdbCommandFraming.CreateSentinelWrappedLines(command);
 
         // Assert
-        _ = result.Should().Contain("!analyze -v");
-        _ = result.Should().Contain(".echo");
-        _ = result.Should().Contain(";");
+        _ = lines.Should().HaveCount(3);
+        _ = lines[0].Should().Be($".echo {CdbSentinels.StartMarker}");
+        _ = lines[1].Should().Be(command);
+        _ = lines[2].Should().Be($".echo {CdbSentinels.EndMarker}");
     }
 
     /// <summary>
@@ -989,19 +990,34 @@ public class CdbSessionTests
     }
 
     /// <summary>
-    /// Verifies that CreateCommandWithSentinels properly formats command with echo statements.
+    /// Verifies that the timeout re-sync attempts to emit the end sentinel marker.
     /// </summary>
+    /// <returns>The asynchronous unit test task.</returns>
     [Fact]
-    public void CreateCommandWithSentinels_ComplexCommand_ReturnsCorrectFormat()
+    public async Task ReadCommandOutputAsync_WhenTimeoutOccurs_AttemptsToEmitEndSentinel()
     {
+        // Arrange
+        var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
+        accessor.SetDefaultCommandTimeoutForTesting(TimeSpan.FromMilliseconds(1));
+
+        var aggregator = new ProcessOutputAggregator();
+        var outputAggregatorField = typeof(CdbSession).GetField("m_OutputAggregator", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        outputAggregatorField!.SetValue(accessor, aggregator);
+
+        await using var memoryStream = new MemoryStream();
+        await using var writer = new StreamWriter(memoryStream, Encoding.UTF8, 1024, true);
+        var inputWriterField = typeof(CdbSession).GetField("m_InputWriter", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        inputWriterField!.SetValue(accessor, writer);
+
         // Act
-        var result = CdbSessionTestAccessor.CreateCommandWithSentinels("!analyze -v");
+        var act = async () => await accessor.ReadCommandOutputAsync(CancellationToken.None);
 
         // Assert
-        _ = result.Should().Contain(".echo");
-        _ = result.Should().Contain("!analyze -v");
-        _ = result.Should().Contain(CdbSentinels.StartMarker);
-        _ = result.Should().Contain(CdbSentinels.EndMarker);
+        _ = await act.Should().ThrowAsync<TimeoutException>();
+
+        await writer.FlushAsync();
+        var text = Encoding.UTF8.GetString(memoryStream.ToArray());
+        _ = text.Should().Contain($".echo {CdbSentinels.EndMarker}");
     }
 
     /// <summary>

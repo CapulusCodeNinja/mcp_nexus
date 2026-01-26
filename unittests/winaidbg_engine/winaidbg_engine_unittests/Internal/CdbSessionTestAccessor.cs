@@ -14,6 +14,7 @@ namespace WinAiDbg.Engine.Unittests.Internal;
 internal class CdbSessionTestAccessor : CdbSession
 {
     private bool? m_IsProcessExitedOverrideForTesting;
+    private TimeSpan? m_DefaultCommandTimeoutOverrideForTesting;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CdbSessionTestAccessor"/> class.
@@ -174,16 +175,6 @@ internal class CdbSessionTestAccessor : CdbSession
     }
 
     /// <summary>
-    /// Exposes the static CreateCommandWithSentinels method.
-    /// </summary>
-    /// <param name="command">The CDB command to wrap.</param>
-    /// <returns>The command string with sentinels.</returns>
-    public static new string CreateCommandWithSentinels(string command)
-    {
-        return CdbSession.CreateCommandWithSentinels(command);
-    }
-
-    /// <summary>
     /// Exposes the CleanupOldCdbLogs method for testing.
     /// </summary>
     /// <param name="sessionsDirectory">The directory containing the CDB log files.</param>
@@ -211,12 +202,41 @@ internal class CdbSessionTestAccessor : CdbSession
     }
 
     /// <summary>
+    /// Sets the default command timeout for testing purposes.
+    /// </summary>
+    /// <param name="timeout">The timeout to use.</param>
+    public void SetDefaultCommandTimeoutForTesting(TimeSpan timeout)
+    {
+        m_DefaultCommandTimeoutOverrideForTesting = timeout;
+    }
+
+    /// <summary>
     /// Overrides the IsProcessExited method to use the test-specific state when provided.
     /// </summary>
     /// <returns>True if the process has exited, false otherwise.</returns>
     protected override bool IsProcessExited()
     {
         return m_IsProcessExitedOverrideForTesting ?? base.IsProcessExited();
+    }
+
+    /// <summary>
+    /// Overrides the default command timeout for test determinism when provided.
+    /// </summary>
+    /// <returns>The command execution timeout.</returns>
+    protected override TimeSpan GetDefaultCommandTimeout()
+    {
+        return m_DefaultCommandTimeoutOverrideForTesting ?? base.GetDefaultCommandTimeout();
+    }
+
+    /// <summary>
+    /// Overrides output draining for tests to avoid arbitrary delays.
+    /// </summary>
+    /// <param name="maxDuration">Maximum time to drain.</param>
+    /// <param name="cancellationToken">External cancellation token.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    protected override Task DrainUntilEndMarkerAsync(TimeSpan maxDuration, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
     }
 
     /// <summary>

@@ -4,8 +4,8 @@
 
 ![WinAiDbg Icon](https://github.com/CapulusCodeNinja/mcp-win-ai-dbg/blob/main/images/winaidbg_small.png?raw=true)
 
-![Tests](https://img.shields.io/badge/tests-1275%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-86.6%25%20lines-green)
+![Tests](https://img.shields.io/badge/tests-1276%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-87.1%25%20lines-green)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 
@@ -172,8 +172,9 @@ winaidbg_web/                  - Static admin UI and docs
 ### Test Statistics
 
 - **1275 total tests** (all passing)
-- **86.6% line coverage** (target: 75%)
-- **76.9% branch coverage** (target: 75%)
+- **1276 total tests** (all passing)
+- **87.1% line coverage** (target: 75%)
+- **76.5% branch coverage** (target: 75%)
 - **Fast execution** (~25 seconds for full suite)
 - **Zero build warnings**
 - **Last verified**: 2026-01-26
