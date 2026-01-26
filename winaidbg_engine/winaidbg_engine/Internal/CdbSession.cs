@@ -467,7 +467,7 @@ internal class CdbSession : ICdbSession
         }
 
         // Ensure the Sessions directory exists
-        _ = Directory.CreateDirectory(sessionsDirectory);
+        m_FileSystem.CreateDirectory(sessionsDirectory);
 
         var retentionDays = m_Settings.Get().Logging.RetentionDays;
         if (retentionDays > 0)

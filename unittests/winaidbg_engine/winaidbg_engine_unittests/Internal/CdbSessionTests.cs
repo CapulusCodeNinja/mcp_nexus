@@ -1396,17 +1396,25 @@ public class CdbSessionTests
     {
         // Arrange
         var originalConfig = LogManager.Configuration;
+        string? testRootDirectory = null;
 
         try
         {
             var config = new LoggingConfiguration();
-            const string mainLogPath = "C:\\logs\\main.log";
+            testRootDirectory = Path.Combine(
+                Path.GetTempPath(),
+                "WinAiDbgTests");
+            var mainLogPath = Path.Combine(
+                testRootDirectory.FullName,
+                "DisposeAsync_CompressesCdbLog_AndDeletesOriginalLog",
+                Guid.NewGuid().ToString("N"),
+                "main.log");
             var fileTarget = new FileTarget("mainFile")
             {
                 FileName = mainLogPath,
+                CreateDirs = false,
             };
             config.AddTarget(fileTarget);
-            config.AddRuleForAllLevels(fileTarget);
             LogManager.Configuration = config;
 
             var fileSystem = new Mock<IFileSystem>();
@@ -1442,6 +1450,11 @@ public class CdbSessionTests
         finally
         {
             LogManager.Configuration = originalConfig;
+
+            if (!string.IsNullOrWhiteSpace(testRootDirectory) && Directory.Exists(testRootDirectory))
+            {
+                Directory.Delete(testRootDirectory, true);
+            }
         }
     }
 }
