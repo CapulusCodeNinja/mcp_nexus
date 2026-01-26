@@ -5,7 +5,7 @@ using WinAiDbg.External.Apis.Native;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Share.Tests;
+namespace WinAiDbg.Engine.Share.Unittests;
 
 /// <summary>
 /// Unit tests for the <see cref="Statistics"/> class.

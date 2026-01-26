@@ -2,7 +2,7 @@ using FluentAssertions;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Share.Tests;
+namespace WinAiDbg.Engine.Share.Unittests;
 
 /// <summary>
 /// Unit tests for SessionIdGenerator class.

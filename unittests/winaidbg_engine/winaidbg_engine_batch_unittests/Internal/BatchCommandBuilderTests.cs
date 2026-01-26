@@ -7,7 +7,7 @@ using WinAiDbg.Engine.Batch.Internal;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Batch.Tests.Internal;
+namespace WinAiDbg.Engine.Batch.Unittests.Internal;
 
 /// <summary>
 /// Unit tests for BatchCommandBuilder class.

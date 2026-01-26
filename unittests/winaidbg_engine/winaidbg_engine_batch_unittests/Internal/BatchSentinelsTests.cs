@@ -2,7 +2,7 @@ using WinAiDbg.Engine.Batch.Internal;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Batch.Tests;
+namespace WinAiDbg.Engine.Batch.Unittests;
 
 /// <summary>
 /// Tests for <see cref="BatchSentinels"/>.

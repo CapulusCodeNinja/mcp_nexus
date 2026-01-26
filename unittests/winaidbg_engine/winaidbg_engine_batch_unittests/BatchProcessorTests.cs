@@ -7,7 +7,7 @@ using WinAiDbg.Config.Models;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Batch.Tests;
+namespace WinAiDbg.Engine.Batch.Unittests;
 
 /// <summary>
 /// Unit tests for the <see cref="BatchProcessor"/> class.

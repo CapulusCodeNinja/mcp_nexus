@@ -9,7 +9,7 @@ using WinAiDbg.External.Apis.FileSystem;
 
 using Xunit;
 
-namespace WinAiDbg.Engine.Share.Tests;
+namespace WinAiDbg.Engine.Share.Unittests;
 
 /// <summary>
 /// Unit tests for <see cref="WindowsKitsToolLocator"/>.
