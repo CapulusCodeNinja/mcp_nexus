@@ -114,9 +114,6 @@ In similar fashion, you can adapt these configurations for other MCP-compatible 
 
 - **`sessions`** - List all active debugging sessions
 - **`commands`** - List commands with filtering by session/state
-- **`extensions`** - List available PowerShell extension scripts
-- **`usage`** - Complete usage guide with examples
-- **`health`** - System health and metrics
 
 ## 📊 Example Workflow
 

@@ -28,7 +28,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
     [Description("Reads the result of a command. Waits for completion if still executing. Deprecated: Use winaidbg_read_dump_analyze_command_result instead.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static async Task<object> nexus_read_dump_analyze_command_result(
+    public static Task<object> nexus_read_dump_analyze_command_result(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
         [Description("Command ID from nexus_enqueue_async_dump_analyze_command")] string commandId)
     {

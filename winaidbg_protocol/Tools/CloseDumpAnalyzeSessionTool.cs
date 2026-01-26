@@ -27,7 +27,7 @@ internal static class CloseDumpAnalyzeSessionTool
     [Description("Closes a debugging session and releases resources. Deprecated: Use winaidbg_close_dump_analyze_session instead.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static async Task<object> nexus_close_dump_analyze_session(
+    public static Task<object> nexus_close_dump_analyze_session(
         [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
     {
         return winaidbg_close_dump_analyze_session(sessionId);

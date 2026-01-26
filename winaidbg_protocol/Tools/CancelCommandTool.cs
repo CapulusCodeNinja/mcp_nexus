@@ -47,8 +47,8 @@ internal static class CancelCommandTool
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static Task<object> winaidbg_cancel_dump_analyze_command(
-    [Description("Session ID from winaidbg_open_dump_analyze_session")] string sessionId,
-    [Description("Command ID to cancel")] string commandId)
+        [Description("Session ID from winaidbg_open_dump_analyze_session")] string sessionId,
+        [Description("Command ID to cancel")] string commandId)
     {
         var logger = LogManager.GetCurrentClassLogger();
 

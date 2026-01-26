@@ -21,7 +21,7 @@ internal static class GetDumpAnalyzeCommandsStatusTool
     /// Deprecated: Use winaidbg_get_dump_analyze_commands_status instead.
     ///
     /// </summary>
-    /// <param name="sessionId">Session ID from nexus_get_dump_analyze_commands_status.</param>
+    /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
     /// <returns>Array of command status information.</returns>
     [McpServerTool]
     [Description("Gets status of all commands in a session. Use for efficient bulk monitoring. Deprecated: Use winaidbg_get_dump_analyze_commands_status instead.")]
