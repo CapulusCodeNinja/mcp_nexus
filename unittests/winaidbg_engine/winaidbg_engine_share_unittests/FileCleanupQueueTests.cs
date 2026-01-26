@@ -234,7 +234,7 @@ public class FileCleanupQueueTests : IDisposable
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Dispose_WithPendingItems_StopsGracefully()
+    public Task Dispose_WithPendingItems_StopsGracefully()
     {
         // Arrange
         const string filePath = @"C:\test\pending.dmp";
@@ -248,6 +248,7 @@ public class FileCleanupQueueTests : IDisposable
 
         // Assert
         _ = true.Should().BeTrue("Dispose should complete without blocking");
+        return Task.CompletedTask;
     }
 
     /// <summary>
