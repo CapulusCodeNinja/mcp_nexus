@@ -1,0 +1,19 @@
+{
+  "name": "process_with_sources",
+  "description": "Downloads sources for stack traces across all threads in the current process. Enumerates threads, collects return addresses, filters with ln, then runs lsa to download sources.",
+  "version": "1.0.0",
+  "author": "WinAiDbg Team",
+  "scriptType": "powershell",
+  "scriptFile": "process_with_sources.ps1",
+  "timeout": 1800000,
+  "parameters": [
+    {
+      "name": "processId",
+      "type": "string",
+      "description": "Optional process selector (e.g., '.' for current process). Typically '.' for user-mode dumps.",
+      "required": false,
+      "default": "."
+    }
+  ]
+}
+
