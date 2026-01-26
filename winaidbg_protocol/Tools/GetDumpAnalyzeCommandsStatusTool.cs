@@ -17,6 +17,24 @@ internal static class GetDumpAnalyzeCommandsStatusTool
 {
     /// <summary>
     /// Gets the status of all commands in a session. Efficient for monitoring multiple commands.
+    ///
+    /// Deprecated: Use winaidbg_get_dump_analyze_commands_status instead.
+    ///
+    /// </summary>
+    /// <param name="sessionId">Session ID from nexus_get_dump_analyze_commands_status.</param>
+    /// <returns>Array of command status information.</returns>
+    [McpServerTool]
+    [Description("Gets status of all commands in a session. Use for efficient bulk monitoring. Deprecated: Use winaidbg_get_dump_analyze_commands_status instead.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
+    public static Task<object> nexus_get_dump_analyze_commands_status(
+        [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
+    {
+        return winaidbg_get_dump_analyze_commands_status(sessionId);
+    }
+
+    /// <summary>
+    /// Gets the status of all commands in a session. Efficient for monitoring multiple commands.
     /// </summary>
     /// <param name="sessionId">Session ID from winaidbg_open_dump_analyze_session.</param>
     /// <returns>Array of command status information.</returns>

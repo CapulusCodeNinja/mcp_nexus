@@ -17,6 +17,27 @@ internal static class CancelCommandTool
 {
     /// <summary>
     /// Cancels a queued or executing command in a session.
+    ///
+    /// Deprecated: Use winaidbg_cancel_dump_analyze_command instead.
+    ///
+    /// </summary>
+    /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
+    /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
+    /// <returns>Command cancellation result.</returns>
+    [McpServerTool]
+    [Description("Cancels a queued or executing command. Deprecated: Use winaidbg_cancel_dump_analyze_command instead.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
+    public static Task<object> nexus_cancel_dump_analyze_command(
+        [Description("Session ID from nexus_open_dump_analyze_session")]
+        string sessionId,
+        [Description("Command ID to cancel")] string commandId)
+    {
+        return winaidbg_cancel_dump_analyze_command(sessionId, commandId);
+    }
+
+    /// <summary>
+    /// Cancels a queued or executing command in a session.
     /// </summary>
     /// <param name="sessionId">Session ID from winaidbg_open_dump_analyze_session.</param>
     /// <param name="commandId">Command ID from winaidbg_enqueue_async_dump_analyze_command.</param>
@@ -26,8 +47,8 @@ internal static class CancelCommandTool
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static Task<object> winaidbg_cancel_dump_analyze_command(
-        [Description("Session ID from winaidbg_open_dump_analyze_session")] string sessionId,
-        [Description("Command ID to cancel")] string commandId)
+    [Description("Session ID from winaidbg_open_dump_analyze_session")] string sessionId,
+    [Description("Command ID to cancel")] string commandId)
     {
         var logger = LogManager.GetCurrentClassLogger();
 

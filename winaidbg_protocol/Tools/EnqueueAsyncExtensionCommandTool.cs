@@ -17,6 +17,28 @@ internal static class EnqueueAsyncExtensionCommandTool
 {
     /// <summary>
     /// Enqueues an extension script for asynchronous execution in the specified session.
+    ///
+    /// Deprecated: Use nexus_enqueue_async_dump_analyze_command instead.
+    ///
+    /// </summary>
+    /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
+    /// <param name="extensionName">Name of the extension script to execute.</param>
+    /// <param name="parameters">Optional parameters to pass to the extension script.</param>
+    /// <returns>Command enqueue result with commandId.</returns>
+    [McpServerTool]
+    [Description("Enqueues an extension script for asynchronous execution. Returns commandId for tracking. Deprecated: Use nexus_enqueue_async_dump_analyze_command instead.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
+    public static async Task<object> nexus_enqueue_async_extension_command(
+        [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
+        [Description("Name of the extension script to execute")] string extensionName,
+        [Description("Optional parameters to pass to the extension script")] object? parameters = null)
+    {
+        return winaidbg_enqueue_async_extension_command(sessionId, extensionName, parameters);
+    }
+
+    /// <summary>
+    /// Enqueues an extension script for asynchronous execution in the specified session.
     /// </summary>
     /// <param name="sessionId">Session ID from winaidbg_open_dump_analyze_session.</param>
     /// <param name="extensionName">Name of the extension script to execute.</param>

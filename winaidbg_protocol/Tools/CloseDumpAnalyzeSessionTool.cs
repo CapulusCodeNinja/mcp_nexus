@@ -17,6 +17,24 @@ internal static class CloseDumpAnalyzeSessionTool
 {
     /// <summary>
     /// Closes a debugging session and releases all associated resources.
+    ///
+    /// Deprecated: Use winaidbg_close_dump_analyze_session instead.
+    ///
+    /// </summary>
+    /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
+    /// <returns>Session closure result.</returns>
+    [McpServerTool]
+    [Description("Closes a debugging session and releases resources. Deprecated: Use winaidbg_close_dump_analyze_session instead.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
+    public static async Task<object> nexus_close_dump_analyze_session(
+        [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
+    {
+        return winaidbg_close_dump_analyze_session(sessionId);
+    }
+
+    /// <summary>
+    /// Closes a debugging session and releases all associated resources.
     /// </summary>
     /// <param name="sessionId">Session ID from winaidbg_open_dump_analyze_session.</param>
     /// <returns>Session closure result.</returns>

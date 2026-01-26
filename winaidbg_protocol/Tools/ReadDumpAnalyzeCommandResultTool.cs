@@ -17,6 +17,26 @@ internal static class ReadDumpAnalyzeCommandResultTool
 {
     /// <summary>
     /// Reads the result of a previously enqueued command. Waits for command completion.
+    ///
+    /// Deprecated: Use winaidbg_read_dump_analyze_command_result instead.
+    ///
+    /// </summary>
+    /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
+    /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
+    /// <returns>Command result with output and status.</returns>
+    [McpServerTool]
+    [Description("Reads the result of a command. Waits for completion if still executing. Deprecated: Use winaidbg_read_dump_analyze_command_result instead.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
+    public static async Task<object> nexus_read_dump_analyze_command_result(
+        [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
+        [Description("Command ID from nexus_enqueue_async_dump_analyze_command")] string commandId)
+    {
+        return winaidbg_read_dump_analyze_command_result(sessionId, commandId);
+    }
+
+    /// <summary>
+    /// Reads the result of a previously enqueued command. Waits for command completion.
     /// </summary>
     /// <param name="sessionId">Session ID from winaidbg_open_dump_analyze_session.</param>
     /// <param name="commandId">Command ID from winaidbg_enqueue_async_dump_analyze_command.</param>
