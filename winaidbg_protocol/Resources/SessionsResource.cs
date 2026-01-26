@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 
 using WinAiDbg.Engine.Share;
+using WinAiDbg.Protocol.Utilities;
 
 namespace WinAiDbg.Protocol.Resources;
 
@@ -16,32 +17,6 @@ namespace WinAiDbg.Protocol.Resources;
 [McpServerResourceType]
 internal static class SessionsResource
 {
-    /// <summary>
-    /// Creates a Markdown table for session listing.
-    /// </summary>
-    /// <param name="headers">The table headers.</param>
-    /// <param name="rows">The table rows.</param>
-    /// <returns>Markdown table.</returns>
-    private static string CreateTable(string[] headers, string[][] rows)
-    {
-        var sb = new StringBuilder();
-        _ = sb.AppendLine("| " + string.Join(" | ", headers) + " |");
-        _ = sb.AppendLine("| " + string.Join(" | ", headers.Select(_ => "---")) + " |");
-
-        foreach (var row in rows)
-        {
-            var padded = new string[headers.Length];
-            for (var i = 0; i < headers.Length; i++)
-            {
-                padded[i] = i < row.Length ? row[i] : string.Empty;
-            }
-
-            _ = sb.AppendLine("| " + string.Join(" | ", padded) + " |");
-        }
-
-        return sb.ToString();
-    }
-
     /// <summary>
     /// Lists all active debugging sessions with status information.
     /// </summary>
@@ -89,7 +64,7 @@ internal static class SessionsResource
                 s.isActive ? "Yes" : "No",
             }).ToArray();
 
-            _ = md.Append(CreateTable(headers, rows));
+            _ = md.Append(MarkdownFormatter.CreateTable(headers, rows));
             return Task.FromResult(md.ToString());
         }
         catch (Exception ex)

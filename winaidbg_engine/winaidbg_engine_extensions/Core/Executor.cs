@@ -112,8 +112,19 @@ internal class Executor
             {
                 candidate = m_FileSystem.CombinePaths(dir, "pwsh.exe");
             }
-            catch
+            catch (ArgumentException ex)
             {
+                m_Logger.Debug(ex, "Ignoring invalid PATH entry while searching for pwsh.exe: {PathEntry}", dir);
+                continue;
+            }
+            catch (PathTooLongException ex)
+            {
+                m_Logger.Debug(ex, "Ignoring too-long PATH entry while searching for pwsh.exe: {PathEntry}", dir);
+                continue;
+            }
+            catch (NotSupportedException ex)
+            {
+                m_Logger.Debug(ex, "Ignoring unsupported PATH entry while searching for pwsh.exe: {PathEntry}", dir);
                 continue;
             }
 
