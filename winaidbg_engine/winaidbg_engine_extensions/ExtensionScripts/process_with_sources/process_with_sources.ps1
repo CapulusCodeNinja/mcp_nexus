@@ -95,13 +95,15 @@ function Get-ReturnAddressesFromStack {
     foreach ($line in $stackLines) {
         # Match stack line format: "Child-SP         RetAddr           Call Site"
         # We want the middle column (RetAddr)
-        if ($line -match '^\s*[0-9a-f`]+\s+([0-9a-f`]+)\s+') {
+        if ($line -match '^\s*[0-9a-fA-F`]+\s+([0-9a-fA-F`]+)\s+') {
             $retAddr = $matches[1]
 
             # Skip inline functions, invalid addresses, and null addresses
             # Filter out null addresses like 00000000`00000000
-            $isNullAddress = $retAddr -match '^[0`]+$'
-            if ($retAddr -notmatch 'Inline' -and $retAddr -match '[0-9a-f`]{8,}' -and -not $isNullAddress) {
+            $normalizedRetAddr = $retAddr -replace '`', ''
+            $isNullAddress = $normalizedRetAddr -match '^0+$'
+            $isWinDbgAddress = $retAddr -match '^[0-9a-fA-F]{8}(`[0-9a-fA-F]{8})?$'
+            if ($retAddr -notmatch 'Inline' -and $isWinDbgAddress -and -not $isNullAddress) {
                 $addresses += $retAddr
             }
         }
@@ -236,7 +238,7 @@ $threadsOutput
                 $firstLine = $lnLines[0]
                 if ($firstLine -is [string] -and (
                         $firstLine -match '\!' -or
-                        $firstLine -match '\.(cpp|c|h|hpp)\([0-9]+\)' -or
+                        $firstLine -match '\.[A-Za-z0-9]{1,10}\([0-9]+\)' -or
                         $firstLine -match '\+\s*0x[0-9a-fA-F]+'
                     )) {
                     $addressesWithSymbols += $addr
