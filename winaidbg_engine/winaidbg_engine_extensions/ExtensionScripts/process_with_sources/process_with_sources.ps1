@@ -231,8 +231,16 @@ $threadsOutput
         try {
             $lnOutput = Wait-WinAiDbgCommand -CommandId $lnCommandIds[$i]
 
-            if ($lnOutput[0] -match '\!' -or $lnOutput[0] -match '\.(cpp|c|h|hpp)\([0-9]+\)' -or $lnOutput[0] -match '\+\s*0x[0-9a-fA-F]+') {
-                $addressesWithSymbols += $addr
+            $lnLines = @($lnOutput)
+            if ($lnLines.Count -gt 0) {
+                $firstLine = $lnLines[0]
+                if ($firstLine -is [string] -and (
+                        $firstLine -match '\!' -or
+                        $firstLine -match '\.(cpp|c|h|hpp)\([0-9]+\)' -or
+                        $firstLine -match '\+\s*0x[0-9a-fA-F]+'
+                    )) {
+                    $addressesWithSymbols += $addr
+                }
             }
         }
         catch {
@@ -304,9 +312,18 @@ $addrAll
             
             # Check if source was found in cache (with .srcnoisy 3, should show "already loaded")
             # Also accept if output shows line numbers (source is displayed)
-            if ($verifyOutput[0] -match 'Found already loaded file:|already loaded' -or
-                $verifyOutput[0] -match '^\s*\d+:') {
-                $downloadedCount++
+            $verifyLines = @($verifyOutput)
+            if ($verifyLines.Count -gt 0) {
+                $firstVerifyLine = $verifyLines[0]
+                if ($firstVerifyLine -is [string] -and (
+                        $firstVerifyLine -match 'Found already loaded file:|already loaded' -or
+                        $firstVerifyLine -match '^\s*\d+:'
+                    )) {
+                    $downloadedCount++
+                }
+                else {
+                    $failedAddresses += $addr
+                }
             }
             else {
                 $failedAddresses += $addr
@@ -350,7 +367,18 @@ $addrAll
     $sourceOutputsText = New-Object System.Text.StringBuilder
     foreach ($kv in $sourceOutputs.GetEnumerator()) {
         [void]$sourceOutputsText.AppendLine("[$($kv.Key)]")
-        [void]$sourceOutputsText.AppendLine($kv.Value)
+
+        $valueText = if ($null -eq $kv.Value) {
+            ""
+        }
+        elseif ($kv.Value -is [System.Array]) {
+            $kv.Value -join "`n"
+        }
+        else {
+            [string]$kv.Value
+        }
+
+        [void]$sourceOutputsText.AppendLine($valueText)
         [void]$sourceOutputsText.AppendLine()
     }
 
