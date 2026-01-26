@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 using FluentAssertions;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +28,7 @@ public class SessionsResourceTests
     public SessionsResourceTests()
     {
         m_MockDebugEngine = new Mock<IDebugEngine>();
+        _ = m_MockDebugEngine.Setup(e => e.GetActiveSessions()).Returns(Array.Empty<string>());
 
         var services = new ServiceCollection();
         _ = services.AddSingleton(m_MockDebugEngine.Object);
@@ -47,11 +46,31 @@ public class SessionsResourceTests
         var result = await SessionsResource.Sessions(m_ServiceProvider);
 
         _ = result.Should().NotBeNullOrEmpty();
+        _ = result.Should().Contain("## Sessions");
+        _ = result.Should().Contain("**Count:** 0");
+        _ = result.Should().Contain("No active sessions.");
+    }
 
-        var json = JsonDocument.Parse(result);
-        _ = json.RootElement.GetProperty("count").GetInt32().Should().Be(0);
-        _ = json.RootElement.GetProperty("sessions").GetArrayLength().Should().Be(0);
-        _ = json.RootElement.GetProperty("note").GetString().Should().Contain("IDebugEngine");
+    /// <summary>
+    /// Verifies that Sessions returns active sessions when sessions exist.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Sessions_WhenSessionsExist_ReturnsSessions()
+    {
+        _ = m_MockDebugEngine.Setup(e => e.GetActiveSessions()).Returns(new[] { "sess-1", "sess-2" });
+        _ = m_MockDebugEngine.Setup(e => e.GetSessionState("sess-1")).Returns(WinAiDbg.Engine.Share.Models.SessionState.Active);
+        _ = m_MockDebugEngine.Setup(e => e.GetSessionState("sess-2")).Returns(WinAiDbg.Engine.Share.Models.SessionState.Initializing);
+        _ = m_MockDebugEngine.Setup(e => e.IsSessionActive("sess-1")).Returns(true);
+        _ = m_MockDebugEngine.Setup(e => e.IsSessionActive("sess-2")).Returns(false);
+
+        var result = await SessionsResource.Sessions(m_ServiceProvider);
+
+        _ = result.Should().Contain("## Sessions");
+        _ = result.Should().Contain("**Count:** 2");
+        _ = result.Should().Contain("sess-1");
+        _ = result.Should().Contain("sess-2");
+        _ = result.Should().Contain("| Session ID | State | Active |");
     }
 
     /// <summary>
@@ -63,8 +82,7 @@ public class SessionsResourceTests
     {
         var result = await SessionsResource.Sessions(m_ServiceProvider);
 
-        var json = JsonDocument.Parse(result);
-        _ = json.RootElement.TryGetProperty("timestamp", out _).Should().BeTrue();
+        _ = result.Should().Contain("**Timestamp:**");
     }
 
     /// <summary>
@@ -76,8 +94,7 @@ public class SessionsResourceTests
     {
         var result = await SessionsResource.Sessions(m_ServiceProvider);
 
-        var action = () => JsonDocument.Parse(result);
-        _ = action.Should().NotThrow();
+        _ = result.Should().Contain("## Sessions");
     }
 
     /// <summary>
@@ -93,10 +110,9 @@ public class SessionsResourceTests
 
         var result = await SessionsResource.Sessions(mockServiceProvider.Object);
 
-        var json = JsonDocument.Parse(result);
-        _ = json.RootElement.GetProperty("count").GetInt32().Should().Be(0);
-        _ = json.RootElement.TryGetProperty("error", out var errorProperty).Should().BeTrue();
-        _ = errorProperty.GetString().Should().Contain("Test error");
+        _ = result.Should().Contain("## Sessions");
+        _ = result.Should().Contain("**Status:** Error");
+        _ = result.Should().Contain("Test error");
     }
 
     /// <summary>
@@ -119,6 +135,6 @@ public class SessionsResourceTests
     {
         var result = await SessionsResource.Sessions(m_ServiceProvider);
 
-        _ = result.Should().Contain("\n"); // Indented JSON contains newlines
+        _ = result.Should().Contain("\n"); // Markdown is multi-line
     }
 }

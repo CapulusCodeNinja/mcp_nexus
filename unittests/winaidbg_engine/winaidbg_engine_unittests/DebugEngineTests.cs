@@ -250,6 +250,50 @@ public class DebugEngineTests : IDisposable
     }
 
     /// <summary>
+    /// Verifies that GetActiveSessions returns empty when no sessions exist.
+    /// </summary>
+    [Fact]
+    public void GetActiveSessions_WithNoSessions_ReturnsEmpty()
+    {
+        var result = m_Engine.GetActiveSessions();
+
+        _ = result.Should().NotBeNull();
+        _ = result.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that GetActiveSessions returns active session identifiers.
+    /// </summary>
+    [Fact]
+    public void GetActiveSessions_WithActiveSession_ReturnsSessionId()
+    {
+        // Arrange
+        var sessionId = "test-session-id";
+        var debugSession = new DebugSessionTestAccessor(
+            sessionId,
+            @"C:\\dummy\\dump.dmp",
+            null,
+            m_Settings.Object,
+            m_MockFileSystem.Object,
+            m_MockFileCleanupQueue.Object,
+            m_MockProcessManager.Object,
+            m_BatchProcessor.Object);
+        debugSession.SetState(WinAiDbg.Engine.Share.Models.SessionState.Active);
+
+        var sessionsField = typeof(DebugEngine)
+            .GetField("m_Sessions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        _ = sessionsField.Should().NotBeNull();
+        var sessions = (System.Collections.Concurrent.ConcurrentDictionary<string, WinAiDbg.Engine.Internal.DebugSession>)sessionsField!.GetValue(m_Engine)!;
+        _ = sessions.TryAdd(sessionId, debugSession).Should().BeTrue();
+
+        // Act
+        var result = m_Engine.GetActiveSessions();
+
+        // Assert
+        _ = result.Should().ContainSingle().Which.Should().Be(sessionId);
+    }
+
+    /// <summary>
     /// Verifies that IsSessionActive throws when sessionId is null.
     /// </summary>
     [Fact]

@@ -43,6 +43,12 @@ public interface IDebugEngine : IDisposable
     Task CloseSessionAsync(string sessionId, string? closeReason = null);
 
     /// <summary>
+    /// Gets the identifiers of all active sessions managed by the engine.
+    /// </summary>
+    /// <returns>A read-only collection of active session identifiers.</returns>
+    IReadOnlyCollection<string> GetActiveSessions();
+
+    /// <summary>
     /// Checks if a session is currently active.
     /// </summary>
     /// <param name="sessionId">The session ID to check.</param>

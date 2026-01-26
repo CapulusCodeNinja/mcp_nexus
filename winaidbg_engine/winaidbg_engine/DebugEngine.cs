@@ -316,6 +316,22 @@ public class DebugEngine : IDebugEngine
     }
 
     /// <summary>
+    /// Gets the identifiers of all active sessions managed by the engine.
+    /// </summary>
+    /// <returns>A read-only collection of active session identifiers.</returns>
+    public IReadOnlyCollection<string> GetActiveSessions()
+    {
+        ThrowIfDisposed();
+
+        // Return a stable snapshot (sorted) for determinism.
+        return m_Sessions
+            .Where(kvp => kvp.Value.IsActive)
+            .Select(kvp => kvp.Key)
+            .OrderBy(sessionId => sessionId, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    /// <summary>
     /// Checks if a session is currently active.
     /// </summary>
     /// <param name="sessionId">The session ID to check.</param>
