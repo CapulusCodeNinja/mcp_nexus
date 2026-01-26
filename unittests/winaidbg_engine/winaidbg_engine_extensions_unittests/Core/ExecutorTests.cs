@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 using FluentAssertions;
 
 using Moq;
@@ -22,6 +24,7 @@ public class ExecutorTests
 {
     private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IProcessManager> m_MockProcessManager;
+    private readonly Mock<IFileSystem> m_MockFileSystem;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExecutorTests"/> class.
@@ -30,6 +33,7 @@ public class ExecutorTests
     {
         m_Settings = new Mock<ISettings>();
         m_MockProcessManager = new Mock<IProcessManager>();
+        m_MockFileSystem = new Mock<IFileSystem>();
 
         var sharedConfig = new SharedConfiguration
         {
@@ -49,6 +53,111 @@ public class ExecutorTests
     }
 
     /// <summary>
+    /// Creates an <see cref="Executor"/> instance wired to the default test doubles.
+    /// </summary>
+    /// <param name="manager">The extension manager.</param>
+    /// <param name="tokenValidator">The token validator.</param>
+    /// <returns>A new <see cref="Executor"/> instance.</returns>
+    private Executor CreateExecutor(Manager manager, TokenValidator tokenValidator)
+    {
+        return new Executor(manager, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
+    }
+
+    /// <summary>
+    /// Adds extension metadata into a <see cref="Manager"/> instance using reflection.
+    /// </summary>
+    /// <param name="manager">The extension manager to update.</param>
+    /// <param name="extensionName">The extension name key.</param>
+    /// <param name="scriptType">The script type (e.g., "PowerShell").</param>
+    /// <param name="fullScriptPath">The full script path.</param>
+    /// <param name="timeoutMs">The timeout in milliseconds.</param>
+    private static void AddExtensionViaReflection(
+        Manager manager,
+        string extensionName,
+        string scriptType,
+        string fullScriptPath,
+        int timeoutMs)
+    {
+        var extensionMetadataType = typeof(Manager).Assembly.GetType("WinAiDbg.Engine.Extensions.Models.ExtensionMetadata")!;
+        var metadata = Activator.CreateInstance(extensionMetadataType)!;
+        extensionMetadataType.GetProperty("Name")!.SetValue(metadata, extensionName);
+        extensionMetadataType.GetProperty("ScriptType")!.SetValue(metadata, scriptType);
+        extensionMetadataType.GetProperty("FullScriptPath")!.SetValue(metadata, fullScriptPath);
+        extensionMetadataType.GetProperty("TimeoutMs")!.SetValue(metadata, timeoutMs);
+
+        var extensionsField = typeof(Manager).GetField("m_Extensions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var extensionsDict = extensionsField?.GetValue(manager);
+        if (extensionsDict == null)
+        {
+            return;
+        }
+
+        var addMethod = extensionsDict.GetType().GetMethod("Add");
+        if (addMethod == null)
+        {
+            return;
+        }
+
+        _ = addMethod.Invoke(extensionsDict, new[] { extensionName, metadata });
+    }
+
+    /// <summary>
+    /// Verifies that PowerShell 7 (pwsh) is used when present on the machine.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteAsync_WhenPwshIsInstalled_UsesPwshHost()
+    {
+        // Arrange
+        var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
+        var tokenValidator = new TokenValidator();
+        AddExtensionViaReflection(manager, "TestExtension", "PowerShell", @"C:\extensions\test\test.ps1", 30000);
+
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        var expectedPwshPath = Path.Combine(programFiles, "PowerShell", "7", "pwsh.exe");
+
+        _ = m_MockFileSystem.Setup(fs => fs.CombinePaths(It.IsAny<string[]>())).Returns<string[]>(paths => Path.Combine(paths));
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(false);
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(expectedPwshPath)).Returns(true);
+
+        _ = m_MockProcessManager.Setup(pm => pm.StartProcess(It.Is<ProcessStartInfo>(psi => psi.FileName == expectedPwshPath)))
+            .Returns(new Process());
+
+        // Act
+        _ = await CreateExecutor(manager, tokenValidator).ExecuteAsync("TestExtension", "session-123", null, "cmd-456");
+
+        // Assert
+        m_MockProcessManager.Verify(pm => pm.StartProcess(It.Is<ProcessStartInfo>(psi => psi.FileName == expectedPwshPath)), Times.Once);
+        tokenValidator.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that Windows PowerShell is used when PowerShell 7 is not present.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ExecuteAsync_WhenPwshIsNotInstalled_UsesWindowsPowerShellHost()
+    {
+        // Arrange
+        var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
+        var tokenValidator = new TokenValidator();
+        AddExtensionViaReflection(manager, "TestExtension", "PowerShell", @"C:\extensions\test\test.ps1", 30000);
+
+        _ = m_MockFileSystem.Setup(fs => fs.CombinePaths(It.IsAny<string[]>())).Returns<string[]>(paths => Path.Combine(paths));
+        _ = m_MockFileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(false);
+
+        _ = m_MockProcessManager.Setup(pm => pm.StartProcess(It.Is<ProcessStartInfo>(psi => psi.FileName == "powershell.exe")))
+            .Returns(new Process());
+
+        // Act
+        _ = await CreateExecutor(manager, tokenValidator).ExecuteAsync("TestExtension", "session-123", null, "cmd-456");
+
+        // Assert
+        m_MockProcessManager.Verify(pm => pm.StartProcess(It.Is<ProcessStartInfo>(psi => psi.FileName == "powershell.exe")), Times.Once);
+        tokenValidator.Dispose();
+    }
+
+    /// <summary>
     /// Verifies that constructor with valid parameters succeeds.
     /// </summary>
     [Fact]
@@ -59,7 +168,7 @@ public class ExecutorTests
         var tokenValidator = new TokenValidator();
 
         // Act
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = new Executor(manager, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
 
         // Assert
         _ = executor.Should().NotBeNull();
@@ -77,7 +186,7 @@ public class ExecutorTests
 
         // Act & Assert
         _ = Assert.Throws<ArgumentNullException>(() =>
-            new Executor(null!, tokenValidator, m_MockProcessManager.Object, m_Settings.Object));
+            new Executor(null!, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object));
         tokenValidator.Dispose();
     }
 
@@ -92,7 +201,7 @@ public class ExecutorTests
 
         // Act & Assert
         _ = Assert.Throws<ArgumentNullException>(() =>
-            new Executor(manager, null!, m_MockProcessManager.Object, m_Settings.Object));
+            new Executor(manager, null!, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object));
     }
 
     /// <summary>
@@ -107,7 +216,23 @@ public class ExecutorTests
 
         // Act & Assert
         _ = Assert.Throws<ArgumentNullException>(() =>
-            new Executor(manager, tokenValidator, null!, m_Settings.Object));
+            new Executor(manager, tokenValidator, m_MockFileSystem.Object, null!, m_Settings.Object));
+        tokenValidator.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that constructor with null fileSystem throws <see cref="ArgumentNullException"/>.
+    /// </summary>
+    [Fact]
+    public void Constructor_WithNullFileSystem_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
+        var tokenValidator = new TokenValidator();
+
+        // Act & Assert
+        _ = Assert.Throws<ArgumentNullException>(() =>
+            new Executor(manager, tokenValidator, null!, m_MockProcessManager.Object, m_Settings.Object));
         tokenValidator.Dispose();
     }
 
@@ -121,7 +246,7 @@ public class ExecutorTests
         // Arrange
         var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = CreateExecutor(manager, tokenValidator);
 
         // Act
         var result = await executor.ExecuteAsync("NonExistentExtension", "session-123", null, "cmd-456");
@@ -143,7 +268,7 @@ public class ExecutorTests
         // Arrange
         var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = CreateExecutor(manager, tokenValidator);
         var callbackUrl = "http://127.0.0.1:9001/extension-callback";
 
         // Act
@@ -163,7 +288,7 @@ public class ExecutorTests
         // Arrange
         var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = CreateExecutor(manager, tokenValidator);
 
         // Act & Assert
         _ = Assert.Throws<ArgumentNullException>(() => executor.UpdateCallbackUrl(null!));
@@ -179,7 +304,7 @@ public class ExecutorTests
         // Arrange
         var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = CreateExecutor(manager, tokenValidator);
 
         // Act & Assert
         _ = Assert.Throws<ArgumentException>(() => executor.UpdateCallbackUrl(string.Empty));
@@ -195,7 +320,7 @@ public class ExecutorTests
         // Arrange
         var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = CreateExecutor(manager, tokenValidator);
 
         // Act & Assert
         _ = Assert.Throws<ArgumentException>(() => executor.UpdateCallbackUrl("   "));
@@ -211,7 +336,7 @@ public class ExecutorTests
         // Arrange
         var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = CreateExecutor(manager, tokenValidator);
 
         // Act
         executor.UpdateCallbackUrl("http://127.0.0.1:9001/extension-callback");
@@ -233,7 +358,7 @@ public class ExecutorTests
         // Arrange
         var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = CreateExecutor(manager, tokenValidator);
 
         // Act
         var result = await executor.ExecuteAsync("NonExistentExtension", "session-123", null, "cmd-456");
@@ -256,7 +381,7 @@ public class ExecutorTests
         // Arrange
         var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = CreateExecutor(manager, tokenValidator);
 
         // Act
         var result = await executor.ExecuteAsync("NonExistentExtension", "session-123", null, "cmd-456");
@@ -277,7 +402,7 @@ public class ExecutorTests
         // Arrange
         var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = CreateExecutor(manager, tokenValidator);
         var parameters = new { Key = "Value", Number = 42 };
 
         // Act
@@ -298,7 +423,7 @@ public class ExecutorTests
         // Arrange
         var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = CreateExecutor(manager, tokenValidator);
 
         // Act
         executor.UpdateCallbackUrl("http://127.0.0.1:9001/extension-callback");
@@ -319,7 +444,7 @@ public class ExecutorTests
         // Arrange
         var manager = new Manager(new Mock<IFileSystem>().Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = CreateExecutor(manager, tokenValidator);
 
         // Act - ExecuteAsync with non-existent extension should return Failed state
         var result = await executor.ExecuteAsync("NonExistentExtension", "session-123", null, "cmd-456");
@@ -346,7 +471,7 @@ public class ExecutorTests
 
         var manager = new Manager(mockFileSystem.Object, m_Settings.Object);
         var tokenValidator = new TokenValidator();
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = new Executor(manager, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
 
         // Setup process manager to return null (simulating process start failure)
         _ = m_MockProcessManager.Setup(pm => pm.StartProcess(It.IsAny<System.Diagnostics.ProcessStartInfo>()))
@@ -396,7 +521,7 @@ public class ExecutorTests
             }
         }
 
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = new Executor(manager, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
 
         // Setup process manager
         var mockProcess = new System.Diagnostics.Process();
@@ -448,7 +573,7 @@ public class ExecutorTests
             }
         }
 
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = new Executor(manager, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
 
         // Setup process manager to verify parameters are included
         var mockProcess = new System.Diagnostics.Process();
@@ -503,7 +628,7 @@ public class ExecutorTests
             }
         }
 
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = new Executor(manager, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
 
         // Setup process manager
         var mockProcess = new System.Diagnostics.Process();
@@ -556,7 +681,7 @@ public class ExecutorTests
             }
         }
 
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = new Executor(manager, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
 
         // Setup process manager to simulate timeout - create Process with redirected output
         var processWithRedirectedOutput = new System.Diagnostics.Process
@@ -622,7 +747,7 @@ public class ExecutorTests
             }
         }
 
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = new Executor(manager, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
 
         // Setup process manager to simulate cancellation during WaitForProcessExitAsync
         // Create a Process with redirected output to avoid InvalidOperationException from BeginOutputReadLine
@@ -690,7 +815,7 @@ public class ExecutorTests
             }
         }
 
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = new Executor(manager, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
 
         // Setup process manager to throw exception
         _ = m_MockProcessManager.Setup(pm => pm.StartProcess(It.IsAny<System.Diagnostics.ProcessStartInfo>()))
@@ -740,7 +865,7 @@ public class ExecutorTests
             }
         }
 
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = new Executor(manager, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
 
         // Setup process manager to verify working directory is set
         var mockProcess = new System.Diagnostics.Process();
@@ -793,7 +918,7 @@ public class ExecutorTests
             }
         }
 
-        var executor = new Executor(manager, tokenValidator, m_MockProcessManager.Object, m_Settings.Object);
+        var executor = new Executor(manager, tokenValidator, m_MockFileSystem.Object, m_MockProcessManager.Object, m_Settings.Object);
 
         // Setup process manager to throw exception during monitoring
         var mockProcess = new System.Diagnostics.Process();

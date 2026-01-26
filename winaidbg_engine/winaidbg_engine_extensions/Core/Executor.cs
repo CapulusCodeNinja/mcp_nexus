@@ -9,6 +9,7 @@ using WinAiDbg.Config;
 using WinAiDbg.Engine.Extensions.Models;
 using WinAiDbg.Engine.Extensions.Security;
 using WinAiDbg.Engine.Share.Models;
+using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.ProcessManagement;
 
 namespace WinAiDbg.Engine.Extensions.Core;
@@ -22,8 +23,10 @@ internal class Executor
     private readonly ISettings m_Settings;
     private readonly Manager m_Manager;
     private string m_CallbackUrl;
+    private readonly IFileSystem m_FileSystem;
     private readonly IProcessManager m_ProcessManager;
     private readonly TokenValidator m_TokenValidator;
+    private readonly string m_PowerShellExecutable;
 
     // Compiled regex to strip ANSI escape sequences from process output
     private static readonly Regex AnsiRegex = new("\x1B\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
@@ -33,11 +36,13 @@ internal class Executor
     /// </summary>
     /// <param name="manager">The extension manager.</param>
     /// <param name="tokenValidator">The token validator.</param>
+    /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="processManager">The process manager.</param>
     /// <param name="settings">The product settings.</param>
     public Executor(
         Manager manager,
         TokenValidator tokenValidator,
+        IFileSystem fileSystem,
         IProcessManager processManager,
         ISettings settings)
     {
@@ -45,7 +50,9 @@ internal class Executor
         m_Logger = LogManager.GetCurrentClassLogger();
         m_Manager = manager ?? throw new ArgumentNullException(nameof(manager));
         m_TokenValidator = tokenValidator ?? throw new ArgumentNullException(nameof(tokenValidator));
+        m_FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         m_ProcessManager = processManager ?? throw new ArgumentNullException(nameof(processManager));
+        m_PowerShellExecutable = ResolvePowerShellExecutable();
 
         // Get callback URL from configuration
         var callbackPort = m_Settings.Get().WinAiDbg.Extensions.CallbackPort;
@@ -55,6 +62,70 @@ internal class Executor
         }
 
         m_CallbackUrl = $"http://127.0.0.1:{callbackPort}/extension-callback";
+    }
+
+    /// <summary>
+    /// Resolves the preferred PowerShell executable for launching extension scripts.
+    /// Prefers PowerShell 7 (pwsh) when available and falls back to Windows PowerShell (powershell.exe).
+    /// </summary>
+    /// <returns>The executable path or name to use in <see cref="ProcessStartInfo.FileName"/>.</returns>
+    private string ResolvePowerShellExecutable()
+    {
+        // Prefer pwsh if it exists. Check common install locations first (deterministic),
+        // then fall back to PATH lookup.
+        var candidatePaths = new List<string>();
+
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        if (!string.IsNullOrWhiteSpace(programFiles))
+        {
+            candidatePaths.Add(m_FileSystem.CombinePaths(programFiles, "PowerShell", "7", "pwsh.exe"));
+            candidatePaths.Add(m_FileSystem.CombinePaths(programFiles, "PowerShell", "7-preview", "pwsh.exe"));
+        }
+
+        var programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+        if (!string.IsNullOrWhiteSpace(programFilesX86) && !string.Equals(programFilesX86, programFiles, StringComparison.OrdinalIgnoreCase))
+        {
+            candidatePaths.Add(m_FileSystem.CombinePaths(programFilesX86, "PowerShell", "7", "pwsh.exe"));
+            candidatePaths.Add(m_FileSystem.CombinePaths(programFilesX86, "PowerShell", "7-preview", "pwsh.exe"));
+        }
+
+        foreach (var candidate in candidatePaths)
+        {
+            if (m_FileSystem.FileExists(candidate))
+            {
+                m_Logger.Info("Using PowerShell 7 host for extensions: {Executable}", candidate);
+                return candidate;
+            }
+        }
+
+        var pathValue = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        var pathEntries = pathValue.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var dir in pathEntries)
+        {
+            if (string.IsNullOrWhiteSpace(dir))
+            {
+                continue;
+            }
+
+            string candidate;
+            try
+            {
+                candidate = m_FileSystem.CombinePaths(dir, "pwsh.exe");
+            }
+            catch
+            {
+                continue;
+            }
+
+            if (m_FileSystem.FileExists(candidate))
+            {
+                m_Logger.Info("Using PowerShell 7 host for extensions (from PATH): {Executable}", candidate);
+                return candidate;
+            }
+        }
+
+        m_Logger.Info("Using Windows PowerShell host for extensions: powershell.exe");
+        return "powershell.exe";
     }
 
     /// <summary>
@@ -177,7 +248,7 @@ internal class Executor
 
             if (metadata.ScriptType.Equals("PowerShell", StringComparison.OrdinalIgnoreCase))
             {
-                fileName = "powershell.exe";
+                fileName = m_PowerShellExecutable;
                 arguments = $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -SessionId \"{sessionId}\" -Token \"{token}\" -CallbackUrl \"{m_CallbackUrl}\"";
 
                 // Add parameters if provided
@@ -189,7 +260,7 @@ internal class Executor
             else
             {
                 // Default to PowerShell
-                fileName = "powershell.exe";
+                fileName = m_PowerShellExecutable;
                 arguments = $"-ExecutionPolicy Bypass -File \"{scriptPath}\" -SessionId \"{sessionId}\" -Token \"{token}\" -CallbackUrl \"{m_CallbackUrl}\"";
 
                 // Add parameters if provided
