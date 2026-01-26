@@ -25,7 +25,7 @@ internal static class CancelCommandTool
     /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
     /// <returns>Command cancellation result.</returns>
     [McpServerTool]
-    [Description("Cancels a queued or executing command. Deprecated: Use winaidbg_cancel_dump_analyze_command instead.")]
+    [Description("Deprecated but kept for backward compatibility. Same as winaidbg_cancel_dump_analyze_command. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static Task<object> nexus_cancel_dump_analyze_command(
@@ -43,7 +43,7 @@ internal static class CancelCommandTool
     /// <param name="commandId">Command ID from winaidbg_enqueue_async_dump_analyze_command.</param>
     /// <returns>Command cancellation result.</returns>
     [McpServerTool]
-    [Description("Cancels a queued or executing command.")]
+    [Description("Cancels a queued or executing command. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static Task<object> winaidbg_cancel_dump_analyze_command(

@@ -25,7 +25,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
     /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
     /// <returns>Command result with output and status.</returns>
     [McpServerTool]
-    [Description("Reads the result of a command. Waits for completion if still executing. Deprecated: Use winaidbg_read_dump_analyze_command_result instead.")]
+    [Description("Deprecated but kept for backward compatibility. Same as winaidbg_read_dump_analyze_command_result. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static Task<object> nexus_read_dump_analyze_command_result(
@@ -42,7 +42,7 @@ internal static class ReadDumpAnalyzeCommandResultTool
     /// <param name="commandId">Command ID from winaidbg_enqueue_async_dump_analyze_command.</param>
     /// <returns>Command result with output and status.</returns>
     [McpServerTool]
-    [Description("Reads the result of a command. Waits for completion if still executing.")]
+    [Description("Reads the result of a previously enqueued command. Blocks until command completes. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static async Task<object> winaidbg_read_dump_analyze_command_result(

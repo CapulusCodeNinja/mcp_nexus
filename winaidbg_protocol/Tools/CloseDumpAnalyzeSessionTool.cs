@@ -24,7 +24,7 @@ internal static class CloseDumpAnalyzeSessionTool
     /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
     /// <returns>Session closure result.</returns>
     [McpServerTool]
-    [Description("Closes a debugging session and releases resources. Deprecated: Use winaidbg_close_dump_analyze_session instead.")]
+    [Description("Deprecated but kept for backward compatibility. Same as winaidbg_close_dump_analyze_session. MCP call shape: tools/call with params.arguments { sessionId: string }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static Task<object> nexus_close_dump_analyze_session(
@@ -39,7 +39,7 @@ internal static class CloseDumpAnalyzeSessionTool
     /// <param name="sessionId">Session ID from winaidbg_open_dump_analyze_session.</param>
     /// <returns>Session closure result.</returns>
     [McpServerTool]
-    [Description("Closes a debugging session and releases resources.")]
+    [Description("Closes a debugging session and releases resources. MCP call shape: tools/call with params.arguments { sessionId: string }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static async Task<object> winaidbg_close_dump_analyze_session(

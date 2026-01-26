@@ -25,7 +25,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
     /// <param name="command">WinDbg/CDB command to execute.</param>
     /// <returns>Command enqueue result with commandId.</returns>
     [McpServerTool]
-    [Description("Enqueues a debugging command for asynchronous execution. Returns commandId for tracking. Deprecated: Use winaidbg_enqueue_async_dump_analyze_command instead.")]
+    [Description("Deprecated but kept for backward compatibility. Same as winaidbg_enqueue_async_dump_analyze_command. MCP call shape: tools/call with params.arguments { sessionId: string, command: string }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static Task<object> nexus_enqueue_async_dump_analyze_command(
@@ -42,7 +42,7 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
     /// <param name="command">WinDbg/CDB command to execute.</param>
     /// <returns>Command enqueue result with commandId.</returns>
     [McpServerTool]
-    [Description("Enqueues a debugging command for asynchronous execution. Returns commandId for tracking.")]
+    [Description("Enqueues a debugging command for asynchronous execution. Returns commandId for tracking. MCP call shape: tools/call with params.arguments { sessionId: string, command: string }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static Task<object> winaidbg_enqueue_async_dump_analyze_command(

@@ -27,7 +27,7 @@ internal static class OpenDumpAnalyzeSessionTool
     /// <param name="symbolsPath">Optional path to symbol files directory.</param>
     /// <returns>Session creation result with sessionId.</returns>
     [McpServerTool]
-    [Description("Opens a new debugging session for crash dump analysis. Returns sessionId for subsequent operations. Deprecated: Use winaidbg_open_dump_analyze_session instead.")]
+    [Description("Deprecated but kept for backward compatibility. Same as winaidbg_open_dump_analyze_session. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static Task<object> nexus_open_dump_analyze_session(
@@ -44,7 +44,7 @@ internal static class OpenDumpAnalyzeSessionTool
     /// <param name="symbolsPath">Optional path to symbol files directory.</param>
     /// <returns>Session creation result with sessionId.</returns>
     [McpServerTool]
-    [Description("Opens a new debugging session for crash dump analysis. Returns sessionId for subsequent operations.")]
+    [Description("Opens a new debugging session for crash dump analysis. Returns sessionId for use in subsequent operations. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static async Task<object> winaidbg_open_dump_analyze_session(

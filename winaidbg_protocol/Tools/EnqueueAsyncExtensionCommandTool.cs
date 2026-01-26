@@ -26,7 +26,7 @@ internal static class EnqueueAsyncExtensionCommandTool
     /// <param name="parameters">Optional parameters to pass to the extension script.</param>
     /// <returns>Command enqueue result with commandId.</returns>
     [McpServerTool]
-    [Description("Enqueues an extension script for asynchronous execution. Returns commandId for tracking. Deprecated: Use winaidbg_enqueue_async_extension_command instead.")]
+    [Description("Deprecated but kept for backward compatibility. Same as winaidbg_enqueue_async_extension_command. MCP call shape: tools/call with params.arguments { sessionId: string, extensionName: string, parameters?: object }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static Task<object> nexus_enqueue_async_extension_command(
@@ -45,7 +45,7 @@ internal static class EnqueueAsyncExtensionCommandTool
     /// <param name="parameters">Optional parameters to pass to the extension script.</param>
     /// <returns>Command enqueue result with commandId.</returns>
     [McpServerTool]
-    [Description("Enqueues an extension script for asynchronous execution. Returns commandId for tracking.")]
+    [Description("Enqueues an extension command for asynchronous execution. Returns commandId for tracking. MCP call shape: tools/call with params.arguments { sessionId: string, extensionName: string, parameters?: object }.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
     public static async Task<object> winaidbg_enqueue_async_extension_command(
