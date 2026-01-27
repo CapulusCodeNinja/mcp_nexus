@@ -94,7 +94,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     {
         return new McpToolSchema
         {
-            Name = "winaidbg_open_dump_analyze_session",
+            Name = "Execute",
             Description = "Opens a new debugging session for crash dump analysis. Returns sessionId for use in subsequent operations. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.",
             InputSchema = new
             {
@@ -125,7 +125,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     {
         return new McpToolSchema
         {
-            Name = "winaidbg_enqueue_async_dump_analyze_command",
+            Name = "Execute",
             Description = "Enqueues a debugging command for asynchronous execution. Returns commandId for tracking. MCP call shape: tools/call with params.arguments { sessionId: string, command: string }.",
             InputSchema = new
             {
@@ -135,7 +135,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from winaidbg_open_dump_analyze_session",
+                        description = "Session ID from Execute",
                     },
                     command = new
                     {
@@ -156,7 +156,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     {
         return new McpToolSchema
         {
-            Name = "winaidbg_enqueue_async_extension_command",
+            Name = "Execute",
             Description = "Enqueues an extension command for asynchronous execution. Returns commandId for tracking. MCP call shape: tools/call with params.arguments { sessionId: string, extensionName: string, parameters?: object }.",
             InputSchema = new
             {
@@ -166,7 +166,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from winaidbg_open_dump_analyze_session",
+                        description = "Session ID from Execute",
                     },
                     extensionName = new
                     {
@@ -192,7 +192,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     {
         return new McpToolSchema
         {
-            Name = "winaidbg_read_dump_analyze_command_result",
+            Name = "Execute",
             Description = "Reads the result of a previously enqueued command. Blocks until command completes. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.",
             InputSchema = new
             {
@@ -202,12 +202,12 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from winaidbg_open_dump_analyze_session",
+                        description = "Session ID from Execute",
                     },
                     commandId = new
                     {
                         type = "string",
-                        description = "Command ID from winaidbg_enqueue_async_dump_analyze_command",
+                        description = "Command ID from Execute",
                     },
                 },
                 required = new[] { "sessionId", "commandId" },
@@ -223,7 +223,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     {
         return new McpToolSchema
         {
-            Name = "winaidbg_get_dump_analyze_commands_status",
+            Name = "Execute",
             Description = "Gets status of all commands in a session. Efficient for monitoring multiple commands. MCP call shape: tools/call with params.arguments { sessionId: string }.",
             InputSchema = new
             {
@@ -233,7 +233,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from winaidbg_open_dump_analyze_session",
+                        description = "Session ID from Execute",
                     },
                 },
                 required = new[] { "sessionId" },
@@ -249,7 +249,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     {
         return new McpToolSchema
         {
-            Name = "winaidbg_close_dump_analyze_session",
+            Name = "Execute",
             Description = "Closes a debugging session and releases resources. MCP call shape: tools/call with params.arguments { sessionId: string }.",
             InputSchema = new
             {
@@ -259,7 +259,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from winaidbg_open_dump_analyze_session",
+                        description = "Session ID from Execute",
                     },
                 },
                 required = new[] { "sessionId" },
@@ -275,7 +275,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     {
         return new McpToolSchema
         {
-            Name = "winaidbg_cancel_dump_analyze_command",
+            Name = "Execute",
             Description = "Cancels a queued or executing command. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.",
             InputSchema = new
             {
@@ -285,12 +285,12 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                     sessionId = new
                     {
                         type = "string",
-                        description = "Session ID from winaidbg_open_dump_analyze_session",
+                        description = "Session ID from Execute",
                     },
                     commandId = new
                     {
                         type = "string",
-                        description = "Command ID from winaidbg_enqueue_async_dump_analyze_command",
+                        description = "Command ID from Execute",
                     },
                 },
                 required = new[] { "sessionId", "commandId" },
@@ -307,7 +307,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         return new McpToolSchema
         {
             Name = "nexus_open_dump_analyze_session",
-            Description = "Deprecated but kept for backward compatibility. Same as winaidbg_open_dump_analyze_session. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.",
+            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.",
             InputSchema = new
             {
                 type = "object",
@@ -338,7 +338,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         return new McpToolSchema
         {
             Name = "nexus_enqueue_async_dump_analyze_command",
-            Description = "Deprecated but kept for backward compatibility. Same as winaidbg_enqueue_async_dump_analyze_command. MCP call shape: tools/call with params.arguments { sessionId: string, command: string }.",
+            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string, command: string }.",
             InputSchema = new
             {
                 type = "object",
@@ -369,7 +369,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         return new McpToolSchema
         {
             Name = "nexus_enqueue_async_extension_command",
-            Description = "Deprecated but kept for backward compatibility. Same as winaidbg_enqueue_async_extension_command. MCP call shape: tools/call with params.arguments { sessionId: string, extensionName: string, parameters?: object }.",
+            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string, extensionName: string, parameters?: object }.",
             InputSchema = new
             {
                 type = "object",
@@ -405,7 +405,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         return new McpToolSchema
         {
             Name = "nexus_read_dump_analyze_command_result",
-            Description = "Deprecated but kept for backward compatibility. Same as winaidbg_read_dump_analyze_command_result. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.",
+            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.",
             InputSchema = new
             {
                 type = "object",
@@ -436,7 +436,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         return new McpToolSchema
         {
             Name = "nexus_get_dump_analyze_commands_status",
-            Description = "Deprecated but kept for backward compatibility. Same as winaidbg_get_dump_analyze_commands_status. MCP call shape: tools/call with params.arguments { sessionId: string }.",
+            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string }.",
             InputSchema = new
             {
                 type = "object",
@@ -462,7 +462,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         return new McpToolSchema
         {
             Name = "nexus_close_dump_analyze_session",
-            Description = "Deprecated but kept for backward compatibility. Same as winaidbg_close_dump_analyze_session. MCP call shape: tools/call with params.arguments { sessionId: string }.",
+            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string }.",
             InputSchema = new
             {
                 type = "object",
@@ -488,7 +488,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         return new McpToolSchema
         {
             Name = "nexus_cancel_dump_analyze_command",
-            Description = "Deprecated but kept for backward compatibility. Same as winaidbg_cancel_dump_analyze_command. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.",
+            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.",
             InputSchema = new
             {
                 type = "object",

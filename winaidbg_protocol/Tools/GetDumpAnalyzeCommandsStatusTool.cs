@@ -1,7 +1,3 @@
-using System.ComponentModel;
-
-using ModelContextProtocol.Server;
-
 using NLog;
 
 using WinAiDbg.Protocol.Services;
@@ -12,38 +8,15 @@ namespace WinAiDbg.Protocol.Tools;
 /// <summary>
 /// MCP tool for getting the status of all commands in a session.
 /// </summary>
-[McpServerToolType]
-internal static class GetDumpAnalyzeCommandsStatusTool
+internal class GetDumpAnalyzeCommandsStatusTool
 {
-    /// <summary>
-    /// Gets the status of all commands in a session. Efficient for monitoring multiple commands.
-    ///
-    /// Deprecated: Use winaidbg_get_dump_analyze_commands_status instead.
-    ///
-    /// </summary>
-    /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
-    /// <returns>Array of command status information.</returns>
-    [McpServerTool]
-    [Description("Deprecated but kept for backward compatibility. Same as winaidbg_get_dump_analyze_commands_status. MCP call shape: tools/call with params.arguments { sessionId: string }.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static Task<object> nexus_get_dump_analyze_commands_status(
-        [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId)
-    {
-        return winaidbg_get_dump_analyze_commands_status(sessionId);
-    }
-
     /// <summary>
     /// Gets the status of all commands in a session. Efficient for monitoring multiple commands.
     /// </summary>
     /// <param name="sessionId">Session ID from winaidbg_open_dump_analyze_session.</param>
     /// <returns>Array of command status information.</returns>
-    [McpServerTool]
-    [Description("Gets status of all commands in a session. Efficient for monitoring multiple commands. MCP call shape: tools/call with params.arguments { sessionId: string }.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static Task<object> winaidbg_get_dump_analyze_commands_status(
-        [Description("Session ID from winaidbg_open_dump_analyze_session")] string sessionId)
+    public Task<object> Execute(
+        string sessionId)
     {
         var logger = LogManager.GetCurrentClassLogger();
 

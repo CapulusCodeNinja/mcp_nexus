@@ -1,7 +1,3 @@
-using System.ComponentModel;
-
-using ModelContextProtocol.Server;
-
 using NLog;
 
 using WinAiDbg.Engine.Share.Models;
@@ -14,42 +10,17 @@ namespace WinAiDbg.Protocol.Tools;
 /// <summary>
 /// MCP tool for opening a new debugging session for crash dump analysis.
 /// </summary>
-[McpServerToolType]
-internal static class OpenDumpAnalyzeSessionTool
+internal class OpenDumpAnalyzeSessionTool
 {
     /// <summary>
     /// Opens a new debugging session for analyzing a crash dump file.
-    ///
-    /// Deprecated: Use winaidbg_open_dump_analyze_session instead.
-    ///
     /// </summary>
     /// <param name="dumpPath">Full path to the crash dump file (.dmp).</param>
     /// <param name="symbolsPath">Optional path to symbol files directory.</param>
     /// <returns>Session creation result with sessionId.</returns>
-    [McpServerTool]
-    [Description("Deprecated but kept for backward compatibility. Same as winaidbg_open_dump_analyze_session. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static Task<object> nexus_open_dump_analyze_session(
-        [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
-        [Description("Optional path to symbol files directory")] string? symbolsPath = null)
-    {
-        return winaidbg_open_dump_analyze_session(dumpPath, symbolsPath);
-    }
-
-    /// <summary>
-    /// Opens a new debugging session for analyzing a crash dump file.
-    /// </summary>
-    /// <param name="dumpPath">Full path to the crash dump file (.dmp).</param>
-    /// <param name="symbolsPath">Optional path to symbol files directory.</param>
-    /// <returns>Session creation result with sessionId.</returns>
-    [McpServerTool]
-    [Description("Opens a new debugging session for crash dump analysis. Returns sessionId for use in subsequent operations. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static async Task<object> winaidbg_open_dump_analyze_session(
-        [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
-        [Description("Optional path to symbol files directory")] string? symbolsPath = null)
+    public async Task<object> Execute(
+        string dumpPath,
+        string? symbolsPath = null)
     {
         var logger = LogManager.GetCurrentClassLogger();
 
