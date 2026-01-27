@@ -106,11 +106,6 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                         type = "string",
                         description = "Full path to the crash dump file (.dmp)",
                     },
-                    symbolsPath = new
-                    {
-                        type = "string",
-                        description = "Optional: Path to symbols directory for enhanced analysis",
-                    },
                 },
                 required = new[] { "dumpPath" },
             },
@@ -193,7 +188,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         return new McpToolSchema
         {
             Name = "winaidbg_read_dump_analyze_command_result",
-            Description = "Reads the result of a previously enqueued command. Blocks until command completes. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.",
+            Description = "Reads the result of a previously enqueued command. Waits up to maxWaitSeconds for completion; if still running, returns current state without output. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string, maxWaitSeconds: integer }.",
             InputSchema = new
             {
                 type = "object",
@@ -209,8 +204,15 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                         type = "string",
                         description = "Command ID from winaidbg_enqueue_async_dump_analyze_command",
                     },
+                    maxWaitSeconds = new
+                    {
+                        type = "integer",
+                        minimum = 1,
+                        maximum = 30,
+                        description = "Maximum seconds to wait for completion (1-30). For polling (0-second wait), use winaidbg_get_dump_analyze_commands_status.",
+                    },
                 },
-                required = new[] { "sessionId", "commandId" },
+                required = new[] { "sessionId", "commandId", "maxWaitSeconds" },
             },
         };
     }
@@ -405,7 +407,7 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
         return new McpToolSchema
         {
             Name = "nexus_read_dump_analyze_command_result",
-            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.",
+            Description = "Deprecated but kept for backward compatibility. Same behavior as winaidbg_read_dump_analyze_command_result. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string, maxWaitSeconds: integer }.",
             InputSchema = new
             {
                 type = "object",
@@ -421,8 +423,15 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
                         type = "string",
                         description = "Command ID from nexus_enqueue_async_dump_analyze_command",
                     },
+                    maxWaitSeconds = new
+                    {
+                        type = "integer",
+                        minimum = 1,
+                        maximum = 30,
+                        description = "Maximum seconds to wait for completion (1-30). For polling (0-second wait), use nexus_get_dump_analyze_commands_status.",
+                    },
                 },
-                required = new[] { "sessionId", "commandId" },
+                required = new[] { "sessionId", "commandId", "maxWaitSeconds" },
             },
         };
     }

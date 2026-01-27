@@ -15,11 +15,8 @@ internal class OpenDumpAnalyzeSessionTool
     /// Opens a new debugging session for analyzing a crash dump file.
     /// </summary>
     /// <param name="dumpPath">Full path to the crash dump file (.dmp).</param>
-    /// <param name="symbolsPath">Optional path to symbol files directory.</param>
     /// <returns>Session creation result with sessionId.</returns>
-    public async Task<object> Execute(
-        string dumpPath,
-        string? symbolsPath = null)
+    public async Task<object> Execute(string dumpPath)
     {
         var logger = LogManager.GetCurrentClassLogger();
 
@@ -32,12 +29,7 @@ internal class OpenDumpAnalyzeSessionTool
             ToolInputValidator.EnsureNonEmpty(dumpPath, "dumpPath");
             ToolInputValidator.EnsureDumpFileExists(dumpPath, fileSystem);
 
-            if (symbolsPath == "null" || string.IsNullOrWhiteSpace(symbolsPath))
-            {
-                symbolsPath = null;
-            }
-
-            var createResult = await EngineService.Get().CreateSessionAsync(dumpPath, symbolsPath);
+            var createResult = await EngineService.Get().CreateSessionAsync(dumpPath);
 
             logger.Info("Successfully created session: {SessionId}", createResult.SessionId);
 
@@ -46,7 +38,6 @@ internal class OpenDumpAnalyzeSessionTool
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Success",
                 createResult.DumpCheck,
-                symbolsPath,
                 $"Session {createResult.SessionId} created successfully");
 
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();

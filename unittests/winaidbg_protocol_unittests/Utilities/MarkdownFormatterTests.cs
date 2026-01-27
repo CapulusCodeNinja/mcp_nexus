@@ -290,7 +290,6 @@ public class MarkdownFormatterTests
                 ExitCode = 0,
                 Message = "Dumpchk output",
             },
-            "C:\\symbols",
             "Session created");
 
         // Assert

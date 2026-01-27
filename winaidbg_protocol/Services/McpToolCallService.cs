@@ -186,8 +186,7 @@ internal class McpToolCallService
             case "nexus_open_dump_analyze_session":
                 {
                     var dumpPath = GetRequiredString(arguments, "dumpPath");
-                    var symbolsPath = GetOptionalString(arguments, "symbolsPath");
-                    var result = await m_OpenDumpAnalyzeSessionTool.Execute(dumpPath, symbolsPath);
+                    var result = await m_OpenDumpAnalyzeSessionTool.Execute(dumpPath);
                     return result.ToString() ?? string.Empty;
                 }
 
@@ -215,7 +214,8 @@ internal class McpToolCallService
                 {
                     var sessionId = GetRequiredString(arguments, "sessionId");
                     var commandId = GetRequiredString(arguments, "commandId");
-                    var result = await m_ReadDumpAnalyzeCommandResultTool.Execute(sessionId, commandId);
+                    var maxWaitSeconds = GetRequiredInt(arguments, "maxWaitSeconds");
+                    var result = await m_ReadDumpAnalyzeCommandResultTool.Execute(sessionId, commandId, maxWaitSeconds);
                     return result.ToString() ?? string.Empty;
                 }
 
@@ -289,7 +289,7 @@ internal class McpToolCallService
             return string.Empty;
         }
 
-        // Type/value validation for string-typed properties. (We keep this conservative; only validate when schema says "string".)
+        // Type/value validation for schema-typed properties. (We keep this conservative; validate only when schema declares a concrete type.)
         foreach (var kvp in safeArguments)
         {
             if (!propertiesElement.TryGetProperty(kvp.Key, out var propSchema))
@@ -311,6 +311,11 @@ internal class McpToolCallService
             if (expectedType == "string" && kvp.Value.ValueKind != JsonValueKind.String)
             {
                 return $"Invalid type for parameter `{kvp.Key}`: expected `string`, got `{kvp.Value.ValueKind}`.";
+            }
+
+            if (expectedType == "integer" && (kvp.Value.ValueKind != JsonValueKind.Number || !kvp.Value.TryGetInt32(out _)))
+            {
+                return $"Invalid type for parameter `{kvp.Key}`: expected `integer`, got `{kvp.Value.ValueKind}`.";
             }
         }
 
@@ -455,6 +460,21 @@ internal class McpToolCallService
         return arguments.TryGetValue(name, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString() ?? string.Empty
             : throw new ArgumentException($"Missing required string argument '{name}'.", nameof(arguments));
+    }
+
+    /// <summary>
+    /// Reads a required integer argument.
+    /// </summary>
+    /// <param name="arguments">Arguments dictionary.</param>
+    /// <param name="name">Argument name.</param>
+    /// <returns>The integer argument value.</returns>
+    private static int GetRequiredInt(IReadOnlyDictionary<string, JsonElement> arguments, string name)
+    {
+        return arguments.TryGetValue(name, out var value) &&
+               value.ValueKind == JsonValueKind.Number &&
+               value.TryGetInt32(out var number)
+            ? number
+            : throw new ArgumentException($"Missing required integer argument '{name}'.", nameof(arguments));
     }
 
     /// <summary>

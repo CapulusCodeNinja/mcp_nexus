@@ -31,36 +31,35 @@ internal static class MarkdownFormatter
         _ = md.AppendLine("- **TOOLS**: Use `tools/call` to execute operations (open session, run commands, close session)");
         _ = md.AppendLine("- **RESOURCES**: Use `resources/read` to access data (command lists, session lists, documentation, metrics)");
         _ = md.AppendLine("- **Async execution**: After opening an analyze session, WinDBG commands can be executed asynchronously");
-        _ = md.AppendLine("- **Command status (get)**: Use `Execute` to poll ALL command statuses in a session (efficient for polling)");
-        _ = md.AppendLine("- **Command results (read)**: Use `Execute` to retrieve the FULL output for a single command; use the `commands` resource to browse summaries");
+        _ = md.AppendLine("- **Command status (get)**: Use `winaidbg_get_dump_analyze_commands_status` to poll ALL command statuses in a session (efficient for polling)");
+        _ = md.AppendLine("- **Command results (read)**: Use `winaidbg_read_dump_analyze_command_result` to retrieve the FULL output for a single command; use the `commands` resource to browse summaries");
         _ = md.AppendLine("- **Sessions**: Opening a session does nothing by itself. Only open a session if you will enqueue commands.");
-        _ = md.AppendLine("- **Commands**: After enqueueing, either poll with `Execute` (get = statuses) or fetch the full output with `Execute` (read = full result). Enqueueing without monitoring or reading results is not useful.");
+        _ = md.AppendLine("- **Commands**: After enqueueing, either poll with `winaidbg_get_dump_analyze_commands_status` (get = statuses) or fetch the full output with `winaidbg_read_dump_analyze_command_result` (read = full result). Enqueueing without monitoring or reading results is not useful.");
         _ = md.AppendLine();
         _ = md.AppendLine("#### Tooling - Open Session");
         _ = md.AppendLine();
-        _ = md.AppendLine("- **Tool name**: `Execute`");
+        _ = md.AppendLine("- **Tool name**: `winaidbg_open_dump_analyze_session`");
         _ = md.AppendLine("- **Action**: Open the analyze session for the dump file");
         _ = md.AppendLine("- **Input**:");
         _ = md.AppendLine("    * **dumpPath**: string (required)");
-        _ = md.AppendLine("    * **symbolsPath**: string (optional)");
         _ = md.AppendLine("- **Output**:");
         _ = md.AppendLine("    * **sessionId**: string");
         _ = md.AppendLine("- **Note**: This EXACT `sessionId` IS REQUIRED for all following commands in the session");
         _ = md.AppendLine();
         _ = md.AppendLine("#### Tooling - Exec Command");
         _ = md.AppendLine();
-        _ = md.AppendLine("- **Tool name**: `Execute`");
+        _ = md.AppendLine("- **Tool name**: `winaidbg_enqueue_async_dump_analyze_command`");
         _ = md.AppendLine("- **Action**: Start asynchronous execution of a WinDBG/CDB command");
         _ = md.AppendLine("- **Input**:");
         _ = md.AppendLine("    * **command**: string (required)");
         _ = md.AppendLine("    * **sessionId**: string (required)");
         _ = md.AppendLine("- **Output**:");
         _ = md.AppendLine("    * **commandId**: string");
-        _ = md.AppendLine("- **Note**: This EXACT `commandId` IS REQUIRED for `Execute`");
+        _ = md.AppendLine("- **Note**: This EXACT `commandId` IS REQUIRED for `winaidbg_read_dump_analyze_command_result`");
         _ = md.AppendLine();
         _ = md.AppendLine("#### Tooling - Close Session");
         _ = md.AppendLine();
-        _ = md.AppendLine("- **Tool name**: `Execute`");
+        _ = md.AppendLine("- **Tool name**: `winaidbg_close_dump_analyze_session`");
         _ = md.AppendLine("- **Action**: Close the analyze session after commands complete or when no longer needed");
         _ = md.AppendLine("- **Input**:");
         _ = md.AppendLine("    * **sessionId**: string (required)");
@@ -68,17 +67,17 @@ internal static class MarkdownFormatter
         _ = md.AppendLine();
         _ = md.AppendLine("#### Tooling - Get Commands Status (Polling)");
         _ = md.AppendLine();
-        _ = md.AppendLine("- **Tool name**: `Execute`");
+        _ = md.AppendLine("- **Tool name**: `winaidbg_get_dump_analyze_commands_status`");
         _ = md.AppendLine("- **Action**: Bulk-poll the status of all queued/executing/completed commands in a session");
         _ = md.AppendLine("- **Input**:");
         _ = md.AppendLine("    * **sessionId**: string (required)");
         _ = md.AppendLine("- **Output**:");
         _ = md.AppendLine("    * **commands**: array of command status objects ({ commandId, command, state, queuedTime, startTime, endTime, executionTime })");
-        _ = md.AppendLine("- **Note**: Use this to efficiently monitor progress (get = poll statuses). For the full output of an individual command, use `Execute` (read = full result)");
+        _ = md.AppendLine("- **Note**: Use this to efficiently monitor progress (get = poll statuses). For the full output of an individual command, use `winaidbg_read_dump_analyze_command_result` (read = full result)");
         _ = md.AppendLine();
         _ = md.AppendLine("#### Tooling - Get Command Result");
         _ = md.AppendLine();
-        _ = md.AppendLine("- **Tool name**: `Execute`");
+        _ = md.AppendLine("- **Tool name**: `winaidbg_read_dump_analyze_command_result`");
         _ = md.AppendLine("- **Action**: Get status and results of a previously queued async command");
         _ = md.AppendLine("- **Input**:");
         _ = md.AppendLine("    * **sessionId**: string (required)");
@@ -86,11 +85,11 @@ internal static class MarkdownFormatter
         _ = md.AppendLine("- **Output**:");
         _ = md.AppendLine("    * **commandStatus**: object");
         _ = md.AppendLine("    * **commandResult**: object");
-        _ = md.AppendLine("- **Note**: Use for results from `Execute` or `Execute`");
+        _ = md.AppendLine("- **Note**: Use for results from `winaidbg_enqueue_async_dump_analyze_command` or `winaidbg_enqueue_async_extension_command`");
         _ = md.AppendLine();
         _ = md.AppendLine("#### Tooling - Cancel Command");
         _ = md.AppendLine();
-        _ = md.AppendLine("- **Tool name**: `Execute`");
+        _ = md.AppendLine("- **Tool name**: `winaidbg_cancel_dump_analyze_command`");
         _ = md.AppendLine("- **Action**: Cancel a queued or executing command in a session");
         _ = md.AppendLine("- **Input**:");
         _ = md.AppendLine("    * **sessionId**: string (required)");
@@ -101,7 +100,7 @@ internal static class MarkdownFormatter
         _ = md.AppendLine();
         _ = md.AppendLine("#### Tooling - Queue Extension");
         _ = md.AppendLine();
-        _ = md.AppendLine("- **Tool name**: `Execute`");
+        _ = md.AppendLine("- **Tool name**: `winaidbg_enqueue_async_extension_command`");
         _ = md.AppendLine("- **Action**: Queue an extension script for complex workflows (may run multiple commands)");
         _ = md.AppendLine("- **Input**:");
         _ = md.AppendLine("    * **sessionId**: string (required)");
@@ -109,7 +108,7 @@ internal static class MarkdownFormatter
         _ = md.AppendLine("    * **parameters**: object (optional)");
         _ = md.AppendLine("- **Output**:");
         _ = md.AppendLine("    * **commandId**: string");
-        _ = md.AppendLine("- **Note**: If an invalid extension name is provided, the error lists available extensions. Use `Execute` to get results. Extensions may take several minutes.");
+        _ = md.AppendLine("- **Note**: If an invalid extension name is provided, the error lists available extensions. Use `winaidbg_read_dump_analyze_command_result` to get results. Extensions may take several minutes.");
         _ = md.AppendLine();
         _ = md.AppendLine("### MCP Resources");
         _ = md.AppendLine();
@@ -200,6 +199,26 @@ internal static class MarkdownFormatter
         _ = markdown.AppendLine(content);
         _ = markdown.AppendLine("```");
 
+        return markdown.ToString();
+    }
+
+    /// <summary>
+    /// Creates a note section in Markdown.
+    /// </summary>
+    /// <param name="message">The note message.</param>
+    /// <returns>Formatted note section.</returns>
+    public static string CreateNoteBlock(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return string.Empty;
+        }
+
+        var markdown = new StringBuilder();
+        _ = markdown.AppendLine("### Note");
+        _ = markdown.AppendLine();
+        _ = markdown.AppendLine(message);
+        _ = markdown.AppendLine();
         return markdown.ToString();
     }
 
@@ -338,7 +357,6 @@ internal static class MarkdownFormatter
     /// <param name="dumpFile">The dump file name.</param>
     /// <param name="status">The creation status.</param>
     /// <param name="dumpCheck">The result of the dump check.</param>
-    /// <param name="symbolsPath">Optional symbols path.</param>
     /// <param name="message">Optional status message.</param>
     /// <returns>Formatted session creation result.</returns>
     public static string CreateSessionResult(
@@ -346,7 +364,6 @@ internal static class MarkdownFormatter
         string dumpFile,
         string status,
         DumpCheckResult dumpCheck,
-        string? symbolsPath = null,
         string? message = null)
     {
         var markdown = new StringBuilder();
@@ -355,11 +372,6 @@ internal static class MarkdownFormatter
         _ = markdown.AppendLine(CreateKeyValue("Session ID", sessionId, true));
         _ = markdown.AppendLine(CreateKeyValue("Dump File", dumpFile, true));
         _ = markdown.AppendLine(CreateKeyValue("Status", status));
-
-        if (!string.IsNullOrEmpty(symbolsPath))
-        {
-            _ = markdown.AppendLine(CreateKeyValue("Symbols Path", symbolsPath, true));
-        }
 
         _ = markdown.AppendLine();
 

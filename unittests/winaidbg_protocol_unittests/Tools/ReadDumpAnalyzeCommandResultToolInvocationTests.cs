@@ -74,6 +74,7 @@ public class ReadDumpAnalyzeCommandResultToolInvocationTests
         _ = textBlock.Text.Should().Contain("Missing required parameter(s)");
         _ = textBlock.Text.Should().Contain("sessionId");
         _ = textBlock.Text.Should().Contain("commandId");
+        _ = textBlock.Text.Should().Contain("maxWaitSeconds");
     }
 
     /// <summary>
@@ -89,6 +90,7 @@ public class ReadDumpAnalyzeCommandResultToolInvocationTests
         {
             ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
             ["commandId"] = JsonSerializer.SerializeToElement(new { id = "cmd-123" }),
+            ["maxWaitSeconds"] = JsonSerializer.SerializeToElement(30),
         };
 
         // Act
@@ -116,6 +118,7 @@ public class ReadDumpAnalyzeCommandResultToolInvocationTests
         {
             ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
             ["commandId"] = JsonSerializer.SerializeToElement("null"),
+            ["maxWaitSeconds"] = JsonSerializer.SerializeToElement(30),
             ["random"] = JsonSerializer.SerializeToElement(new[] { 1, 2, 3 }),
         };
 
