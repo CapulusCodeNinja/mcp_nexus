@@ -2,6 +2,8 @@ using System.Text.Json;
 
 using FluentAssertions;
 
+using ModelContextProtocol.Protocol;
+
 using Moq;
 
 using WinAiDbg.Config;
@@ -196,6 +198,74 @@ public class CancelCommandToolTests
 
             // Assert
             _ = result.IsError.Should().BeTrue();
+        }
+        finally
+        {
+            EngineService.Initialize(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+        }
+    }
+
+    /// <summary>
+    /// Verifies unexpected/extra arguments do not crash invocation and missing required args are reported.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task WinAiDbgCancelDumpAnalyzeCommand_WithUnexpectedArgumentsAndMissingRequired_ReturnsActionableToolError()
+    {
+        // Arrange
+        EngineService.Initialize(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+
+        try
+        {
+            // Act
+            var result = await m_Sut.CallToolAsync(
+                "winaidbg_cancel_dump_analyze_command",
+                new Dictionary<string, JsonElement>
+                {
+                    ["randomObject"] = JsonSerializer.SerializeToElement(new { a = 1 }),
+                },
+                CancellationToken.None);
+
+            // Assert
+            _ = result.IsError.Should().BeTrue();
+            var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
+            _ = textBlock.Text.Should().Contain("Missing required parameter(s)");
+            _ = textBlock.Text.Should().Contain("sessionId");
+            _ = textBlock.Text.Should().Contain("commandId");
+        }
+        finally
+        {
+            EngineService.Initialize(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+        }
+    }
+
+    /// <summary>
+    /// Verifies wrong-typed known argument values are rejected with an actionable error.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task WinAiDbgCancelDumpAnalyzeCommand_WithWrongTypedCommandId_ReturnsActionableToolError()
+    {
+        // Arrange
+        EngineService.Initialize(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+
+        try
+        {
+            // Act
+            var result = await m_Sut.CallToolAsync(
+                "winaidbg_cancel_dump_analyze_command",
+                new Dictionary<string, JsonElement>
+                {
+                    ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
+                    ["commandId"] = JsonSerializer.SerializeToElement(new[] { "cmd-1" }),
+                    ["random"] = JsonSerializer.SerializeToElement(true),
+                },
+                CancellationToken.None);
+
+            // Assert
+            _ = result.IsError.Should().BeTrue();
+            var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
+            _ = textBlock.Text.Should().Contain("Invalid type for parameter `commandId`");
         }
         finally
         {
