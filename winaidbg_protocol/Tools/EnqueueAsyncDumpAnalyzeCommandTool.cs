@@ -56,13 +56,13 @@ internal class EnqueueAsyncDumpAnalyzeCommandTool
         }
         catch (ArgumentException ex)
         {
-            var message = string.Format("Invalid argument: {Message}", ex.Message);
+            var message = $"Invalid argument: {ex.Message}";
             logger.Error(ex, message);
             throw new McpToolUserInputException(message, ex);
         }
         catch (InvalidOperationException ex)
         {
-            var message = string.Format("Cannot enqueue command: {Message}", ex.Message);
+            var message = $"Cannot enqueue command: {ex.Message}";
             logger.Error(ex, message);
             throw new McpToolUserInputException(message, ex);
         }

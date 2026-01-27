@@ -51,7 +51,7 @@ internal class CloseDumpAnalyzeSessionTool
         }
         catch (ArgumentException ex)
         {
-            var message = string.Format("Invalid session ID: {Message}", ex.Message);
+            var message = $"Invalid session ID: {ex.Message}";
             logger.Error(ex, message);
             throw new McpToolUserInputException(message, ex);
         }

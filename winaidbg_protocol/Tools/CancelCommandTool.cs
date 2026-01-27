@@ -66,7 +66,7 @@ internal class CancelCommandTool
         }
         catch (ArgumentException ex)
         {
-            var message = string.Format("Invalid argument: {Message}", ex.Message);
+            var message = $"Invalid argument: {ex.Message}";
             logger.Error(ex, message);
             throw new McpToolUserInputException(message, ex);
         }

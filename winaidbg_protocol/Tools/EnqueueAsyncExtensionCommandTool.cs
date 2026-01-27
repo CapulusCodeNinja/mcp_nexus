@@ -59,13 +59,13 @@ internal class EnqueueAsyncExtensionCommandTool
         }
         catch (ArgumentException ex)
         {
-            var message = string.Format("Invalid argument: {Message}", ex.Message);
+            var message = $"Invalid argument: {ex.Message}";
             logger.Error(ex, message);
             throw new McpToolUserInputException(message, ex);
         }
         catch (InvalidOperationException ex)
         {
-            var message = string.Format("Cannot enqueue  extension script: {Message}", ex.Message);
+            var message = $"Cannot enqueue extension script: {ex.Message}";
             logger.Error(ex, message);
             throw new McpToolUserInputException(message, ex);
         }
