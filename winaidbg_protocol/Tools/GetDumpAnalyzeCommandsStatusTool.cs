@@ -24,6 +24,8 @@ internal class GetDumpAnalyzeCommandsStatusTool
 
         try
         {
+            _ = ToolInputValidator.EnsureSessionExists(sessionId);
+
             var allCommands = EngineService.Get().GetAllCommandInfos(sessionId);
 
             var commandStatuses = allCommands.Values.Select(cmd => new
@@ -45,21 +47,21 @@ internal class GetDumpAnalyzeCommandsStatusTool
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
+        catch (McpToolUserInputException ex)
+        {
+            logger.Warn(ex, "Invalid inputs for get command statuses");
+            throw;
+        }
         catch (ArgumentException ex)
         {
-            logger.Error(ex, "Invalid session ID: {Message}", ex.Message);
-            var markdown = MarkdownFormatter.CreateCommandStatusSummary(sessionId, Array.Empty<object>());
-            markdown += MarkdownFormatter.CreateCodeBlock(ex.Message, "Error");
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            var message = string.Format("Invalid session ID: {Message}", ex.Message);
+            logger.Error(ex, message);
+            throw new McpToolUserInputException(message, ex);
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error getting command statuses");
-            var markdown = MarkdownFormatter.CreateCommandStatusSummary(sessionId, Array.Empty<object>());
-            markdown += MarkdownFormatter.CreateCodeBlock($"Unexpected error: {ex.Message}", "Error");
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            throw;
         }
     }
 }

@@ -26,9 +26,18 @@ internal class CancelCommandTool
 
         try
         {
+            ToolInputValidator.EnsureNonEmpty(commandId, "commandId");
+            _ = ToolInputValidator.EnsureSessionExists(sessionId);
+
             var cancelled = EngineService.Get().CancelCommand(sessionId, commandId);
 
             logger.Info("Command {CommandId} cancellation: {Result}", commandId, cancelled ? "Success" : "NotFound");
+
+            if (!cancelled)
+            {
+                throw new McpToolUserInputException(
+                    $"Invalid `commandId`: `{commandId}` was not found for session `{sessionId}` (or already completed). Use `winaidbg_get_dump_analyze_commands_status` to list known commandIds.");
+            }
 
             var keyValues = new Dictionary<string, object?>
             {
@@ -50,43 +59,21 @@ internal class CancelCommandTool
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
+        catch (McpToolUserInputException ex)
+        {
+            logger.Warn(ex, "Invalid inputs for command cancellation");
+            throw;
+        }
         catch (ArgumentException ex)
         {
-            logger.Error(ex, "Invalid argument: {Message}", ex.Message);
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", commandId },
-                { "Session ID", sessionId },
-                { "Cancelled", false },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Command Cancellation Failed",
-                keyValues,
-                ex.Message,
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            var message = string.Format("Invalid argument: {Message}", ex.Message);
+            logger.Error(ex, message);
+            throw new McpToolUserInputException(message, ex);
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error cancelling command");
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", commandId },
-                { "Session ID", sessionId },
-                { "Cancelled", false },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Command Cancellation Failed",
-                keyValues,
-                $"Unexpected error: {ex.Message}",
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            throw;
         }
     }
 }

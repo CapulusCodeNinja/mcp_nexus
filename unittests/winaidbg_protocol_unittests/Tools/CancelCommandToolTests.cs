@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 using FluentAssertions;
 
 using Moq;
@@ -7,14 +9,13 @@ using WinAiDbg.Config.Models;
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.External.Apis.ProcessManagement;
 using WinAiDbg.Protocol.Services;
-using WinAiDbg.Protocol.Tools;
 
 using Xunit;
 
 namespace WinAiDbg.Protocol.Unittests.Tools;
 
 /// <summary>
-/// Unit tests for the <see cref="CancelCommandTool"/> class.
+/// Unit tests for the cancel command tool call shape and errors.
 /// Tests command cancellation, error handling, and response formatting.
 /// </summary>
 public class CancelCommandToolTests
@@ -22,6 +23,7 @@ public class CancelCommandToolTests
     private readonly Mock<ISettings> m_Settings;
     private readonly Mock<IFileSystem> m_FileSystem;
     private readonly Mock<IProcessManager> m_ProcessManager;
+    private readonly McpToolCallService m_Sut;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CancelCommandToolTests"/> class.
@@ -43,6 +45,7 @@ public class CancelCommandToolTests
             },
         };
         _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
+        m_Sut = new McpToolCallService(new McpToolDefinitionService());
     }
 
     /// <summary>
@@ -58,14 +61,17 @@ public class CancelCommandToolTests
         try
         {
             // Act
-            var result = await new CancelCommandTool().Execute("session-123", "cmd-999");
+            var result = await m_Sut.CallToolAsync(
+                "winaidbg_cancel_dump_analyze_command",
+                new Dictionary<string, JsonElement>
+                {
+                    ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
+                    ["commandId"] = JsonSerializer.SerializeToElement("cmd-999"),
+                },
+                CancellationToken.None);
 
             // Assert
-            _ = result.Should().NotBeNull();
-            var markdown = result.ToString()!;
-            _ = markdown.Should().NotBeNullOrEmpty();
-            _ = markdown.Should().Contain("cmd-999");
-            _ = markdown.Should().Contain("session-123");
+            _ = result.IsError.Should().BeTrue();
         }
         finally
         {
@@ -86,13 +92,17 @@ public class CancelCommandToolTests
         try
         {
             // Act
-            var result = await new CancelCommandTool().Execute(string.Empty, "cmd-456");
+            var result = await m_Sut.CallToolAsync(
+                "winaidbg_cancel_dump_analyze_command",
+                new Dictionary<string, JsonElement>
+                {
+                    ["sessionId"] = JsonSerializer.SerializeToElement(string.Empty),
+                    ["commandId"] = JsonSerializer.SerializeToElement("cmd-456"),
+                },
+                CancellationToken.None);
 
             // Assert
-            _ = result.Should().NotBeNull();
-            var markdown = result.ToString()!;
-            _ = markdown.Should().NotBeNullOrEmpty();
-            _ = markdown.Should().Contain("cmd-456");
+            _ = result.IsError.Should().BeTrue();
         }
         finally
         {
@@ -113,13 +123,17 @@ public class CancelCommandToolTests
         try
         {
             // Act
-            var result = await new CancelCommandTool().Execute("session-123", string.Empty);
+            var result = await m_Sut.CallToolAsync(
+                "winaidbg_cancel_dump_analyze_command",
+                new Dictionary<string, JsonElement>
+                {
+                    ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
+                    ["commandId"] = JsonSerializer.SerializeToElement(string.Empty),
+                },
+                CancellationToken.None);
 
             // Assert
-            _ = result.Should().NotBeNull();
-            var markdown = result.ToString()!;
-            _ = markdown.Should().NotBeNullOrEmpty();
-            _ = markdown.Should().Contain("session-123");
+            _ = result.IsError.Should().BeTrue();
         }
         finally
         {
@@ -140,13 +154,17 @@ public class CancelCommandToolTests
         try
         {
             // Act
-            var result = await new CancelCommandTool().Execute(string.Empty, "cmd-456");
+            var result = await m_Sut.CallToolAsync(
+                "winaidbg_cancel_dump_analyze_command",
+                new Dictionary<string, JsonElement>
+                {
+                    ["sessionId"] = JsonSerializer.SerializeToElement(string.Empty),
+                    ["commandId"] = JsonSerializer.SerializeToElement("cmd-456"),
+                },
+                CancellationToken.None);
 
             // Assert
-            _ = result.Should().NotBeNull();
-            var markdown = result.ToString()!;
-            _ = markdown.Should().NotBeNullOrEmpty();
-            _ = markdown.Should().Contain("cmd-456");
+            _ = result.IsError.Should().BeTrue();
         }
         finally
         {
@@ -167,15 +185,17 @@ public class CancelCommandToolTests
         try
         {
             // Act
-            var result = await new CancelCommandTool().Execute("session-123", "cmd-999");
+            var result = await m_Sut.CallToolAsync(
+                "winaidbg_cancel_dump_analyze_command",
+                new Dictionary<string, JsonElement>
+                {
+                    ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
+                    ["commandId"] = JsonSerializer.SerializeToElement("cmd-999"),
+                },
+                CancellationToken.None);
 
             // Assert
-            _ = result.Should().NotBeNull();
-            var markdown = result.ToString()!;
-            _ = markdown.Should().NotBeNullOrEmpty();
-
-            // Should contain usage guide
-            _ = markdown.Length.Should().BeGreaterThan(100);
+            _ = result.IsError.Should().BeTrue();
         }
         finally
         {

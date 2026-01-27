@@ -24,6 +24,8 @@ internal class CloseDumpAnalyzeSessionTool
 
         try
         {
+            _ = ToolInputValidator.EnsureSessionExists(sessionId);
+
             await EngineService.Get().CloseSessionAsync(sessionId);
 
             logger.Info("Successfully closed session: {SessionId}", sessionId);
@@ -42,39 +44,21 @@ internal class CloseDumpAnalyzeSessionTool
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
         }
+        catch (McpToolUserInputException ex)
+        {
+            logger.Warn(ex, "Invalid inputs for session close");
+            throw;
+        }
         catch (ArgumentException ex)
         {
-            logger.Error(ex, "Invalid session ID: {Message}", ex.Message);
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Session ID", sessionId },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Session Close Failed",
-                keyValues,
-                ex.Message,
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            var message = string.Format("Invalid session ID: {Message}", ex.Message);
+            logger.Error(ex, message);
+            throw new McpToolUserInputException(message, ex);
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error closing session");
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Session ID", sessionId },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Session Close Failed",
-                keyValues,
-                $"Unexpected error: {ex.Message}",
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            throw;
         }
     }
 }

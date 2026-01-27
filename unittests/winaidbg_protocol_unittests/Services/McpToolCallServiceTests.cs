@@ -29,7 +29,7 @@ public class McpToolCallServiceTests
 
         // Act
         var result = await sut.CallToolAsync(
-            "Execute",
+            "winaidbg_open_dump_analyze_session",
             new Dictionary<string, JsonElement>(),
             CancellationToken.None);
 
@@ -62,7 +62,7 @@ public class McpToolCallServiceTests
 
         // Act
         var result = await sut.CallToolAsync(
-            "Execute",
+            "winaidbg_open_dump_analyze_session",
             arguments,
             CancellationToken.None);
 

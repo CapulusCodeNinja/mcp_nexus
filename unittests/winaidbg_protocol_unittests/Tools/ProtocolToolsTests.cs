@@ -1,6 +1,16 @@
+using System.Text.Json;
+
 using FluentAssertions;
 
-using WinAiDbg.Protocol.Tools;
+using ModelContextProtocol.Protocol;
+
+using Moq;
+
+using WinAiDbg.Config;
+using WinAiDbg.Config.Models;
+using WinAiDbg.External.Apis.FileSystem;
+using WinAiDbg.External.Apis.ProcessManagement;
+using WinAiDbg.Protocol.Services;
 
 using Xunit;
 
@@ -12,6 +22,55 @@ namespace WinAiDbg.Protocol.Unittests.Tools;
 /// </summary>
 public class ProtocolToolsTests
 {
+    private readonly Mock<ISettings> m_Settings;
+    private readonly Mock<IFileSystem> m_FileSystem;
+    private readonly Mock<IProcessManager> m_ProcessManager;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProtocolToolsTests"/> class.
+    /// </summary>
+    public ProtocolToolsTests()
+    {
+        m_Settings = new Mock<ISettings>();
+        m_FileSystem = new Mock<IFileSystem>();
+        m_ProcessManager = new Mock<IProcessManager>();
+
+        var sharedConfig = new SharedConfiguration
+        {
+            WinAiDbg = new WinAiDbgSettings
+            {
+                Extensions = new ExtensionsSettings
+                {
+                    CallbackPort = 0,
+                },
+            },
+        };
+        _ = m_Settings.Setup(s => s.Get()).Returns(sharedConfig);
+
+        EngineService.Initialize(m_FileSystem.Object, m_ProcessManager.Object, m_Settings.Object);
+    }
+
+    /// <summary>
+    /// Creates a new tool call service instance for tests.
+    /// </summary>
+    /// <returns>The tool call service.</returns>
+    private static McpToolCallService CreateSut()
+    {
+        var toolDefinitionService = new McpToolDefinitionService();
+        return new McpToolCallService(toolDefinitionService);
+    }
+
+    /// <summary>
+    /// Extracts the first text content block from a tool call result.
+    /// </summary>
+    /// <param name="result">The call result.</param>
+    /// <returns>The text content.</returns>
+    private static string GetText(CallToolResult result)
+    {
+        var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
+        return textBlock.Text;
+    }
+
     /// <summary>
     /// Verifies that enqueue tool handles empty sessionId correctly.
     /// </summary>
@@ -20,14 +79,19 @@ public class ProtocolToolsTests
     public async Task EnqueueDumpAnalyzeCommand_WithEmptySessionId_ReturnsErrorResponse()
     {
         // Act
-        var result = await new EnqueueAsyncDumpAnalyzeCommandTool().Execute(string.Empty, "test command");
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_dump_analyze_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement(string.Empty),
+                ["command"] = JsonSerializer.SerializeToElement("test command"),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("Failed");
-        _ = markdown.Should().Contain("sessionId");
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("sessionId");
     }
 
     /// <summary>
@@ -38,14 +102,19 @@ public class ProtocolToolsTests
     public async Task EnqueueDumpAnalyzeCommand_WithEmptyCommand_ReturnsErrorResponse()
     {
         // Act
-        var result = await new EnqueueAsyncDumpAnalyzeCommandTool().Execute("session-123", string.Empty);
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_dump_analyze_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
+                ["command"] = JsonSerializer.SerializeToElement(string.Empty),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("Failed");
-        _ = markdown.Should().Contain("command");
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("command");
     }
 
     /// <summary>
@@ -56,13 +125,19 @@ public class ProtocolToolsTests
     public async Task EnqueueDumpAnalyzeCommand_WithWhitespaceSessionId_ReturnsErrorResponse()
     {
         // Act
-        var result = await new EnqueueAsyncDumpAnalyzeCommandTool().Execute("   ", "test command");
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_dump_analyze_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("   "),
+                ["command"] = JsonSerializer.SerializeToElement("test command"),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("Failed");
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("sessionId");
     }
 
     /// <summary>
@@ -73,13 +148,19 @@ public class ProtocolToolsTests
     public async Task EnqueueDumpAnalyzeCommand_WithWhitespaceCommand_ReturnsErrorResponse()
     {
         // Act
-        var result = await new EnqueueAsyncDumpAnalyzeCommandTool().Execute("session-123", "   ");
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_dump_analyze_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
+                ["command"] = JsonSerializer.SerializeToElement("   "),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("Failed");
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("command");
     }
 
     /// <summary>
@@ -90,15 +171,19 @@ public class ProtocolToolsTests
     public async Task EnqueueDumpAnalyzeCommand_WithInvalidSessionId_ReturnsErrorResponse()
     {
         // Act
-        var result = await new EnqueueAsyncDumpAnalyzeCommandTool().Execute("invalid-session-999", "test command");
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_dump_analyze_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+                ["command"] = JsonSerializer.SerializeToElement("test command"),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-
-        // Should contain error indicator or failure status
-        _ = (markdown.Contains("Failed") || markdown.Contains("Error") || markdown.Contains("❌")).Should().BeTrue();
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("sessionId");
     }
 
     /// <summary>
@@ -109,14 +194,19 @@ public class ProtocolToolsTests
     public async Task EnqueueExtensionCommand_WithEmptySessionId_ReturnsErrorResponse()
     {
         // Act
-        var result = await new EnqueueAsyncExtensionCommandTool().Execute(string.Empty, "testExtension", null);
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement(string.Empty),
+                ["extensionName"] = JsonSerializer.SerializeToElement("testExtension"),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("Failed");
-        _ = markdown.Should().Contain("sessionId");
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("sessionId");
     }
 
     /// <summary>
@@ -127,14 +217,19 @@ public class ProtocolToolsTests
     public async Task EnqueueExtensionCommand_WithEmptyExtensionName_ReturnsErrorResponse()
     {
         // Act
-        var result = await new EnqueueAsyncExtensionCommandTool().Execute("session-123", string.Empty, null);
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
+                ["extensionName"] = JsonSerializer.SerializeToElement(string.Empty),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("Failed");
-        _ = markdown.Should().Contain("extensionName");
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("extensionName");
     }
 
     /// <summary>
@@ -145,13 +240,19 @@ public class ProtocolToolsTests
     public async Task EnqueueExtensionCommand_WithWhitespaceSessionId_ReturnsErrorResponse()
     {
         // Act
-        var result = await new EnqueueAsyncExtensionCommandTool().Execute("   ", "testExtension", null);
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("   "),
+                ["extensionName"] = JsonSerializer.SerializeToElement("testExtension"),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("Failed");
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("sessionId");
     }
 
     /// <summary>
@@ -162,13 +263,19 @@ public class ProtocolToolsTests
     public async Task EnqueueExtensionCommand_WithWhitespaceExtensionName_ReturnsErrorResponse()
     {
         // Act
-        var result = await new EnqueueAsyncExtensionCommandTool().Execute("session-123", "   ", null);
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
+                ["extensionName"] = JsonSerializer.SerializeToElement("   "),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("Failed");
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("extensionName");
     }
 
     /// <summary>
@@ -179,13 +286,19 @@ public class ProtocolToolsTests
     public async Task EnqueueExtensionCommand_WithInvalidSessionId_ReturnsErrorResponse()
     {
         // Act
-        var result = await new EnqueueAsyncExtensionCommandTool().Execute("invalid-session-999", "testExtension", null);
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+                ["extensionName"] = JsonSerializer.SerializeToElement("testExtension"),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = (markdown.Contains("Failed") || markdown.Contains("Error") || markdown.Contains("❌")).Should().BeTrue();
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("sessionId");
     }
 
     /// <summary>
@@ -196,12 +309,19 @@ public class ProtocolToolsTests
     public async Task EnqueueExtensionCommand_WithNullParameters_HandlesGracefully()
     {
         // Act
-        var result = await new EnqueueAsyncExtensionCommandTool().Execute("invalid-session-999", "testExtension", null);
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+                ["extensionName"] = JsonSerializer.SerializeToElement("testExtension"),
+                ["parameters"] = JsonSerializer.SerializeToElement<object?>(null),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
+        _ = result.IsError.Should().BeTrue();
     }
 
     /// <summary>
@@ -213,12 +333,19 @@ public class ProtocolToolsTests
     {
         // Act
         var parameters = new { param1 = "value1", param2 = 123 };
-        var result = await new EnqueueAsyncExtensionCommandTool().Execute("invalid-session-999", "testExtension", parameters);
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+                ["extensionName"] = JsonSerializer.SerializeToElement("testExtension"),
+                ["parameters"] = JsonSerializer.SerializeToElement(parameters),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
+        _ = result.IsError.Should().BeTrue();
     }
 
     /// <summary>
@@ -229,13 +356,18 @@ public class ProtocolToolsTests
     public async Task GetCommandsStatus_WithInvalidSessionId_ReturnsErrorResponse()
     {
         // Act
-        var result = await new GetDumpAnalyzeCommandsStatusTool().Execute("invalid-session-999");
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_get_dump_analyze_commands_status",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("Command Status Summary");
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("sessionId");
     }
 
     /// <summary>
@@ -246,12 +378,17 @@ public class ProtocolToolsTests
     public async Task GetCommandsStatus_WithEmptySessionId_ReturnsErrorResponse()
     {
         // Act
-        var result = await new GetDumpAnalyzeCommandsStatusTool().Execute(string.Empty);
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_get_dump_analyze_commands_status",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement(string.Empty),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
+        _ = result.IsError.Should().BeTrue();
     }
 
     /// <summary>
@@ -262,13 +399,17 @@ public class ProtocolToolsTests
     public async Task GetCommandsStatus_ReturnsValidMarkdown()
     {
         // Act
-        var result = await new GetDumpAnalyzeCommandsStatusTool().Execute("test-session");
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_get_dump_analyze_commands_status",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("test-session"),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("##");
+        _ = result.IsError.Should().BeTrue();
     }
 
     /// <summary>
@@ -279,13 +420,19 @@ public class ProtocolToolsTests
     public async Task CancelCommand_WithInvalidSessionId_ReturnsResponse()
     {
         // Act
-        var result = await new CancelCommandTool().Execute("invalid-session-999", "cmd-123");
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_cancel_dump_analyze_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+                ["commandId"] = JsonSerializer.SerializeToElement("cmd-123"),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("Cancellation");
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("sessionId");
     }
 
     /// <summary>
@@ -296,12 +443,18 @@ public class ProtocolToolsTests
     public async Task CancelCommand_WithInvalidCommandId_ReturnsResponse()
     {
         // Act
-        var result = await new CancelCommandTool().Execute("session-123", "invalid-cmd-999");
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_cancel_dump_analyze_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
+                ["commandId"] = JsonSerializer.SerializeToElement("invalid-cmd-999"),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
+        _ = result.IsError.Should().BeTrue();
     }
 
     /// <summary>
@@ -312,12 +465,17 @@ public class ProtocolToolsTests
     public async Task CancelCommand_ReturnsValidMarkdown()
     {
         // Act
-        var result = await new CancelCommandTool().Execute("test-session", "test-command");
+        var sut = CreateSut();
+        var result = await sut.CallToolAsync(
+            "winaidbg_cancel_dump_analyze_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("test-session"),
+                ["commandId"] = JsonSerializer.SerializeToElement("test-command"),
+            },
+            CancellationToken.None);
 
         // Assert
-        _ = result.Should().NotBeNull();
-        var markdown = result.ToString()!;
-        _ = markdown.Should().NotBeNullOrEmpty();
-        _ = markdown.Should().Contain("##");
+        _ = result.IsError.Should().BeTrue();
     }
 }

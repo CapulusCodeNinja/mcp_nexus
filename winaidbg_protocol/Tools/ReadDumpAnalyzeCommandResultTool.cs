@@ -26,6 +26,9 @@ internal class ReadDumpAnalyzeCommandResultTool
 
         try
         {
+            ToolInputValidator.EnsureNonEmpty(commandId, "commandId");
+            _ = ToolInputValidator.EnsureSessionExists(sessionId);
+
             var commandInfo = await EngineService.Get().GetCommandInfoAsync(sessionId, commandId);
 
             logger.Info("Command {CommandId} result retrieved: State={State}", commandId, commandInfo.State);
@@ -55,50 +58,27 @@ internal class ReadDumpAnalyzeCommandResultTool
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
         }
+        catch (McpToolUserInputException ex)
+        {
+            logger.Warn(ex, "Invalid inputs for command result read");
+            throw;
+        }
         catch (ArgumentException ex)
         {
             logger.Error(ex, "Invalid argument: {Message}", ex.Message);
-            var markdown = MarkdownFormatter.CreateCommandResult(
-                commandId,
-                sessionId,
-                "N/A",
-                "Failed",
-                false,
-                DateTime.Now);
-
-            markdown += MarkdownFormatter.CreateCodeBlock(ex.Message, "Error");
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            throw new McpToolUserInputException(ex.Message, ex);
         }
         catch (KeyNotFoundException ex)
         {
             logger.Error(ex, "Command not found: {CommandId}", commandId);
-            var markdown = MarkdownFormatter.CreateCommandResult(
-                commandId,
-                sessionId,
-                "N/A",
-                "NotFound",
-                false,
-                DateTime.Now);
-
-            markdown += MarkdownFormatter.CreateCodeBlock("Command not found", "Error");
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            throw new McpToolUserInputException(
+                $"Invalid `commandId`: `{commandId}` was not found for session `{sessionId}`. Use `winaidbg_get_dump_analyze_commands_status` to list known commandIds.",
+                ex);
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error reading command result");
-            var markdown = MarkdownFormatter.CreateCommandResult(
-                commandId,
-                sessionId,
-                "N/A",
-                "Failed",
-                false,
-                DateTime.Now);
-
-            markdown += MarkdownFormatter.CreateCodeBlock($"Unexpected error: {ex.Message}", "Error");
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            throw;
         }
     }
 }

@@ -139,6 +139,13 @@ internal class McpToolCallService
                 ],
             };
         }
+        catch (McpToolUserInputException ex)
+        {
+            return CreateErrorResult(
+                toolName,
+                ex.Message,
+                schemaElement);
+        }
         catch (Exception ex)
         {
             m_Logger.Error(ex, "Unhandled exception invoking tool {ToolName}", toolName);
@@ -304,15 +311,6 @@ internal class McpToolCallService
             if (expectedType == "string" && kvp.Value.ValueKind != JsonValueKind.String)
             {
                 return $"Invalid type for parameter `{kvp.Key}`: expected `string`, got `{kvp.Value.ValueKind}`.";
-            }
-
-            if (expectedType == "string" && kvp.Value.ValueKind == JsonValueKind.String)
-            {
-                var value = kvp.Value.GetString() ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    return $"Invalid value for parameter `{kvp.Key}`: expected a non-empty string.";
-                }
             }
         }
 

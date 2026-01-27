@@ -47,7 +47,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        _ = tools.Should().Contain(t => t.Name == "Execute");
+        _ = tools.Should().Contain(t => t.Name == "winaidbg_open_dump_analyze_session");
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        _ = tools.Should().Contain(t => t.Name == "Execute");
+        _ = tools.Should().Contain(t => t.Name == "winaidbg_enqueue_async_dump_analyze_command");
     }
 
     /// <summary>
@@ -69,7 +69,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        _ = tools.Should().Contain(t => t.Name == "Execute");
+        _ = tools.Should().Contain(t => t.Name == "winaidbg_read_dump_analyze_command_result");
     }
 
     /// <summary>
@@ -80,7 +80,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        _ = tools.Should().Contain(t => t.Name == "Execute");
+        _ = tools.Should().Contain(t => t.Name == "winaidbg_get_dump_analyze_commands_status");
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        _ = tools.Should().Contain(t => t.Name == "Execute");
+        _ = tools.Should().Contain(t => t.Name == "winaidbg_close_dump_analyze_session");
     }
 
     /// <summary>
@@ -102,7 +102,7 @@ public class McpToolDefinitionServiceTests
     {
         var tools = m_Service.GetAllTools();
 
-        _ = tools.Should().Contain(t => t.Name == "Execute");
+        _ = tools.Should().Contain(t => t.Name == "winaidbg_cancel_dump_analyze_command");
     }
 
     /// <summary>
@@ -111,10 +111,10 @@ public class McpToolDefinitionServiceTests
     [Fact]
     public void GetTool_ExistingTool_ReturnsTool()
     {
-        var tool = m_Service.GetTool("Execute");
+        var tool = m_Service.GetTool("winaidbg_open_dump_analyze_session");
 
         _ = tool.Should().NotBeNull();
-        _ = tool!.Name.Should().Be("Execute");
+        _ = tool!.Name.Should().Be("winaidbg_open_dump_analyze_session");
     }
 
     /// <summary>

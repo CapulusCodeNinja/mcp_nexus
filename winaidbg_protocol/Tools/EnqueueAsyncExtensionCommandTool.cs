@@ -28,6 +28,9 @@ internal class EnqueueAsyncExtensionCommandTool
 
         try
         {
+            ToolInputValidator.EnsureNonEmpty(extensionName, "extensionName");
+            ToolInputValidator.EnsureSessionIsActive(sessionId);
+
             var commandId = await EngineService.Get().EnqueueExtensionScriptAsync(sessionId, extensionName, parameters);
 
             logger.Info("Extension Script enqueued: {CommandId} in session {SessionId}", commandId, sessionId);
@@ -49,65 +52,27 @@ internal class EnqueueAsyncExtensionCommandTool
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return markdown;
         }
+        catch (McpToolUserInputException ex)
+        {
+            logger.Warn(ex, "Invalid inputs for extension enqueue");
+            throw;
+        }
         catch (ArgumentException ex)
         {
-            logger.Error(ex, "Invalid argument: {Message}", ex.Message);
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", "N/A" },
-                { "Session ID", sessionId },
-                { "Extension Name", extensionName },
-                { "Parameters", parameters?.ToString() ?? "None" },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Extension Script Enqueue Failed",
-                keyValues,
-                ex.Message,
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            var message = string.Format("Invalid argument: {Message}", ex.Message);
+            logger.Error(ex, message);
+            throw new McpToolUserInputException(message, ex);
         }
         catch (InvalidOperationException ex)
         {
-            logger.Error(ex, "Cannot enqueue  extension script: {Message}", ex.Message);
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", "N/A" },
-                { "Session ID", sessionId },
-                { "Extension Name", extensionName },
-                { "Parameters", parameters?.ToString() ?? "None" },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Extension Script Enqueue Failed",
-                keyValues,
-                ex.Message,
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            var message = string.Format("Cannot enqueue  extension script: {Message}", ex.Message);
+            logger.Error(ex, message);
+            throw new McpToolUserInputException(message, ex);
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error enqueuing extension script ");
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", "N/A" },
-                { "Session ID", sessionId },
-                { "Extension Name", extensionName },
-                { "Parameters", parameters?.ToString() ?? "None" },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Extension Script Enqueue Failed",
-                keyValues,
-                $"Unexpected error: {ex.Message}",
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            throw;
         }
     }
 }

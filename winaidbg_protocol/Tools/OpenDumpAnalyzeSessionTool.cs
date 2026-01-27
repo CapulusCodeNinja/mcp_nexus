@@ -1,6 +1,5 @@
 using NLog;
 
-using WinAiDbg.Engine.Share.Models;
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.Protocol.Services;
 using WinAiDbg.Protocol.Utilities;
@@ -30,6 +29,9 @@ internal class OpenDumpAnalyzeSessionTool
 
         try
         {
+            ToolInputValidator.EnsureNonEmpty(dumpPath, "dumpPath");
+            ToolInputValidator.EnsureDumpFileExists(dumpPath, fileSystem);
+
             if (symbolsPath == "null" || string.IsNullOrWhiteSpace(symbolsPath))
             {
                 symbolsPath = null;
@@ -53,97 +55,32 @@ internal class OpenDumpAnalyzeSessionTool
         catch (FileNotFoundException ex)
         {
             logger.Error(ex, "File not found: {Message}", ex.Message);
-            var markdown = MarkdownFormatter.CreateSessionResult(
-                "N/A",
-                fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                "Failed",
-                new DumpCheckResult
-                {
-                    IsEnabled = false,
-                    WasExecuted = false,
-                    ExitCode = -1,
-                    Message = string.Empty,
-                },
-                null,
-                ex.Message);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            throw new McpToolUserInputException($"Invalid `dumpPath`: {ex.Message}", ex);
         }
         catch (InvalidOperationException ex)
         {
             logger.Error(ex, "Cannot create session: {Message}", ex.Message);
-            var markdown = MarkdownFormatter.CreateSessionResult(
-                "N/A",
-                fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                "Failed",
-                new DumpCheckResult
-                {
-                    IsEnabled = false,
-                    WasExecuted = false,
-                    ExitCode = -1,
-                    Message = string.Empty,
-                },
-                null,
-                ex.Message);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            throw new McpToolUserInputException(ex.Message, ex);
         }
         catch (UnauthorizedAccessException ex)
         {
             logger.Error(ex, "Access denied: {Message}", ex.Message);
-            var errorMarkdown = MarkdownFormatter.CreateSessionResult(
-                "N/A",
-                fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                "Failed",
-                new DumpCheckResult
-                {
-                    IsEnabled = false,
-                    WasExecuted = false,
-                    ExitCode = -1,
-                    Message = string.Empty,
-                },
-                null,
-                $"Cannot open file (access denied): {ex.Message}");
-            errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return errorMarkdown;
+            throw new McpToolUserInputException($"Cannot open file (access denied): {ex.Message}", ex);
         }
         catch (IOException ex)
         {
             logger.Error(ex, "I/O error when opening dump: {DumpPath}", dumpPath);
-            var errorMarkdown = MarkdownFormatter.CreateSessionResult(
-                "N/A",
-                fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                "Failed",
-                new DumpCheckResult
-                {
-                    IsEnabled = false,
-                    WasExecuted = false,
-                    ExitCode = -1,
-                    Message = string.Empty,
-                },
-                null,
-                $"Cannot open file: {ex.Message}");
-            errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return errorMarkdown;
+            throw new McpToolUserInputException($"Cannot open file: {ex.Message}", ex);
+        }
+        catch (McpToolUserInputException ex)
+        {
+            logger.Warn(ex, "Invalid inputs for session creation");
+            throw;
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error creating session");
-            var markdown = MarkdownFormatter.CreateSessionResult(
-                "N/A",
-                fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                "Failed",
-                new DumpCheckResult
-                {
-                    IsEnabled = false,
-                    WasExecuted = false,
-                    ExitCode = -1,
-                    Message = string.Empty,
-                },
-                null,
-                $"Unexpected error: {ex.Message}");
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            throw;
         }
     }
 }

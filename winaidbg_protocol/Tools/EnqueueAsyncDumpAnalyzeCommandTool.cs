@@ -26,15 +26,8 @@ internal class EnqueueAsyncDumpAnalyzeCommandTool
 
         try
         {
-            if (string.IsNullOrWhiteSpace(sessionId))
-            {
-                throw new ArgumentException("sessionId cannot be empty", nameof(sessionId));
-            }
-
-            if (string.IsNullOrWhiteSpace(command))
-            {
-                throw new ArgumentException("command cannot be empty", nameof(command));
-            }
+            ToolInputValidator.EnsureNonEmpty(command, "command");
+            ToolInputValidator.EnsureSessionIsActive(sessionId);
 
             var commandId = EngineService.Get().EnqueueCommand(sessionId, command);
 
@@ -56,62 +49,27 @@ internal class EnqueueAsyncDumpAnalyzeCommandTool
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
+        catch (McpToolUserInputException ex)
+        {
+            logger.Warn(ex, "Invalid inputs for command enqueue");
+            throw;
+        }
         catch (ArgumentException ex)
         {
-            logger.Error(ex, "Invalid argument: {Message}", ex.Message);
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", "N/A" },
-                { "Session ID", sessionId },
-                { "Command", command },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Command Enqueue Failed",
-                keyValues,
-                ex.Message,
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            var message = string.Format("Invalid argument: {Message}", ex.Message);
+            logger.Error(ex, message);
+            throw new McpToolUserInputException(message, ex);
         }
         catch (InvalidOperationException ex)
         {
-            logger.Error(ex, "Cannot enqueue command: {Message}", ex.Message);
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", "N/A" },
-                { "Session ID", sessionId },
-                { "Command", command },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Command Enqueue Failed",
-                keyValues,
-                ex.Message,
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            var message = string.Format("Cannot enqueue command: {Message}", ex.Message);
+            logger.Error(ex, message);
+            throw new McpToolUserInputException(message, ex);
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error enqueuing command");
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", "N/A" },
-                { "Session ID", sessionId },
-                { "Command", command },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Command Enqueue Failed",
-                keyValues,
-                $"Unexpected error: {ex.Message}",
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            throw;
         }
     }
 }
