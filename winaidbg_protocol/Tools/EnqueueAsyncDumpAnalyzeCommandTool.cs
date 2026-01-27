@@ -1,7 +1,3 @@
-using System.ComponentModel;
-
-using ModelContextProtocol.Server;
-
 using NLog;
 
 using WinAiDbg.Protocol.Services;
@@ -12,42 +8,17 @@ namespace WinAiDbg.Protocol.Tools;
 /// <summary>
 /// MCP tool for enqueuing debugging commands for asynchronous execution.
 /// </summary>
-[McpServerToolType]
-internal static class EnqueueAsyncDumpAnalyzeCommandTool
+internal class EnqueueAsyncDumpAnalyzeCommandTool
 {
-    /// <summary>
-    /// Enqueues a debugging command for asynchronous execution in the specified session.
-    ///
-    /// Deprecated: Use winaidbg_enqueue_async_dump_analyze_command instead.
-    ///
-    /// </summary>
-    /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
-    /// <param name="command">WinDbg/CDB command to execute.</param>
-    /// <returns>Command enqueue result with commandId.</returns>
-    [McpServerTool]
-    [Description("Deprecated but kept for backward compatibility. Same as winaidbg_enqueue_async_dump_analyze_command. MCP call shape: tools/call with params.arguments { sessionId: string, command: string }.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static Task<object> nexus_enqueue_async_dump_analyze_command(
-        [Description("Session ID from nexus_open_dump_analyze_session")] string sessionId,
-        [Description("WinDbg/CDB command to execute (e.g., 'k', '!analyze -v', 'lm')")] string command)
-    {
-        return winaidbg_enqueue_async_dump_analyze_command(sessionId, command);
-    }
-
     /// <summary>
     /// Enqueues a debugging command for asynchronous execution in the specified session.
     /// </summary>
     /// <param name="sessionId">Session ID from winaidbg_open_dump_analyze_session.</param>
     /// <param name="command">WinDbg/CDB command to execute.</param>
     /// <returns>Command enqueue result with commandId.</returns>
-    [McpServerTool]
-    [Description("Enqueues a debugging command for asynchronous execution. Returns commandId for tracking. MCP call shape: tools/call with params.arguments { sessionId: string, command: string }.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static Task<object> winaidbg_enqueue_async_dump_analyze_command(
-        [Description("Session ID from winaidbg_open_dump_analyze_session")] string sessionId,
-        [Description("WinDbg/CDB command to execute (e.g., 'k', '!analyze -v', 'lm')")] string command)
+    public Task<object> Execute(
+        string sessionId,
+        string command)
     {
         var logger = LogManager.GetCurrentClassLogger();
 
@@ -55,15 +26,8 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
 
         try
         {
-            if (string.IsNullOrWhiteSpace(sessionId))
-            {
-                throw new ArgumentException("sessionId cannot be empty", nameof(sessionId));
-            }
-
-            if (string.IsNullOrWhiteSpace(command))
-            {
-                throw new ArgumentException("command cannot be empty", nameof(command));
-            }
+            ToolInputValidator.EnsureNonEmpty(command, "command");
+            ToolInputValidator.EnsureSessionIsActive(sessionId);
 
             var commandId = EngineService.Get().EnqueueCommand(sessionId, command);
 
@@ -85,62 +49,27 @@ internal static class EnqueueAsyncDumpAnalyzeCommandTool
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
+        catch (McpToolUserInputException ex)
+        {
+            logger.Warn(ex, "Invalid inputs for command enqueue");
+            throw;
+        }
         catch (ArgumentException ex)
         {
-            logger.Error(ex, "Invalid argument: {Message}", ex.Message);
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", "N/A" },
-                { "Session ID", sessionId },
-                { "Command", command },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Command Enqueue Failed",
-                keyValues,
-                ex.Message,
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            var message = $"Invalid argument: {ex.Message}";
+            logger.Error(ex, message);
+            throw new McpToolUserInputException(message, ex);
         }
         catch (InvalidOperationException ex)
         {
-            logger.Error(ex, "Cannot enqueue command: {Message}", ex.Message);
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", "N/A" },
-                { "Session ID", sessionId },
-                { "Command", command },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Command Enqueue Failed",
-                keyValues,
-                ex.Message,
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            var message = $"Cannot enqueue command: {ex.Message}";
+            logger.Error(ex, message);
+            throw new McpToolUserInputException(message, ex);
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error enqueuing command");
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", "N/A" },
-                { "Session ID", sessionId },
-                { "Command", command },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Command Enqueue Failed",
-                keyValues,
-                $"Unexpected error: {ex.Message}",
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            throw;
         }
     }
 }

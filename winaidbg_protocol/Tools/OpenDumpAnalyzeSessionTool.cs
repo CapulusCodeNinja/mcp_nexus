@@ -1,10 +1,5 @@
-using System.ComponentModel;
-
-using ModelContextProtocol.Server;
-
 using NLog;
 
-using WinAiDbg.Engine.Share.Models;
 using WinAiDbg.External.Apis.FileSystem;
 using WinAiDbg.Protocol.Services;
 using WinAiDbg.Protocol.Utilities;
@@ -14,42 +9,14 @@ namespace WinAiDbg.Protocol.Tools;
 /// <summary>
 /// MCP tool for opening a new debugging session for crash dump analysis.
 /// </summary>
-[McpServerToolType]
-internal static class OpenDumpAnalyzeSessionTool
+internal class OpenDumpAnalyzeSessionTool
 {
     /// <summary>
     /// Opens a new debugging session for analyzing a crash dump file.
-    ///
-    /// Deprecated: Use winaidbg_open_dump_analyze_session instead.
-    ///
     /// </summary>
     /// <param name="dumpPath">Full path to the crash dump file (.dmp).</param>
-    /// <param name="symbolsPath">Optional path to symbol files directory.</param>
     /// <returns>Session creation result with sessionId.</returns>
-    [McpServerTool]
-    [Description("Deprecated but kept for backward compatibility. Same as winaidbg_open_dump_analyze_session. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static Task<object> nexus_open_dump_analyze_session(
-        [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
-        [Description("Optional path to symbol files directory")] string? symbolsPath = null)
-    {
-        return winaidbg_open_dump_analyze_session(dumpPath, symbolsPath);
-    }
-
-    /// <summary>
-    /// Opens a new debugging session for analyzing a crash dump file.
-    /// </summary>
-    /// <param name="dumpPath">Full path to the crash dump file (.dmp).</param>
-    /// <param name="symbolsPath">Optional path to symbol files directory.</param>
-    /// <returns>Session creation result with sessionId.</returns>
-    [McpServerTool]
-    [Description("Opens a new debugging session for crash dump analysis. Returns sessionId for use in subsequent operations. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static async Task<object> winaidbg_open_dump_analyze_session(
-        [Description("Full path to the crash dump file (.dmp)")] string dumpPath,
-        [Description("Optional path to symbol files directory")] string? symbolsPath = null)
+    public async Task<object> Execute(string dumpPath)
     {
         var logger = LogManager.GetCurrentClassLogger();
 
@@ -59,12 +26,10 @@ internal static class OpenDumpAnalyzeSessionTool
 
         try
         {
-            if (symbolsPath == "null" || string.IsNullOrWhiteSpace(symbolsPath))
-            {
-                symbolsPath = null;
-            }
+            ToolInputValidator.EnsureNonEmpty(dumpPath, "dumpPath");
+            ToolInputValidator.EnsureDumpFileExists(dumpPath, fileSystem);
 
-            var createResult = await EngineService.Get().CreateSessionAsync(dumpPath, symbolsPath);
+            var createResult = await EngineService.Get().CreateSessionAsync(dumpPath);
 
             logger.Info("Successfully created session: {SessionId}", createResult.SessionId);
 
@@ -73,7 +38,6 @@ internal static class OpenDumpAnalyzeSessionTool
                 fileSystem.GetFileName(dumpPath) ?? "Unknown",
                 "Success",
                 createResult.DumpCheck,
-                symbolsPath,
                 $"Session {createResult.SessionId} created successfully");
 
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
@@ -82,97 +46,32 @@ internal static class OpenDumpAnalyzeSessionTool
         catch (FileNotFoundException ex)
         {
             logger.Error(ex, "File not found: {Message}", ex.Message);
-            var markdown = MarkdownFormatter.CreateSessionResult(
-                "N/A",
-                fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                "Failed",
-                new DumpCheckResult
-                {
-                    IsEnabled = false,
-                    WasExecuted = false,
-                    ExitCode = -1,
-                    Message = string.Empty,
-                },
-                null,
-                ex.Message);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            throw new McpToolUserInputException($"Invalid `dumpPath`: {ex.Message}", ex);
         }
         catch (InvalidOperationException ex)
         {
             logger.Error(ex, "Cannot create session: {Message}", ex.Message);
-            var markdown = MarkdownFormatter.CreateSessionResult(
-                "N/A",
-                fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                "Failed",
-                new DumpCheckResult
-                {
-                    IsEnabled = false,
-                    WasExecuted = false,
-                    ExitCode = -1,
-                    Message = string.Empty,
-                },
-                null,
-                ex.Message);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            throw new McpToolUserInputException(ex.Message, ex);
         }
         catch (UnauthorizedAccessException ex)
         {
             logger.Error(ex, "Access denied: {Message}", ex.Message);
-            var errorMarkdown = MarkdownFormatter.CreateSessionResult(
-                "N/A",
-                fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                "Failed",
-                new DumpCheckResult
-                {
-                    IsEnabled = false,
-                    WasExecuted = false,
-                    ExitCode = -1,
-                    Message = string.Empty,
-                },
-                null,
-                $"Cannot open file (access denied): {ex.Message}");
-            errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return errorMarkdown;
+            throw new McpToolUserInputException($"Cannot open file (access denied): {ex.Message}", ex);
         }
         catch (IOException ex)
         {
             logger.Error(ex, "I/O error when opening dump: {DumpPath}", dumpPath);
-            var errorMarkdown = MarkdownFormatter.CreateSessionResult(
-                "N/A",
-                fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                "Failed",
-                new DumpCheckResult
-                {
-                    IsEnabled = false,
-                    WasExecuted = false,
-                    ExitCode = -1,
-                    Message = string.Empty,
-                },
-                null,
-                $"Cannot open file: {ex.Message}");
-            errorMarkdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return errorMarkdown;
+            throw new McpToolUserInputException($"Cannot open file: {ex.Message}", ex);
+        }
+        catch (McpToolUserInputException ex)
+        {
+            logger.Warn(ex, "Invalid inputs for session creation");
+            throw;
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error creating session");
-            var markdown = MarkdownFormatter.CreateSessionResult(
-                "N/A",
-                fileSystem.GetFileName(dumpPath) ?? "Unknown",
-                "Failed",
-                new DumpCheckResult
-                {
-                    IsEnabled = false,
-                    WasExecuted = false,
-                    ExitCode = -1,
-                    Message = string.Empty,
-                },
-                null,
-                $"Unexpected error: {ex.Message}");
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return markdown;
+            throw;
         }
     }
 }

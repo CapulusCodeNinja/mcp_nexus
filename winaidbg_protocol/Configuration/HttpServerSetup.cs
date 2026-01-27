@@ -10,7 +10,10 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using ModelContextProtocol.Protocol;
+
 using WinAiDbg.Config;
+using WinAiDbg.Protocol.Services;
 
 namespace WinAiDbg.Protocol.Configuration;
 
@@ -113,9 +116,23 @@ internal static class HttpServerSetup
     /// <param name="services">The service collection to configure.</param>
     private static void ConfigureMcpServer(IServiceCollection services)
     {
+        _ = services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
+        _ = services.AddSingleton<McpToolCallService>();
+
         _ = services.AddMcpServer()
             .WithHttpTransport()
-            .WithToolsFromAssembly()
+            .WithListToolsHandler((context, _) =>
+            {
+                var toolCallService = context.Services?.GetRequiredService<McpToolCallService>()
+                                      ?? throw new InvalidOperationException("McpToolCallService is not available.");
+                return new ValueTask<ListToolsResult>(toolCallService.ListTools());
+            })
+            .WithCallToolHandler((context, cancellationToken) =>
+            {
+                var toolCallService = context.Services?.GetRequiredService<McpToolCallService>()
+                                      ?? throw new InvalidOperationException("McpToolCallService is not available.");
+                return toolCallService.CallToolAsync(context, cancellationToken);
+            })
             .WithResourcesFromAssembly();
     }
 
@@ -146,10 +163,24 @@ internal static class HttpServerSetup
     {
         ArgumentNullException.ThrowIfNull(services);
 
+        _ = services.AddSingleton<IMcpToolDefinitionService, McpToolDefinitionService>();
+        _ = services.AddSingleton<McpToolCallService>();
+
         // Use official SDK for stdio mode
         _ = services.AddMcpServer()
             .WithStdioServerTransport()
-            .WithToolsFromAssembly()
+            .WithListToolsHandler((context, _) =>
+            {
+                var toolCallService = context.Services?.GetRequiredService<McpToolCallService>()
+                                      ?? throw new InvalidOperationException("McpToolCallService is not available.");
+                return new ValueTask<ListToolsResult>(toolCallService.ListTools());
+            })
+            .WithCallToolHandler((context, cancellationToken) =>
+            {
+                var toolCallService = context.Services?.GetRequiredService<McpToolCallService>()
+                                      ?? throw new InvalidOperationException("McpToolCallService is not available.");
+                return toolCallService.CallToolAsync(context, cancellationToken);
+            })
             .WithResourcesFromAssembly();
     }
 

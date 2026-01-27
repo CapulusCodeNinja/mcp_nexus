@@ -1,7 +1,3 @@
-using System.ComponentModel;
-
-using ModelContextProtocol.Server;
-
 using NLog;
 
 using WinAiDbg.Protocol.Services;
@@ -12,43 +8,17 @@ namespace WinAiDbg.Protocol.Tools;
 /// <summary>
 /// MCP tool for canceling a queued or executing command.
 /// </summary>
-[McpServerToolType]
-internal static class CancelCommandTool
+internal class CancelCommandTool
 {
-    /// <summary>
-    /// Cancels a queued or executing command in a session.
-    ///
-    /// Deprecated: Use winaidbg_cancel_dump_analyze_command instead.
-    ///
-    /// </summary>
-    /// <param name="sessionId">Session ID from nexus_open_dump_analyze_session.</param>
-    /// <param name="commandId">Command ID from nexus_enqueue_async_dump_analyze_command.</param>
-    /// <returns>Command cancellation result.</returns>
-    [McpServerTool]
-    [Description("Deprecated but kept for backward compatibility. Same as winaidbg_cancel_dump_analyze_command. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static Task<object> nexus_cancel_dump_analyze_command(
-        [Description("Session ID from nexus_open_dump_analyze_session")]
-        string sessionId,
-        [Description("Command ID to cancel")] string commandId)
-    {
-        return winaidbg_cancel_dump_analyze_command(sessionId, commandId);
-    }
-
     /// <summary>
     /// Cancels a queued or executing command in a session.
     /// </summary>
     /// <param name="sessionId">Session ID from winaidbg_open_dump_analyze_session.</param>
     /// <param name="commandId">Command ID from winaidbg_enqueue_async_dump_analyze_command.</param>
     /// <returns>Command cancellation result.</returns>
-    [McpServerTool]
-    [Description("Cancels a queued or executing command. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Required for interoperability with external system")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:Element should begin with upper-case letter", Justification = "Required for interoperability with external system")]
-    public static Task<object> winaidbg_cancel_dump_analyze_command(
-        [Description("Session ID from winaidbg_open_dump_analyze_session")] string sessionId,
-        [Description("Command ID to cancel")] string commandId)
+    public Task<object> Execute(
+        string sessionId,
+        string commandId)
     {
         var logger = LogManager.GetCurrentClassLogger();
 
@@ -56,9 +26,18 @@ internal static class CancelCommandTool
 
         try
         {
+            ToolInputValidator.EnsureNonEmpty(commandId, "commandId");
+            _ = ToolInputValidator.EnsureSessionExists(sessionId);
+
             var cancelled = EngineService.Get().CancelCommand(sessionId, commandId);
 
             logger.Info("Command {CommandId} cancellation: {Result}", commandId, cancelled ? "Success" : "NotFound");
+
+            if (!cancelled)
+            {
+                throw new McpToolUserInputException(
+                    $"Invalid `commandId`: `{commandId}` was not found for session `{sessionId}` (or already completed). Use `winaidbg_get_dump_analyze_commands_status` to list known commandIds.");
+            }
 
             var keyValues = new Dictionary<string, object?>
             {
@@ -80,43 +59,21 @@ internal static class CancelCommandTool
             markdown += MarkdownFormatter.GetUsageGuideMarkdown();
             return Task.FromResult<object>(markdown);
         }
+        catch (McpToolUserInputException ex)
+        {
+            logger.Warn(ex, "Invalid inputs for command cancellation");
+            throw;
+        }
         catch (ArgumentException ex)
         {
-            logger.Error(ex, "Invalid argument: {Message}", ex.Message);
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", commandId },
-                { "Session ID", sessionId },
-                { "Cancelled", false },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Command Cancellation Failed",
-                keyValues,
-                ex.Message,
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            var message = $"Invalid argument: {ex.Message}";
+            logger.Error(ex, message);
+            throw new McpToolUserInputException(message, ex);
         }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error cancelling command");
-            var keyValues = new Dictionary<string, object?>
-            {
-                { "Command ID", commandId },
-                { "Session ID", sessionId },
-                { "Cancelled", false },
-                { "Status", "Failed" },
-            };
-
-            var markdown = MarkdownFormatter.CreateOperationResult(
-                "Command Cancellation Failed",
-                keyValues,
-                $"Unexpected error: {ex.Message}",
-                false);
-            markdown += MarkdownFormatter.GetUsageGuideMarkdown();
-            return Task.FromResult<object>(markdown);
+            throw;
         }
     }
 }

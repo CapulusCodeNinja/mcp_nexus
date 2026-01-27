@@ -8,15 +8,15 @@ internal static class CdbSentinels
     /// <summary>
     /// Start marker for command execution.
     /// </summary>
-    public const string StartMarker = "winaidbg_SENTINEL_COMMAND_START";
+    public const string StartMarker = "WINAIDBG_SENTINEL_COMMAND_START";
 
     /// <summary>
     /// End marker for command execution.
     /// </summary>
-    public const string EndMarker = "winaidbg_SENTINEL_COMMAND_END";
+    public const string EndMarker = "WINAIDBG_SENTINEL_COMMAND_END";
 
     /// <summary>
     /// Command separator marker for batch commands.
     /// </summary>
-    public const string CommandSeparator = "winaidbg_COMMAND_SEPERATOR";
+    public const string CommandSeparator = "WINAIDBG_COMMAND_SEPERATOR";
 }

@@ -189,11 +189,10 @@ internal class CdbSession : ICdbSession
 
             try
             {
-                // Create command with sentinels
-                var wrappedCommand = CreateCommandWithSentinels(processedCommand);
-
-                // Send command to CDB
-                await SendCommandToCdbAsync(wrappedCommand);
+                // Send start sentinel, command, and end sentinel as separate lines.
+                // This prevents syntax errors in the command from suppressing the end sentinel.
+                var framedLines = CdbCommandFraming.CreateSentinelWrappedLines(processedCommand);
+                await SendCommandLinesToCdbAsync(framedLines);
 
                 // Read output until completion
                 var output = await ReadCommandOutputAsync(cancellationToken);
@@ -691,16 +690,6 @@ internal class CdbSession : ICdbSession
     }
 
     /// <summary>
-    /// Creates a CDB command wrapped with start and end sentinel markers.
-    /// </summary>
-    /// <param name="command">The CDB command to wrap.</param>
-    /// <returns>The command string with sentinels.</returns>
-    protected static string CreateCommandWithSentinels(string command)
-    {
-        return $".echo {CdbSentinels.StartMarker}; {command}; .echo {CdbSentinels.EndMarker}";
-    }
-
-    /// <summary>
     /// Sends a command to the CDB process input stream.
     /// </summary>
     /// <param name="command">The command to send.</param>
@@ -708,12 +697,33 @@ internal class CdbSession : ICdbSession
     /// <exception cref="InvalidOperationException">Thrown when CDB input stream is not available.</exception>
     protected async Task SendCommandToCdbAsync(string command)
     {
+        await SendCommandLinesToCdbAsync(new[] { command });
+    }
+
+    /// <summary>
+    /// Sends one or more command lines to the CDB process input stream and flushes once.
+    /// </summary>
+    /// <param name="commandLines">The command lines to send.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandLines"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when CDB input stream is not available.</exception>
+    protected async Task SendCommandLinesToCdbAsync(IEnumerable<string> commandLines)
+    {
+        if (commandLines == null)
+        {
+            throw new ArgumentNullException(nameof(commandLines));
+        }
+
         if (m_InputWriter == null)
         {
             throw new InvalidOperationException("CDB input stream is not available");
         }
 
-        await m_InputWriter.WriteLineAsync(command);
+        foreach (var line in commandLines)
+        {
+            await m_InputWriter.WriteLineAsync(line);
+        }
+
         await m_InputWriter.FlushAsync();
     }
 
@@ -733,7 +743,7 @@ internal class CdbSession : ICdbSession
 
         var output = new StringBuilder();
         var startMarkerFound = false;
-        var timeout = m_Settings.Get().WinAiDbg.AutomatedRecovery.GetDefaultCommandTimeout();
+        var timeout = GetDefaultCommandTimeout();
 
         using var timeoutCts = new CancellationTokenSource(timeout);
         using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
@@ -756,11 +766,37 @@ internal class CdbSession : ICdbSession
         {
             // Include partial output and attempt to re-sync to the next end marker to avoid misalignment
             var partial = output.ToString().TrimEnd();
+            await TryEmitEndSentinelAsync();
             await DrainUntilEndMarkerAsync(TimeSpan.FromMilliseconds(750), cancellationToken);
             throw new TimeoutException($"Command execution timed out after {timeout.TotalMinutes:F1} minutes{Environment.NewLine}{partial}");
         }
 
         return output.ToString().TrimEnd();
+    }
+
+    /// <summary>
+    /// Gets the effective timeout for a single command execution.
+    /// </summary>
+    /// <returns>The command execution timeout.</returns>
+    protected virtual TimeSpan GetDefaultCommandTimeout()
+    {
+        return m_Settings.Get().WinAiDbg.AutomatedRecovery.GetDefaultCommandTimeout();
+    }
+
+    /// <summary>
+    /// Attempts to emit the end sentinel marker to help re-synchronize output after a timeout.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    private async Task TryEmitEndSentinelAsync()
+    {
+        try
+        {
+            await SendCommandToCdbAsync($".echo {CdbSentinels.EndMarker}");
+        }
+        catch (Exception ex)
+        {
+            m_Logger.Trace(ex, "Failed to emit end sentinel after command timeout");
+        }
     }
 
     /// <summary>

@@ -290,7 +290,6 @@ public class MarkdownFormatterTests
                 ExitCode = 0,
                 Message = "Dumpchk output",
             },
-            "C:\\symbols",
             "Session created");
 
         // Assert
@@ -298,7 +297,6 @@ public class MarkdownFormatterTests
         _ = result.Should().Contain("**Session ID:** `sess-123`");
         _ = result.Should().Contain("**Dump File:** `dump.dmp`");
         _ = result.Should().Contain("**Status:** Success");
-        _ = result.Should().Contain("**Symbols Path:** `C:\\symbols`");
         _ = result.Should().Contain("✓ Session created");
         _ = result.Should().Contain("## Dump file validation result (dumpchk.exe)");
         _ = result.Should().Contain("**Exitcode:** 0");
@@ -496,5 +494,41 @@ public class MarkdownFormatterTests
         _ = result.Should().Contain("| 1 | Test1 |");
         _ = result.Should().NotContain("Extra1");
         _ = result.Should().NotContain("Extra2");
+    }
+
+    /// <summary>
+    /// Ensures non-extension command output is wrapped in a code block.
+    /// </summary>
+    [Fact]
+    public void AppendOutputForCommand_NonExtension_WrapsInCodeBlock()
+    {
+        // Arrange
+        var command = "!threads";
+        var output = "line1\nline2";
+
+        // Act
+        var result = MarkdownFormatter.AppendOutputForCommand(command, output, "Output");
+
+        // Assert
+        _ = result.Should().Contain("```");
+        _ = result.Should().Contain("line1");
+        _ = result.Should().Contain("line2");
+    }
+
+    /// <summary>
+    /// Ensures extension command output is returned verbatim.
+    /// </summary>
+    [Fact]
+    public void AppendOutputForCommand_Extension_ReturnsVerbatim()
+    {
+        // Arrange
+        var command = "Extension: basic_crash_analysis";
+        var output = "## Some Markdown\n\n``\ncode\n``".Replace("``", "```");
+
+        // Act
+        var result = MarkdownFormatter.AppendOutputForCommand(command, output, "Output");
+
+        // Assert
+        _ = result.Should().Be(output);
     }
 }

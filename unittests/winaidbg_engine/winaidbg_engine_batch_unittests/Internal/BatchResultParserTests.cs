@@ -124,6 +124,54 @@ Module output for command 2
     }
 
     /// <summary>
+    /// Verifies that ParseResult extracts batch results even when outer WinAiDbg sentinels are present.
+    /// </summary>
+    [Fact]
+    public void ParseResult_WithBatchResultAndOuterSentinels_ExtractsIndividualResults()
+    {
+        // Arrange - First batch the commands to register the mapping
+        var sessionId = "test-session-parse-outer-1";
+        var commands = new List<Command>
+        {
+            new() { CommandId = "cmd-1", CommandText = "k" },
+            new() { CommandId = "cmd-2", CommandText = "lm" },
+        };
+
+        var batchedCommands = m_Processor.BatchCommands(sessionId, commands);
+        var batchId = batchedCommands[0].CommandId;
+
+        // Simulate the text captured between CdbSentinels.StartMarker and CdbSentinels.EndMarker
+        // while still containing the batch-internal separators.
+        var resultText = $@"
+WINAIDBG_SENTINEL_COMMAND_START
+{BatchSentinels.GetStartMarker("cmd-1")}
+Stack output for command 1
+{BatchSentinels.GetEndMarker("cmd-1")}
+{BatchSentinels.GetStartMarker("cmd-2")}
+Module output for command 2
+{BatchSentinels.GetEndMarker("cmd-2")}
+WINAIDBG_SENTINEL_COMMAND_END
+";
+
+        var result = new CommandResult
+        {
+            CommandId = batchId,
+            SessionId = sessionId,
+            ResultText = resultText,
+        };
+
+        // Act
+        var results = m_Parser.ParseResult(result);
+
+        // Assert
+        _ = results.Should().HaveCount(2);
+        _ = results[0].CommandId.Should().Be("cmd-1");
+        _ = results[0].ResultText.Should().Contain("Stack output for command 1");
+        _ = results[1].CommandId.Should().Be("cmd-2");
+        _ = results[1].ResultText.Should().Contain("Module output for command 2");
+    }
+
+    /// <summary>
     /// Verifies that ParseResult handles batch with three commands.
     /// </summary>
     [Fact]

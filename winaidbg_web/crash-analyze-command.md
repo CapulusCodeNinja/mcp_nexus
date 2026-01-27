@@ -32,7 +32,7 @@ The following steps must be performed sequentially. Ensure all mandatory rules a
     * Use tool: `winaidbg_enqueue_async_extension_command` with `sessionId` and `extensionName = "stack_with_sources"`.
     * The tool returns a `commandId` (prefixed with `ext-`)
     * **Efficient Monitoring:** Use `winaidbg_get_dump_analyze_commands_status(sessionId)` to poll ALL commands in the session at once (recommended for better performance)
-    * Get individual results via `winaidbg_read_dump_analyze_command_result` using the same `sessionId` and returned `commandId` when status shows "Completed"
+    * Get individual results via `winaidbg_read_dump_analyze_command_result` using the same `sessionId`, returned `commandId`, and `maxWaitSeconds` (required, 1-30). For 0-wait polling, use `winaidbg_get_dump_analyze_commands_status(sessionId)`.
     * When completed successfully the sources for the faulting frames should be available on the filesystem
     * If source is not found for the current frame, try `lsa [ADDRESS]` where `ADDRESS` is the instruction address.
     * Note: Source files (if found) will be in `[workingdir]/source`.
@@ -41,7 +41,7 @@ The following steps must be performed sequentially. Ensure all mandatory rules a
     * Use tool: `winaidbg_enqueue_async_extension_command` with `sessionId` and `extensionName = "basic_crash_analysis"`.
     * The tool returns a `commandId` (prefixed with `ext-`).
     * **Efficient Monitoring:** Use `winaidbg_get_dump_analyze_commands_status(sessionId)` to monitor all commands in the session
-    * Get individual results via `winaidbg_read_dump_analyze_command_result` using the same `sessionId` and returned `commandId` when status shows "Completed"
+    * Get individual results via `winaidbg_read_dump_analyze_command_result` using the same `sessionId`, returned `commandId`, and `maxWaitSeconds` (required, 1-30). For 0-wait polling, use `winaidbg_get_dump_analyze_commands_status(sessionId)`.
     * On success, the result contains outputs from core analysis commands and a concise summary to guide next steps.
 4. **Comprehensive and in-depth Analysis:**
     * Perform a thorough analysis to pinpoint the **exact root cause**.

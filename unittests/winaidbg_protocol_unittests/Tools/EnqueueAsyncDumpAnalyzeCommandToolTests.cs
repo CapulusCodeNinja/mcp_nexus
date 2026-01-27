@@ -21,10 +21,10 @@ using Xunit;
 namespace WinAiDbg.Protocol.Unittests.Tools;
 
 /// <summary>
-/// Unit tests for <see cref="CancelCommandTool"/>.
+/// Unit tests for <see cref="EnqueueAsyncDumpAnalyzeCommandTool"/>.
 /// </summary>
 [Collection("EngineService")]
-public class CancelCommandToolTests
+public class EnqueueAsyncDumpAnalyzeCommandToolTests
 {
     /// <summary>
     /// Verifies unexpected/extra arguments do not crash invocation and missing required args are reported.
@@ -35,21 +35,22 @@ public class CancelCommandToolTests
     {
         // Arrange
         var sut = CreateToolCallService();
+        var arguments = new Dictionary<string, JsonElement>
+        {
+            ["random"] = JsonSerializer.SerializeToElement(new { x = 1 }),
+        };
 
         // Act
         var result = await sut.CallToolAsync(
-            "winaidbg_cancel_dump_analyze_command",
-            new Dictionary<string, JsonElement>
-            {
-                ["randomObject"] = JsonSerializer.SerializeToElement(new { a = 1 }),
-            },
+            "winaidbg_enqueue_async_dump_analyze_command",
+            arguments,
             CancellationToken.None);
 
         // Assert
         _ = result.IsError.Should().BeTrue();
         _ = GetText(result).Should().Contain("Missing required parameter(s)");
         _ = GetText(result).Should().Contain("sessionId");
-        _ = GetText(result).Should().Contain("commandId");
+        _ = GetText(result).Should().Contain("command");
     }
 
     /// <summary>
@@ -57,44 +58,69 @@ public class CancelCommandToolTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CallToolAsync_WithWrongTypedCommandId_ReturnsActionableToolError()
+    public async Task CallToolAsync_WithWrongTypedCommand_ReturnsActionableToolError()
     {
         // Arrange
         var sut = CreateToolCallService();
+        var arguments = new Dictionary<string, JsonElement>
+        {
+            ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+            ["command"] = JsonSerializer.SerializeToElement(new[] { "k", "!analyze -v" }),
+            ["randomFlag"] = JsonSerializer.SerializeToElement(true),
+        };
 
         // Act
         var result = await sut.CallToolAsync(
-            "winaidbg_cancel_dump_analyze_command",
-            new Dictionary<string, JsonElement>
-            {
-                ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
-                ["commandId"] = JsonSerializer.SerializeToElement(new[] { "cmd-1" }),
-                ["random"] = JsonSerializer.SerializeToElement(true),
-            },
+            "winaidbg_enqueue_async_dump_analyze_command",
+            arguments,
             CancellationToken.None);
 
         // Assert
         _ = result.IsError.Should().BeTrue();
-        _ = GetText(result).Should().Contain("Invalid type for parameter `commandId`");
+        _ = GetText(result).Should().Contain("Invalid type for parameter `command`");
     }
 
     /// <summary>
-    /// Verifies invalid sessionId is rejected.
+    /// Verifies whitespace-only command is rejected with an actionable error.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CallToolAsync_WithInvalidSessionId_ReturnsErrorResponse()
+    public async Task CallToolAsync_WithWhitespaceCommand_ReturnsActionableToolError()
     {
         // Arrange
         var sut = CreateToolCallService();
+        var arguments = new Dictionary<string, JsonElement>
+        {
+            ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+            ["command"] = JsonSerializer.SerializeToElement("   "),
+        };
 
         // Act
         var result = await sut.CallToolAsync(
-            "winaidbg_cancel_dump_analyze_command",
+            "winaidbg_enqueue_async_dump_analyze_command",
+            arguments,
+            CancellationToken.None);
+
+        // Assert
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("Invalid `command`");
+    }
+
+    /// <summary>
+    /// Verifies that empty sessionId is rejected.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CallToolAsync_WithEmptySessionId_ReturnsActionableToolError()
+    {
+        // Arrange
+        var sut = CreateToolCallService();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_dump_analyze_command",
             new Dictionary<string, JsonElement>
             {
-                ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
-                ["commandId"] = JsonSerializer.SerializeToElement("cmd-123"),
+                ["sessionId"] = JsonSerializer.SerializeToElement(string.Empty),
+                ["command"] = JsonSerializer.SerializeToElement("test command"),
             },
             CancellationToken.None);
 
@@ -104,35 +130,80 @@ public class CancelCommandToolTests
     }
 
     /// <summary>
-    /// Verifies invalid commandId is rejected.
+    /// Verifies that empty command is rejected.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task CallToolAsync_WithInvalidCommandId_ReturnsErrorResponse()
+    public async Task CallToolAsync_WithEmptyCommand_ReturnsActionableToolError()
     {
         // Arrange
         var sut = CreateToolCallService();
-
-        // Act
         var result = await sut.CallToolAsync(
-            "winaidbg_cancel_dump_analyze_command",
+            "winaidbg_enqueue_async_dump_analyze_command",
             new Dictionary<string, JsonElement>
             {
                 ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
-                ["commandId"] = JsonSerializer.SerializeToElement("invalid-cmd-999"),
+                ["command"] = JsonSerializer.SerializeToElement(string.Empty),
             },
             CancellationToken.None);
 
         // Assert
         _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("command");
     }
 
     /// <summary>
-    /// Verifies that a successful cancel returns a success markdown payload.
+    /// Verifies that whitespace-only sessionId is rejected.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Execute_WhenCancelled_ReturnsSuccessMarkdown()
+    public async Task CallToolAsync_WithWhitespaceSessionId_ReturnsActionableToolError()
+    {
+        // Arrange
+        var sut = CreateToolCallService();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_dump_analyze_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("   "),
+                ["command"] = JsonSerializer.SerializeToElement("test command"),
+            },
+            CancellationToken.None);
+
+        // Assert
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("sessionId");
+    }
+
+    /// <summary>
+    /// Verifies that invalid sessionId is rejected.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CallToolAsync_WithInvalidSessionId_ReturnsActionableToolError()
+    {
+        // Arrange
+        var sut = CreateToolCallService();
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_dump_analyze_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+                ["command"] = JsonSerializer.SerializeToElement("test command"),
+            },
+            CancellationToken.None);
+
+        // Assert
+        _ = result.IsError.Should().BeTrue();
+        _ = GetText(result).Should().Contain("sessionId");
+    }
+
+    /// <summary>
+    /// Verifies that a valid enqueue request returns a success markdown payload.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Execute_WithValidInputs_ReturnsSuccessMarkdown()
     {
         try
         {
@@ -140,29 +211,29 @@ public class CancelCommandToolTests
             EngineService.Shutdown();
 
             const string sessionId = "sess-test";
-            const string commandId = "cmd-1";
+            const string command = "!analyze -v";
+            const string commandId = "cmd-123";
 
             var engine = new Mock<IDebugEngine>(MockBehavior.Strict);
             _ = engine.Setup(e => e.Dispose());
             _ = engine.Setup(e => e.GetSessionState(sessionId)).Returns(SessionState.Active);
-            _ = engine.Setup(e => e.CancelCommand(sessionId, commandId)).Returns(true);
+            _ = engine.Setup(e => e.EnqueueCommand(sessionId, command)).Returns(commandId);
 
             SetEngineForTesting(engine.Object);
 
-            var sut = new CancelCommandTool();
+            var sut = new EnqueueAsyncDumpAnalyzeCommandTool();
 
             // Act
-            var result = await sut.Execute(sessionId, commandId);
+            var result = await sut.Execute(sessionId, command);
             var markdown = result.ToString() ?? string.Empty;
 
             // Assert
-            _ = markdown.Should().Contain("## Command Cancellation");
-            _ = markdown.Should().Contain(sessionId);
+            _ = markdown.Should().Contain("## Command Enqueued");
             _ = markdown.Should().Contain(commandId);
-            _ = markdown.Should().Contain("Cancelled");
+            _ = markdown.Should().Contain(sessionId);
 
             engine.Verify(e => e.GetSessionState(sessionId), Times.Once);
-            engine.Verify(e => e.CancelCommand(sessionId, commandId), Times.Once);
+            engine.Verify(e => e.EnqueueCommand(sessionId, command), Times.Once);
         }
         finally
         {
@@ -171,52 +242,14 @@ public class CancelCommandToolTests
     }
 
     /// <summary>
-    /// Verifies that attempting to cancel an unknown command returns an actionable user input error.
+    /// Verifies that empty commands are rejected as actionable user input errors.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Execute_WhenCommandNotFound_ThrowsMcpToolUserInputException()
-    {
-        try
-        {
-            // Arrange
-            EngineService.Shutdown();
-
-            const string sessionId = "sess-test";
-            const string commandId = "cmd-unknown";
-
-            var engine = new Mock<IDebugEngine>(MockBehavior.Strict);
-            _ = engine.Setup(e => e.Dispose());
-            _ = engine.Setup(e => e.GetSessionState(sessionId)).Returns(SessionState.Active);
-            _ = engine.Setup(e => e.CancelCommand(sessionId, commandId)).Returns(false);
-
-            SetEngineForTesting(engine.Object);
-
-            var sut = new CancelCommandTool();
-
-            // Act
-            var act = async () => await sut.Execute(sessionId, commandId);
-
-            // Assert
-            _ = await act.Should()
-                .ThrowAsync<McpToolUserInputException>()
-                .WithMessage("*not found*");
-        }
-        finally
-        {
-            EngineService.Shutdown();
-        }
-    }
-
-    /// <summary>
-    /// Verifies that invalid arguments are rejected as actionable user input errors.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task Execute_WithWhitespaceCommandId_ThrowsMcpToolUserInputException()
+    public async Task Execute_WithWhitespaceCommand_ThrowsMcpToolUserInputException()
     {
         // Arrange
-        var sut = new CancelCommandTool();
+        var sut = new EnqueueAsyncDumpAnalyzeCommandTool();
 
         // Act
         var act = async () => await sut.Execute("sess-test", "   ");
@@ -224,15 +257,15 @@ public class CancelCommandToolTests
         // Assert
         _ = await act.Should()
             .ThrowAsync<McpToolUserInputException>()
-            .WithMessage("*Invalid `commandId`*");
+            .WithMessage("*Invalid `command`*");
     }
 
     /// <summary>
-    /// Verifies that argument exceptions from the engine are wrapped into actionable user input errors.
+    /// Verifies that inactive sessions are rejected as actionable user input errors.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Execute_WhenEngineThrowsArgumentException_ThrowsMcpToolUserInputException()
+    public async Task Execute_WithInactiveSession_ThrowsMcpToolUserInputException()
     {
         try
         {
@@ -240,24 +273,59 @@ public class CancelCommandToolTests
             EngineService.Shutdown();
 
             const string sessionId = "sess-test";
-            const string commandId = "cmd-1";
-
             var engine = new Mock<IDebugEngine>(MockBehavior.Strict);
             _ = engine.Setup(e => e.Dispose());
-            _ = engine.Setup(e => e.GetSessionState(sessionId)).Returns(SessionState.Active);
-            _ = engine.Setup(e => e.CancelCommand(sessionId, commandId)).Throws(new ArgumentException("bad command id"));
+            _ = engine.Setup(e => e.GetSessionState(sessionId)).Returns(SessionState.Closed);
 
             SetEngineForTesting(engine.Object);
 
-            var sut = new CancelCommandTool();
+            var sut = new EnqueueAsyncDumpAnalyzeCommandTool();
 
             // Act
-            var act = async () => await sut.Execute(sessionId, commandId);
+            var act = async () => await sut.Execute(sessionId, "k");
 
             // Assert
             _ = await act.Should()
                 .ThrowAsync<McpToolUserInputException>()
-                .WithMessage("*Invalid argument*");
+                .WithMessage("*not active*");
+        }
+        finally
+        {
+            EngineService.Shutdown();
+        }
+    }
+
+    /// <summary>
+    /// Verifies that engine failures are wrapped into actionable user input errors.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Execute_WhenEngineThrowsInvalidOperation_ThrowsMcpToolUserInputException()
+    {
+        try
+        {
+            // Arrange
+            EngineService.Shutdown();
+
+            const string sessionId = "sess-test";
+            const string command = ".reload /f";
+
+            var engine = new Mock<IDebugEngine>(MockBehavior.Strict);
+            _ = engine.Setup(e => e.Dispose());
+            _ = engine.Setup(e => e.GetSessionState(sessionId)).Returns(SessionState.Active);
+            _ = engine.Setup(e => e.EnqueueCommand(sessionId, command)).Throws(new InvalidOperationException("engine busy"));
+
+            SetEngineForTesting(engine.Object);
+
+            var sut = new EnqueueAsyncDumpAnalyzeCommandTool();
+
+            // Act
+            var act = async () => await sut.Execute(sessionId, command);
+
+            // Assert
+            _ = await act.Should()
+                .ThrowAsync<McpToolUserInputException>()
+                .WithMessage("*Cannot enqueue command*");
         }
         finally
         {

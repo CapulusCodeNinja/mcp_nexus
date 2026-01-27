@@ -42,7 +42,6 @@ internal static class MarkdownFormatter
         _ = md.AppendLine("- **Action**: Open the analyze session for the dump file");
         _ = md.AppendLine("- **Input**:");
         _ = md.AppendLine("    * **dumpPath**: string (required)");
-        _ = md.AppendLine("    * **symbolsPath**: string (optional)");
         _ = md.AppendLine("- **Output**:");
         _ = md.AppendLine("    * **sessionId**: string");
         _ = md.AppendLine("- **Note**: This EXACT `sessionId` IS REQUIRED for all following commands in the session");
@@ -83,10 +82,13 @@ internal static class MarkdownFormatter
         _ = md.AppendLine("- **Input**:");
         _ = md.AppendLine("    * **sessionId**: string (required)");
         _ = md.AppendLine("    * **commandId**: string (required)");
+        _ = md.AppendLine("    * **maxWaitSeconds**: integer (required, 1-30)");
         _ = md.AppendLine("- **Output**:");
         _ = md.AppendLine("    * **commandStatus**: object");
         _ = md.AppendLine("    * **commandResult**: object");
-        _ = md.AppendLine("- **Note**: Use for results from `winaidbg_enqueue_async_dump_analyze_command` or `winaidbg_enqueue_async_extension_command`");
+        _ = md.AppendLine("- **Notes**:");
+        _ = md.AppendLine("    * Use for results from `winaidbg_enqueue_async_dump_analyze_command` or `winaidbg_enqueue_async_extension_command`.");
+        _ = md.AppendLine("    * `maxWaitSeconds` bounds how long this tool will wait for completion. For 0-wait polling, use `winaidbg_get_dump_analyze_commands_status`.");
         _ = md.AppendLine();
         _ = md.AppendLine("#### Tooling - Cancel Command");
         _ = md.AppendLine();
@@ -200,6 +202,26 @@ internal static class MarkdownFormatter
         _ = markdown.AppendLine(content);
         _ = markdown.AppendLine("```");
 
+        return markdown.ToString();
+    }
+
+    /// <summary>
+    /// Creates a note section in Markdown.
+    /// </summary>
+    /// <param name="message">The note message.</param>
+    /// <returns>Formatted note section.</returns>
+    public static string CreateNoteBlock(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return string.Empty;
+        }
+
+        var markdown = new StringBuilder();
+        _ = markdown.AppendLine("### Note");
+        _ = markdown.AppendLine();
+        _ = markdown.AppendLine(message);
+        _ = markdown.AppendLine();
         return markdown.ToString();
     }
 
@@ -338,7 +360,6 @@ internal static class MarkdownFormatter
     /// <param name="dumpFile">The dump file name.</param>
     /// <param name="status">The creation status.</param>
     /// <param name="dumpCheck">The result of the dump check.</param>
-    /// <param name="symbolsPath">Optional symbols path.</param>
     /// <param name="message">Optional status message.</param>
     /// <returns>Formatted session creation result.</returns>
     public static string CreateSessionResult(
@@ -346,7 +367,6 @@ internal static class MarkdownFormatter
         string dumpFile,
         string status,
         DumpCheckResult dumpCheck,
-        string? symbolsPath = null,
         string? message = null)
     {
         var markdown = new StringBuilder();
@@ -355,11 +375,6 @@ internal static class MarkdownFormatter
         _ = markdown.AppendLine(CreateKeyValue("Session ID", sessionId, true));
         _ = markdown.AppendLine(CreateKeyValue("Dump File", dumpFile, true));
         _ = markdown.AppendLine(CreateKeyValue("Status", status));
-
-        if (!string.IsNullOrEmpty(symbolsPath))
-        {
-            _ = markdown.AppendLine(CreateKeyValue("Symbols Path", symbolsPath, true));
-        }
 
         _ = markdown.AppendLine();
 
