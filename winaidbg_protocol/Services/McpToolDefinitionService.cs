@@ -1,7 +1,10 @@
+using System.Text;
+
 using NLog;
 
 using WinAiDbg.Protocol.Models;
 using WinAiDbg.Protocol.Notifications;
+using WinAiDbg.Protocol.Utilities;
 
 namespace WinAiDbg.Protocol.Services;
 
@@ -14,6 +17,22 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     private readonly Logger m_Logger;
     private readonly IMcpNotificationService? m_NotificationService;
     private readonly McpToolSchema[] m_Tools;
+
+    /// <summary>
+    /// Creates a standardized Markdown description for MCP tools.
+    /// </summary>
+    /// <param name="toolName">The MCP tool name.</param>
+    /// <param name="summary">A short summary of what the tool does.</param>
+    /// <returns>Markdown description including the shared usage guide.</returns>
+    private static string CreateToolDescriptionMarkdown(string toolName, string summary)
+    {
+        var sb = new StringBuilder();
+        _ = sb.AppendLine($"## {toolName}");
+        _ = sb.AppendLine();
+        _ = sb.AppendLine(summary);
+        _ = sb.AppendLine(MarkdownFormatter.GetUsageGuideMarkdown());
+        return sb.ToString();
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="McpToolDefinitionService"/> class.
@@ -92,10 +111,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the open-session operation.</returns>
     private static McpToolSchema CreateOpenSessionTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "winaidbg_open_dump_analyze_session",
+            "Opens a new debugging session for crash dump analysis. Returns sessionId for use in subsequent operations. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.");
+
         return new McpToolSchema
         {
             Name = "winaidbg_open_dump_analyze_session",
-            Description = "Opens a new debugging session for crash dump analysis. Returns sessionId for use in subsequent operations. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -118,10 +141,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the enqueue-command operation.</returns>
     private static McpToolSchema CreateEnqueueCommandTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "winaidbg_enqueue_async_dump_analyze_command",
+            "Enqueues a debugging command for asynchronous execution. Returns commandId for tracking. MCP call shape: tools/call with params.arguments { sessionId: string, command: string }.");
+
         return new McpToolSchema
         {
             Name = "winaidbg_enqueue_async_dump_analyze_command",
-            Description = "Enqueues a debugging command for asynchronous execution. Returns commandId for tracking. MCP call shape: tools/call with params.arguments { sessionId: string, command: string }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -149,10 +176,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the enqueue-extension operation.</returns>
     private static McpToolSchema CreateEnqueueExtensionCommandTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "winaidbg_enqueue_async_extension_command",
+            "Enqueues an extension command for asynchronous execution. Returns commandId for tracking. MCP call shape: tools/call with params.arguments { sessionId: string, extensionName: string, parameters?: object }.");
+
         return new McpToolSchema
         {
             Name = "winaidbg_enqueue_async_extension_command",
-            Description = "Enqueues an extension command for asynchronous execution. Returns commandId for tracking. MCP call shape: tools/call with params.arguments { sessionId: string, extensionName: string, parameters?: object }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -185,10 +216,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the read-result operation.</returns>
     private static McpToolSchema CreateReadResultTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "winaidbg_read_dump_analyze_command_result",
+            "Reads the result of a previously enqueued command. Waits up to maxWaitSeconds for completion; if still running, returns current state without output. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string, maxWaitSeconds: integer }.");
+
         return new McpToolSchema
         {
             Name = "winaidbg_read_dump_analyze_command_result",
-            Description = "Reads the result of a previously enqueued command. Waits up to maxWaitSeconds for completion; if still running, returns current state without output. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string, maxWaitSeconds: integer }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -223,10 +258,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the get-commands-status operation.</returns>
     private static McpToolSchema CreateGetCommandsStatusTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "winaidbg_get_dump_analyze_commands_status",
+            "Gets status of all commands in a session. Efficient for monitoring multiple commands. MCP call shape: tools/call with params.arguments { sessionId: string }.");
+
         return new McpToolSchema
         {
             Name = "winaidbg_get_dump_analyze_commands_status",
-            Description = "Gets status of all commands in a session. Efficient for monitoring multiple commands. MCP call shape: tools/call with params.arguments { sessionId: string }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -249,10 +288,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the close-session operation.</returns>
     private static McpToolSchema CreateCloseSessionTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "winaidbg_close_dump_analyze_session",
+            "Closes a debugging session and releases resources. MCP call shape: tools/call with params.arguments { sessionId: string }.");
+
         return new McpToolSchema
         {
             Name = "winaidbg_close_dump_analyze_session",
-            Description = "Closes a debugging session and releases resources. MCP call shape: tools/call with params.arguments { sessionId: string }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -275,10 +318,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the cancel-command operation.</returns>
     private static McpToolSchema CreateCancelCommandTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "winaidbg_cancel_dump_analyze_command",
+            "Cancels a queued or executing command. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.");
+
         return new McpToolSchema
         {
             Name = "winaidbg_cancel_dump_analyze_command",
-            Description = "Cancels a queued or executing command. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -306,10 +353,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the open-session operation.</returns>
     private static McpToolSchema CreateDeprecatedNexusOpenSessionTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "nexus_open_dump_analyze_session",
+            "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.");
+
         return new McpToolSchema
         {
             Name = "nexus_open_dump_analyze_session",
-            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { dumpPath: string, symbolsPath?: string }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -337,10 +388,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the enqueue-command operation.</returns>
     private static McpToolSchema CreateDeprecatedNexusEnqueueCommandTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "nexus_enqueue_async_dump_analyze_command",
+            "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string, command: string }.");
+
         return new McpToolSchema
         {
             Name = "nexus_enqueue_async_dump_analyze_command",
-            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string, command: string }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -368,10 +423,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the enqueue-extension operation.</returns>
     private static McpToolSchema CreateDeprecatedNexusEnqueueExtensionCommandTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "nexus_enqueue_async_extension_command",
+            "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string, extensionName: string, parameters?: object }.");
+
         return new McpToolSchema
         {
             Name = "nexus_enqueue_async_extension_command",
-            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string, extensionName: string, parameters?: object }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -404,10 +463,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the read-result operation.</returns>
     private static McpToolSchema CreateDeprecatedNexusReadResultTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "nexus_read_dump_analyze_command_result",
+            "Deprecated but kept for backward compatibility. Same behavior as winaidbg_read_dump_analyze_command_result. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string, maxWaitSeconds: integer }.");
+
         return new McpToolSchema
         {
             Name = "nexus_read_dump_analyze_command_result",
-            Description = "Deprecated but kept for backward compatibility. Same behavior as winaidbg_read_dump_analyze_command_result. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string, maxWaitSeconds: integer }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -442,10 +505,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the get-commands-status operation.</returns>
     private static McpToolSchema CreateDeprecatedNexusGetCommandsStatusTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "nexus_get_dump_analyze_commands_status",
+            "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string }.");
+
         return new McpToolSchema
         {
             Name = "nexus_get_dump_analyze_commands_status",
-            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -468,10 +535,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the close-session operation.</returns>
     private static McpToolSchema CreateDeprecatedNexusCloseSessionTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "nexus_close_dump_analyze_session",
+            "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string }.");
+
         return new McpToolSchema
         {
             Name = "nexus_close_dump_analyze_session",
-            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",
@@ -494,10 +565,14 @@ internal class McpToolDefinitionService : IMcpToolDefinitionService
     /// <returns>The tool schema describing the cancel-command operation.</returns>
     private static McpToolSchema CreateDeprecatedNexusCancelCommandTool()
     {
+        var description = CreateToolDescriptionMarkdown(
+            "nexus_cancel_dump_analyze_command",
+            "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.");
+
         return new McpToolSchema
         {
             Name = "nexus_cancel_dump_analyze_command",
-            Description = "Deprecated but kept for backward compatibility. Same as Execute. MCP call shape: tools/call with params.arguments { sessionId: string, commandId: string }.",
+            Description = description,
             InputSchema = new
             {
                 type = "object",

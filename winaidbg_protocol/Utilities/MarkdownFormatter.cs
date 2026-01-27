@@ -82,10 +82,13 @@ internal static class MarkdownFormatter
         _ = md.AppendLine("- **Input**:");
         _ = md.AppendLine("    * **sessionId**: string (required)");
         _ = md.AppendLine("    * **commandId**: string (required)");
+        _ = md.AppendLine("    * **maxWaitSeconds**: integer (required, 1-30)");
         _ = md.AppendLine("- **Output**:");
         _ = md.AppendLine("    * **commandStatus**: object");
         _ = md.AppendLine("    * **commandResult**: object");
-        _ = md.AppendLine("- **Note**: Use for results from `winaidbg_enqueue_async_dump_analyze_command` or `winaidbg_enqueue_async_extension_command`");
+        _ = md.AppendLine("- **Notes**:");
+        _ = md.AppendLine("    * Use for results from `winaidbg_enqueue_async_dump_analyze_command` or `winaidbg_enqueue_async_extension_command`.");
+        _ = md.AppendLine("    * `maxWaitSeconds` bounds how long this tool will wait for completion. For 0-wait polling, use `winaidbg_get_dump_analyze_commands_status`.");
         _ = md.AppendLine();
         _ = md.AppendLine("#### Tooling - Cancel Command");
         _ = md.AppendLine();

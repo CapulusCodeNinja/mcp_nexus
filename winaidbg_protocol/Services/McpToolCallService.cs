@@ -7,6 +7,7 @@ using ModelContextProtocol.Server;
 using NLog;
 
 using WinAiDbg.Protocol.Tools;
+using WinAiDbg.Protocol.Utilities;
 
 namespace WinAiDbg.Protocol.Services;
 
@@ -386,6 +387,8 @@ internal class McpToolCallService
             }
         }
 
+        _ = sb.AppendLine(MarkdownFormatter.GetUsageGuideMarkdown());
+
         return sb.ToString();
     }
 
@@ -475,19 +478,6 @@ internal class McpToolCallService
                value.TryGetInt32(out var number)
             ? number
             : throw new ArgumentException($"Missing required integer argument '{name}'.", nameof(arguments));
-    }
-
-    /// <summary>
-    /// Reads an optional string argument.
-    /// </summary>
-    /// <param name="arguments">Arguments dictionary.</param>
-    /// <param name="name">Argument name.</param>
-    /// <returns>The value, or null if not provided.</returns>
-    private static string? GetOptionalString(IReadOnlyDictionary<string, JsonElement> arguments, string name)
-    {
-        return arguments.TryGetValue(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()
-            : null;
     }
 
     /// <summary>
