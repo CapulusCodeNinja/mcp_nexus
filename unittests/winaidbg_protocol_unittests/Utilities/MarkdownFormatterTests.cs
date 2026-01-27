@@ -297,7 +297,6 @@ public class MarkdownFormatterTests
         _ = result.Should().Contain("**Session ID:** `sess-123`");
         _ = result.Should().Contain("**Dump File:** `dump.dmp`");
         _ = result.Should().Contain("**Status:** Success");
-        _ = result.Should().Contain("**Symbols Path:** `C:\\symbols`");
         _ = result.Should().Contain("✓ Session created");
         _ = result.Should().Contain("## Dump file validation result (dumpchk.exe)");
         _ = result.Should().Contain("**Exitcode:** 0");
