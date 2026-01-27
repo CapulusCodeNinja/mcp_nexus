@@ -40,7 +40,7 @@ public class McpToolCallServiceTests
         var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
         _ = textBlock.Text.Should().Contain("Tool Invocation Error");
         _ = textBlock.Text.Should().Contain("dumpPath");
-        _ = textBlock.Text.Should().Contain("Expected `params.arguments`");
+        _ = textBlock.Text.Should().Contain("Mandatory `params.arguments`");
     }
 
     /// <summary>

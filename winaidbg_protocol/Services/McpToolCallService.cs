@@ -348,55 +348,100 @@ internal class McpToolCallService
     /// <returns>Markdown text.</returns>
     private static string CreateActionableToolErrorMarkdown(string toolName, string details, JsonElement inputSchema)
     {
-        var example = CreateExampleArgumentsJson(inputSchema);
+        var requiredParameters = GetRequiredParameterNames(inputSchema);
+        var optionalParameters = GetOptionalParameterNames(inputSchema);
         var sb = new StringBuilder();
         _ = sb.AppendLine("## Tool Invocation Error");
+
         _ = sb.AppendLine();
         _ = sb.AppendLine($"**Tool:** `{toolName}`");
-        _ = sb.AppendLine($"**Issue:** {details}");
-        _ = sb.AppendLine();
-        _ = sb.AppendLine("### Expected `params.arguments`");
-        _ = sb.AppendLine();
-        _ = sb.AppendLine("```");
-        _ = sb.AppendLine(example);
-        _ = sb.AppendLine("```");
+
+        _ = sb.AppendLine("**Issue:**");
+        _ = sb.AppendLine(details);
+
+        if (requiredParameters.Count > 0)
+        {
+            _ = sb.AppendLine();
+            _ = sb.AppendLine("### Mandatory `params.arguments` fields");
+            _ = sb.AppendLine();
+            foreach (var p in requiredParameters.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+            {
+                _ = sb.AppendLine($"- `{p}`");
+            }
+        }
+
+        if (optionalParameters.Count > 0)
+        {
+            _ = sb.AppendLine();
+            _ = sb.AppendLine("### Optional `params.arguments` fields");
+            _ = sb.AppendLine();
+            foreach (var p in optionalParameters)
+            {
+                _ = sb.AppendLine($"- `{p}`");
+            }
+        }
+
         return sb.ToString();
     }
 
     /// <summary>
-    /// Creates a best-effort example JSON object for <c>params.arguments</c> based on a tool input schema.
+    /// Gets required parameter names from the input schema.
     /// </summary>
     /// <param name="inputSchema">Tool input schema.</param>
-    /// <returns>Example JSON string.</returns>
-    private static string CreateExampleArgumentsJson(JsonElement inputSchema)
+    /// <returns>Set of required parameter names.</returns>
+    private static HashSet<string> GetRequiredParameterNames(JsonElement inputSchema)
     {
-        var obj = new Dictionary<string, object?>();
-        if (inputSchema.ValueKind == JsonValueKind.Object &&
-            inputSchema.TryGetProperty("properties", out var propertiesElement) &&
-            propertiesElement.ValueKind == JsonValueKind.Object)
+        var required = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (inputSchema.ValueKind != JsonValueKind.Object ||
+            !inputSchema.TryGetProperty("required", out var requiredElement) ||
+            requiredElement.ValueKind != JsonValueKind.Array)
         {
-            foreach (var prop in propertiesElement.EnumerateObject())
+            return required;
+        }
+
+        foreach (var item in requiredElement.EnumerateArray())
+        {
+            if (item.ValueKind == JsonValueKind.String)
             {
-                if (prop.Value.ValueKind == JsonValueKind.Object &&
-                    prop.Value.TryGetProperty("type", out var typeElement) &&
-                    typeElement.ValueKind == JsonValueKind.String)
+                var name = item.GetString();
+                if (!string.IsNullOrWhiteSpace(name))
                 {
-                    var t = typeElement.GetString();
-                    obj[prop.Name] = t switch
-                    {
-                        "string" => $"<{prop.Name}>",
-                        "object" => new Dictionary<string, object?>(),
-                        _ => $"<{t}>",
-                    };
-                }
-                else
-                {
-                    obj[prop.Name] = "<value>";
+                    _ = required.Add(name);
                 }
             }
         }
 
-        return JsonSerializer.Serialize(obj, new JsonSerializerOptions { WriteIndented = true });
+        return required;
+    }
+
+    /// <summary>
+    /// Gets optional parameter names from the input schema.
+    /// </summary>
+    /// <param name="inputSchema">Tool input schema.</param>
+    /// <returns>List of optional parameter names, sorted.</returns>
+    private static List<string> GetOptionalParameterNames(JsonElement inputSchema)
+    {
+        var required = GetRequiredParameterNames(inputSchema);
+        var optional = new List<string>();
+
+        if (inputSchema.ValueKind != JsonValueKind.Object ||
+            !inputSchema.TryGetProperty("properties", out var propertiesElement) ||
+            propertiesElement.ValueKind != JsonValueKind.Object)
+        {
+            return optional;
+        }
+
+        foreach (var prop in propertiesElement.EnumerateObject())
+        {
+            if (!required.Contains(prop.Name))
+            {
+                optional.Add(prop.Name);
+            }
+        }
+
+        optional.Sort(StringComparer.OrdinalIgnoreCase);
+        return optional;
     }
 
     /// <summary>
