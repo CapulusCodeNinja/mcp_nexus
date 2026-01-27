@@ -143,14 +143,14 @@ Module output for command 2
         // Simulate the text captured between CdbSentinels.StartMarker and CdbSentinels.EndMarker
         // while still containing the batch-internal separators.
         var resultText = $@"
-winaidbg_SENTINEL_COMMAND_START
+WINAIDBG_SENTINEL_COMMAND_START
 {BatchSentinels.GetStartMarker("cmd-1")}
 Stack output for command 1
 {BatchSentinels.GetEndMarker("cmd-1")}
 {BatchSentinels.GetStartMarker("cmd-2")}
 Module output for command 2
 {BatchSentinels.GetEndMarker("cmd-2")}
-winaidbg_SENTINEL_COMMAND_END
+WINAIDBG_SENTINEL_COMMAND_END
 ";
 
         var result = new CommandResult
