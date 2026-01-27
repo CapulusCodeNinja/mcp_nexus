@@ -19,6 +19,7 @@ namespace WinAiDbg.Protocol.Unittests.Tools;
 /// <summary>
 /// Unit tests for enqueue extension command tool invocation edge cases.
 /// </summary>
+[Collection("EngineService")]
 public class EnqueueAsyncExtensionCommandToolTests
 {
     private readonly Mock<ISettings> m_Settings;
@@ -75,6 +76,187 @@ public class EnqueueAsyncExtensionCommandToolTests
         _ = textBlock.Text.Should().Contain("Missing required parameter(s)");
         _ = textBlock.Text.Should().Contain("sessionId");
         _ = textBlock.Text.Should().Contain("extensionName");
+    }
+
+    /// <summary>
+    /// Verifies that empty sessionId is rejected.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CallToolAsync_EnqueueExtensionCommand_WithEmptySessionId_ReturnsErrorResponse()
+    {
+        // Arrange
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement(string.Empty),
+                ["extensionName"] = JsonSerializer.SerializeToElement("testExtension"),
+            },
+            CancellationToken.None);
+
+        // Assert
+        _ = result.IsError.Should().BeTrue();
+        var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
+        _ = textBlock.Text.Should().Contain("sessionId");
+    }
+
+    /// <summary>
+    /// Verifies that empty extensionName is rejected.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CallToolAsync_EnqueueExtensionCommand_WithEmptyExtensionName_ReturnsErrorResponse()
+    {
+        // Arrange
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
+                ["extensionName"] = JsonSerializer.SerializeToElement(string.Empty),
+            },
+            CancellationToken.None);
+
+        // Assert
+        _ = result.IsError.Should().BeTrue();
+        var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
+        _ = textBlock.Text.Should().Contain("extensionName");
+    }
+
+    /// <summary>
+    /// Verifies that whitespace-only sessionId is rejected.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CallToolAsync_EnqueueExtensionCommand_WithWhitespaceSessionId_ReturnsErrorResponse()
+    {
+        // Arrange
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("   "),
+                ["extensionName"] = JsonSerializer.SerializeToElement("testExtension"),
+            },
+            CancellationToken.None);
+
+        // Assert
+        _ = result.IsError.Should().BeTrue();
+        var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
+        _ = textBlock.Text.Should().Contain("sessionId");
+    }
+
+    /// <summary>
+    /// Verifies that whitespace-only extensionName is rejected.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CallToolAsync_EnqueueExtensionCommand_WithWhitespaceExtensionName_ReturnsErrorResponse()
+    {
+        // Arrange
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("session-123"),
+                ["extensionName"] = JsonSerializer.SerializeToElement("   "),
+            },
+            CancellationToken.None);
+
+        // Assert
+        _ = result.IsError.Should().BeTrue();
+        var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
+        _ = textBlock.Text.Should().Contain("extensionName");
+    }
+
+    /// <summary>
+    /// Verifies that invalid sessionId is rejected.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CallToolAsync_EnqueueExtensionCommand_WithInvalidSessionId_ReturnsErrorResponse()
+    {
+        // Arrange
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+                ["extensionName"] = JsonSerializer.SerializeToElement("testExtension"),
+            },
+            CancellationToken.None);
+
+        // Assert
+        _ = result.IsError.Should().BeTrue();
+        var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
+        _ = textBlock.Text.Should().Contain("sessionId");
+    }
+
+    /// <summary>
+    /// Verifies that null parameters is handled gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CallToolAsync_EnqueueExtensionCommand_WithNullParameters_HandlesGracefully()
+    {
+        // Arrange
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+                ["extensionName"] = JsonSerializer.SerializeToElement("testExtension"),
+                ["parameters"] = JsonSerializer.SerializeToElement<object?>(null),
+            },
+            CancellationToken.None);
+
+        // Assert
+        _ = result.IsError.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Verifies that parameters object is handled gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task CallToolAsync_EnqueueExtensionCommand_WithParameters_HandlesGracefully()
+    {
+        // Arrange
+        var parameters = new { param1 = "value1", param2 = 123 };
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.CallToolAsync(
+            "winaidbg_enqueue_async_extension_command",
+            new Dictionary<string, JsonElement>
+            {
+                ["sessionId"] = JsonSerializer.SerializeToElement("invalid-session-999"),
+                ["extensionName"] = JsonSerializer.SerializeToElement("testExtension"),
+                ["parameters"] = JsonSerializer.SerializeToElement(parameters),
+            },
+            CancellationToken.None);
+
+        // Assert
+        _ = result.IsError.Should().BeTrue();
     }
 
     /// <summary>

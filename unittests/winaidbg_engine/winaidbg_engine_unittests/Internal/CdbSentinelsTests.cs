@@ -16,7 +16,7 @@ public class CdbSentinelsTests
     public void StartMarker_ShouldHaveCorrectValue()
     {
         // Act & Assert
-        _ = WinAiDbg.Engine.Internal.CdbSentinels.StartMarker.Should().Be("winaidbg_SENTINEL_COMMAND_START");
+        _ = WinAiDbg.Engine.Internal.CdbSentinels.StartMarker.Should().Be("WINAIDBG_SENTINEL_COMMAND_START");
     }
 
     /// <summary>
@@ -26,7 +26,7 @@ public class CdbSentinelsTests
     public void EndMarker_ShouldHaveCorrectValue()
     {
         // Act & Assert
-        _ = WinAiDbg.Engine.Internal.CdbSentinels.EndMarker.Should().Be("winaidbg_SENTINEL_COMMAND_END");
+        _ = WinAiDbg.Engine.Internal.CdbSentinels.EndMarker.Should().Be("WINAIDBG_SENTINEL_COMMAND_END");
     }
 
     /// <summary>
@@ -36,7 +36,7 @@ public class CdbSentinelsTests
     public void CommandSeparator_ShouldHaveCorrectValue()
     {
         // Act & Assert
-        _ = WinAiDbg.Engine.Internal.CdbSentinels.CommandSeparator.Should().Be("winaidbg_COMMAND_SEPERATOR");
+        _ = WinAiDbg.Engine.Internal.CdbSentinels.CommandSeparator.Should().Be("WINAIDBG_COMMAND_SEPERATOR");
     }
 
     /// <summary>
@@ -76,9 +76,9 @@ public class CdbSentinelsTests
     public void AllSentinels_ShouldContainWinAiDbgPrefix()
     {
         // Act & Assert
-        _ = WinAiDbg.Engine.Internal.CdbSentinels.StartMarker.Should().StartWith("winaidbg_");
-        _ = WinAiDbg.Engine.Internal.CdbSentinels.EndMarker.Should().StartWith("winaidbg_");
-        _ = WinAiDbg.Engine.Internal.CdbSentinels.CommandSeparator.Should().StartWith("winaidbg_");
+        _ = WinAiDbg.Engine.Internal.CdbSentinels.StartMarker.Should().StartWith("WINAIDBG_");
+        _ = WinAiDbg.Engine.Internal.CdbSentinels.EndMarker.Should().StartWith("WINAIDBG_");
+        _ = WinAiDbg.Engine.Internal.CdbSentinels.CommandSeparator.Should().StartWith("WINAIDBG_");
     }
 
     /// <summary>

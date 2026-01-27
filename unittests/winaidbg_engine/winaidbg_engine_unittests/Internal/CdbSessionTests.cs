@@ -510,7 +510,7 @@ public class CdbSessionTests
         var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
         var output = new StringBuilder();
         var startMarkerFound = false;
-        var line = "winaidbg_SENTINEL_COMMAND_START";
+        var line = CdbSentinels.StartMarker;
 
         // Act
         var (shouldContinue, shouldBreak) = accessor.ProcessOutputLine(line, ref startMarkerFound, output);
@@ -553,7 +553,7 @@ public class CdbSessionTests
         var accessor = new CdbSessionTestAccessor(m_Settings.Object, m_MockFileSystem.Object, m_MockProcessManager.Object);
         var output = new StringBuilder();
         var startMarkerFound = true;
-        var line = "winaidbg_SENTINEL_COMMAND_END";
+        var line = CdbSentinels.EndMarker;
 
         // Act
         var (shouldContinue, shouldBreak) = accessor.ProcessOutputLine(line, ref startMarkerFound, output);

@@ -19,6 +19,7 @@ namespace WinAiDbg.Protocol.Unittests.Tools;
 /// <summary>
 /// Unit tests for close dump analyze session tool invocation edge cases.
 /// </summary>
+[Collection("EngineService")]
 public class CloseDumpAnalyzeSessionToolTests
 {
     private readonly Mock<ISettings> m_Settings;

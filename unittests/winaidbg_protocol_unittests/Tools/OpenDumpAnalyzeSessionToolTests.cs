@@ -13,6 +13,7 @@ namespace WinAiDbg.Protocol.Unittests.Tools;
 /// <summary>
 /// Unit tests for open dump analyze session tool invocation edge cases.
 /// </summary>
+[Collection("EngineService")]
 public class OpenDumpAnalyzeSessionToolTests
 {
     /// <summary>
