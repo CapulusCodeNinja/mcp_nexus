@@ -76,16 +76,13 @@ This approach is typically the best fit for **HTTP-based integrations**, where c
 
 ```bash
 # Install WinAiDbg as a Windows Service
-dotnet run --project winaidbg/winaidbg.csproj -- service install
+dotnet run --project winaidbg/winaidbg.csproj -- --install
 
-# Start the service
-net start WinAiDbg
-
-# Stop the service
-net stop WinAiDbg
+# Update the Windows Service
+dotnet run --project winaidbg/winaidbg.csproj -- --update
 
 # Uninstall the Windows Service
-dotnet run --project winaidbg/winaidbg.csproj -- service uninstall
+dotnet run --project winaidbg/winaidbg.csproj -- --uninstall
 ```
 
 ## 🤖 AI Integration
