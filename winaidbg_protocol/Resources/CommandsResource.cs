@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Server;
 
-using WinAiDbg.Engine.Share;
+using WinAiDbg.Protocol.Services;
 using WinAiDbg.Protocol.Utilities;
 
 namespace WinAiDbg.Protocol.Resources;
@@ -42,7 +42,7 @@ internal static class CommandsResource
         try
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("CommandsResource");
-            var engine = serviceProvider.GetRequiredService<IDebugEngine>();
+            var engine = EngineService.Get();
 
             logger.LogDebug("Commands resource accessed");
 

@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using FluentAssertions;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +10,7 @@ using Moq;
 
 using WinAiDbg.Engine.Share;
 using WinAiDbg.Protocol.Resources;
+using WinAiDbg.Protocol.Services;
 
 using Xunit;
 
@@ -17,7 +20,8 @@ namespace WinAiDbg.Protocol.Unittests.Resources;
 /// Unit tests for CommandsResource class.
 /// Tests command listing resource with mocked dependencies.
 /// </summary>
-public class CommandsResourceTests
+[Collection("EngineService")]
+public class CommandsResourceTests : IDisposable
 {
     private readonly Mock<IDebugEngine> m_MockDebugEngine;
     private readonly IServiceProvider m_ServiceProvider;
@@ -70,13 +74,36 @@ public class CommandsResourceTests
     /// </summary>
     public CommandsResourceTests()
     {
+        EngineService.Shutdown();
+
         m_MockDebugEngine = new Mock<IDebugEngine>();
+        _ = m_MockDebugEngine.Setup(e => e.Dispose());
         _ = m_MockDebugEngine.Setup(e => e.GetActiveSessions()).Returns(Array.Empty<string>());
+        SetEngineForTesting(m_MockDebugEngine.Object);
 
         var services = new ServiceCollection();
         _ = services.AddSingleton(m_MockDebugEngine.Object);
         _ = services.AddLogging(builder => builder.AddProvider(NullLoggerProvider.Instance));
         m_ServiceProvider = services.BuildServiceProvider();
+    }
+
+    /// <summary>
+    /// Shuts down the shared engine singleton so tests do not leak state.
+    /// </summary>
+    public void Dispose()
+    {
+        EngineService.Shutdown();
+    }
+
+    /// <summary>
+    /// Replaces the <see cref="EngineService"/> singleton instance for tests using reflection.
+    /// </summary>
+    /// <param name="engine">The engine instance to set.</param>
+    private static void SetEngineForTesting(IDebugEngine engine)
+    {
+        var field = typeof(EngineService).GetField("m_DebugEngine", BindingFlags.NonPublic | BindingFlags.Static);
+        _ = field.Should().NotBeNull();
+        field!.SetValue(null, engine);
     }
 
     /// <summary>
